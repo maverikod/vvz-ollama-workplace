@@ -1,0 +1,18 @@
+# OLLAMA workstation example configuration
+# Copy to e.g. ollama_workstation.yaml and set values. Environment variables override.
+#
+# Required:
+mcp_proxy_url: "http://localhost:3004"
+ollama_base_url: "http://localhost:11434"
+ollama_model: "llama3.1"
+
+# Optional:
+# ollama_timeout: 60
+# max_tool_rounds: 10
+
+# Optional: proxy auth (if your MCP Proxy requires it)
+# proxy_token_header: "X-API-Key"
+# proxy_token: "your-token"
+
+# Optional: OLLAMA API key (if required by your setup)
+# ollama_api_key: ""
