@@ -1,18 +1,19 @@
 """
-Unit tests for config.py: load from file and env, required/optional fields, defaults.
+Unit tests for config.py: load from file and env,
+required/optional fields, defaults.
 
 Author: Vasiliy Zdanovskiy
 email: vasilyvz@gmail.com
 """
 
 import os
+import sys
 import tempfile
 from pathlib import Path
 
 import pytest
-import sys
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "src"))  # noqa: E402
+sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "src"))
 from ollama_workstation.config import (  # noqa: E402
     load_config,
     WorkstationConfig,
@@ -52,6 +53,24 @@ def test_load_config_from_json_file() -> None:
         cfg = load_config(path)
         assert cfg.mcp_proxy_url == "http://p:1"
         assert cfg.ollama_base_url == "http://o:2"
+        assert cfg.ollama_model == "m"
+    finally:
+        Path(path).unlink(missing_ok=True)
+
+
+def test_load_config_ignores_ollama_models_extra_key() -> None:
+    """Config with ollama_models in ollama_workstation loads; extra key ok."""
+    data = (
+        '{"ollama_workstation":{"mcp_proxy_url":"http://p:1",'
+        '"ollama_base_url":"http://o:2","ollama_model":"m",'
+        '"ollama_models":["llama3.2","qwen3"]}}'
+    )
+    with tempfile.NamedTemporaryFile(suffix=".json", delete=False) as f:
+        f.write(data.encode())
+        path = f.name
+    try:
+        cfg = load_config(path)
+        assert cfg.mcp_proxy_url == "http://p:1"
         assert cfg.ollama_model == "m"
     finally:
         Path(path).unlink(missing_ok=True)
