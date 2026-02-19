@@ -63,7 +63,7 @@ docker run -d \
   -e OLLAMA_MODELS=/app/data \
   -e OLLAMA_HOME=/app/data \
   -e HOME=/app/data \
-  -e OLLAMA_PRELOAD_MODELS="${OLLAMA_PRELOAD_MODELS:-llama3.2}" \
+  -e OLLAMA_PRELOAD_MODELS="${OLLAMA_PRELOAD_MODELS:-llama3.2,qwen3}" \
   "${IMAGE_NAME}"
 
 echo "Done. Container ${CONTAINER_NAME} is running (adapter https port 8015, user 1000:1000)."
