@@ -118,9 +118,7 @@ def test_missing_model_pull_and_log(
     assert "Loading model qwen3..." in out
     assert "Loaded model qwen3." in out
     pull_calls = [
-        c
-        for c in mock_run.call_args_list
-        if c[0][0][:2] == ["ollama", "pull"]
+        c for c in mock_run.call_args_list if c[0][0][:2] == ["ollama", "pull"]
     ]
     assert len(pull_calls) == 1
     assert pull_calls[0][0][0] == ["ollama", "pull", "qwen3"]
@@ -175,3 +173,52 @@ def test_empty_ollama_models_returns_zero_no_pull(tmp_path: Path) -> None:
             exit_code = mod.main()
     assert exit_code == 0
     mock_run.assert_not_called()
+
+
+def test_fallback_to_ollama_model_when_ollama_models_empty(
+    tmp_path: Path, capsys: pytest.CaptureFixture
+) -> None:
+    """When ollama_models is missing, use ollama_model and pull if missing."""
+    config_path = tmp_path / "adapter_config.json"
+    config_path.write_text(
+        json.dumps(
+            {
+                "ollama_workstation": {
+                    "ollama_model": "llama3.2",
+                },
+            }
+        ),
+        encoding="utf-8",
+    )
+    env = {"ADAPTER_CONFIG_PATH": str(config_path)}
+    list_stdout = _ollama_list_output([])
+
+    with patch.dict(os.environ, env, clear=False):
+        with patch("subprocess.run") as mock_run:
+
+            def run_side_effect(*args, **kwargs):
+                if args[0] == ["ollama", "list"]:
+                    return MagicMock(
+                        returncode=0, stdout=list_stdout, stderr=""
+                    )
+                if args[0][:2] == ["ollama", "pull"]:
+                    return MagicMock(returncode=0)
+                return MagicMock(returncode=1)
+
+            mock_run.side_effect = run_side_effect
+            import ensure_ollama_models as mod  # noqa: E402
+
+            import importlib
+
+            importlib.reload(mod)
+            exit_code = mod.main()
+
+    assert exit_code == 0
+    out, err = capsys.readouterr()
+    assert "Loading model llama3.2..." in out
+    assert "Loaded model llama3.2." in out
+    pull_calls = [
+        c for c in mock_run.call_args_list if c[0][0][:2] == ["ollama", "pull"]
+    ]
+    assert len(pull_calls) == 1
+    assert pull_calls[0][0][0] == ["ollama", "pull", "llama3.2"]

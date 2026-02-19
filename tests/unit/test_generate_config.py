@@ -30,7 +30,7 @@ def test_generate_config_includes_ollama_models(tmp_path: Path) -> None:
         "ADAPTER_CONFIG_PATH": str(config_path),
         "CERTS_DIR": str(certs),
         "ADVERTISED_HOST": "test-adapter",
-        "OLLAMA_MODELS": "llama3.2,qwen3",
+        "OLLAMA_PRELOAD_MODELS": "llama3.2,qwen3",
     }
     saved = {k: os.environ.get(k) for k in env}
     try:
@@ -51,7 +51,7 @@ def test_generate_config_includes_ollama_models(tmp_path: Path) -> None:
 
 
 def test_generate_config_ollama_models_default(tmp_path: Path) -> None:
-    """Default OLLAMA_MODELS yields single default model in list."""
+    """Default OLLAMA_PRELOAD_MODELS yields single default model in list."""
     certs = tmp_path / "certs"
     certs.mkdir()
     for name in (
@@ -67,7 +67,7 @@ def test_generate_config_ollama_models_default(tmp_path: Path) -> None:
     }
     saved = {k: os.environ.get(k) for k in env}
     try:
-        os.environ.pop("OLLAMA_MODELS", None)
+        os.environ.pop("OLLAMA_PRELOAD_MODELS", None)
         os.environ.update(env)
         import generate_config as gen  # noqa: E402
 
@@ -83,4 +83,4 @@ def test_generate_config_ollama_models_default(tmp_path: Path) -> None:
                 os.environ.pop(k, None)
             else:
                 os.environ[k] = v
-        os.environ.pop("OLLAMA_MODELS", None)
+        os.environ.pop("OLLAMA_PRELOAD_MODELS", None)

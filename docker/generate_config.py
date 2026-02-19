@@ -36,13 +36,14 @@ ADVERTISED_HOST = os.environ.get("ADVERTISED_HOST", "ollama-adapter")
 LOG_DIR = os.environ.get("ADAPTER_LOG_DIR", "/app/logs")
 # In Docker use host.docker.internal:11434 or service name (e.g. ollama:11434)
 _O = os.environ.get("OLLAMA_BASE_URL", "http://127.0.0.1:11434")
-OLLAMA_BASE_URL = os.environ.get(
-    "OLLAMA_WORKSTATION_OLLAMA_BASE_URL", _O
+OLLAMA_BASE_URL = os.environ.get("OLLAMA_WORKSTATION_OLLAMA_BASE_URL", _O)
+# Model names to preload (OLLAMA_MODELS is path in Docker)
+_DEFAULT_MODEL = os.environ.get("OLLAMA_MODEL", "llama3.2")
+_OLLAMA_PRELOAD_ENV = os.environ.get(
+    "OLLAMA_PRELOAD_MODELS", _DEFAULT_MODEL
 )
-# Comma-separated list of model names to ensure on startup
-_OLLAMA_MODELS_ENV = os.environ.get("OLLAMA_MODELS", "llama3.2")
 OLLAMA_MODELS_LIST = [
-    m.strip() for m in _OLLAMA_MODELS_ENV.split(",") if m.strip()
+    m.strip() for m in _OLLAMA_PRELOAD_ENV.split(",") if m.strip()
 ]
 
 

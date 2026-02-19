@@ -67,6 +67,11 @@ def main() -> int:
     if not isinstance(models, list):
         return 0
     model_names = [m for m in models if isinstance(m, str) and m.strip()]
+    # Fallback: ensure default model when ollama_models missing
+    if not model_names and ow.get("ollama_model"):
+        default = str(ow.get("ollama_model", "")).strip()
+        if default:
+            model_names = [default]
     if not model_names:
         return 0
 
