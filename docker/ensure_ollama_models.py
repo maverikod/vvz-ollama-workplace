@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """
-Ensure OLLAMA models from adapter config are present: check which exist,
-pull missing ones, and log before/after each pull.
+Read the model list from adapter config (ollama_workstation.ollama_models),
+check which are already present, and pull missing ones. Log before/after
+each pull. Single source of truth: config file only.
 
 Author: Vasiliy Zdanovskiy
 email: vasilyvz@gmail.com
@@ -51,6 +52,7 @@ def _model_present(list_names: set[str], model: str) -> bool:
 
 
 def main() -> int:
+    # List of models comes only from config; we then pull whatever is missing.
     path = Path(CONFIG_PATH)
     if not path.exists():
         print(f"Config not found: {path}", file=sys.stderr)
