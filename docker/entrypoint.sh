@@ -46,8 +46,6 @@ fi
 export OLLAMA_MODELS="${OLLAMA_MODELS:-/app/data}"
 export OLLAMA_HOME="${OLLAMA_HOME:-/app/data}"
 
-# Ensure models from config are present: check, log and pull missing ones.
-/app/.venv/bin/python /app/ensure_ollama_models.py
-
-echo "Starting MCP adapter (auto-registration enabled)..."
+# Start adapter; it loads models in background and reports status via server_status.
+echo "Starting MCP adapter (models load in background; call server_status to check)..."
 exec /app/.venv/bin/python /app/run_adapter.py --config "${CONFIG_PATH}"

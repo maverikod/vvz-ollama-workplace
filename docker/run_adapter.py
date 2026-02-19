@@ -9,6 +9,7 @@ email: vasilyvz@gmail.com
 import argparse
 import json
 import sys
+import threading
 from pathlib import Path
 
 from mcp_proxy_adapter.api.app import create_app
@@ -23,6 +24,7 @@ from mcp_proxy_adapter.commands.command_registry import (
 )
 
 from ollama_workstation.docker_config_validation import validate_project_config
+from ollama_workstation.model_loader import run_model_loading
 
 
 def register_commands() -> None:
@@ -88,6 +90,13 @@ def main() -> int:
     )
 
     register_commands()
+    # Start model loading in background so server can report loading state
+    loader = threading.Thread(
+        target=run_model_loading,
+        args=(str(cfg_path),),
+        daemon=True,
+    )
+    loader.start()
     host = app_config.get("server", {}).get("host", "0.0.0.0")
     port = int(app_config.get("server", {}).get("port", 8443))
 
