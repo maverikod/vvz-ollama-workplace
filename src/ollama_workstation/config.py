@@ -51,7 +51,7 @@ class WorkstationConfig:
     ollama_api_key: Optional[str] = None
     # Optional: commands policy (allowed/forbidden/policy); step 01
     commands_policy_config: Optional[CommandsPolicyConfig] = None
-    # Optional: command discovery refresh interval in seconds; 0 = startup only (step 03)
+    # Optional: command discovery interval (sec); 0 = startup only (step 03)
     command_discovery_interval_sec: int = 0
     # Optional: session store type e.g. "memory" (step 05)
     session_store_type: str = "memory"
@@ -66,6 +66,13 @@ class WorkstationConfig:
     min_semantic_tokens: int = 256
     min_documentation_tokens: int = 0
     relevance_slot_mode: str = "fixed_order"
+    # Step 12: tool→model recursion
+    max_model_call_depth: int = 1
+    model_calling_tool_allow_list: tuple[str, ...] = ()
+    # Optional: paths to files auto-injected into context when present
+    rules_file_path: str = ""
+    standards_file_path: str = ""
+    tools_file_path: str = ""
 
     def __post_init__(self) -> None:
         """Normalize URLs (strip trailing slash) and validate."""
@@ -190,6 +197,17 @@ def load_config(config_path: Optional[str] = None) -> WorkstationConfig:
     relevance_slot_mode = (
         str(_get("relevance_slot_mode") or "fixed_order").strip() or "fixed_order"
     )
+    max_model_call_depth = max(0, _parse_int(_get("max_model_call_depth"), 1))
+    allow_list_raw = ow.get("model_calling_tool_allow_list")
+    if isinstance(allow_list_raw, list):
+        model_calling_tool_allow_list = tuple(
+            str(x).strip() for x in allow_list_raw if str(x).strip()
+        )
+    else:
+        model_calling_tool_allow_list = ()
+    rules_file_path = str(_get("rules_file_path") or "").strip()
+    standards_file_path = str(_get("standards_file_path") or "").strip()
+    tools_file_path = str(_get("tools_file_path") or "").strip()
 
     return WorkstationConfig(
         mcp_proxy_url=mcp_proxy_url,
@@ -212,6 +230,11 @@ def load_config(config_path: Optional[str] = None) -> WorkstationConfig:
         min_semantic_tokens=min_semantic_tokens,
         min_documentation_tokens=min_documentation_tokens,
         relevance_slot_mode=relevance_slot_mode,
+        max_model_call_depth=max_model_call_depth,
+        model_calling_tool_allow_list=model_calling_tool_allow_list,
+        rules_file_path=rules_file_path,
+        standards_file_path=standards_file_path,
+        tools_file_path=tools_file_path,
     )
 
 

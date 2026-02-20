@@ -11,6 +11,7 @@ from __future__ import annotations
 import logging
 from typing import Any, Dict, List, Optional
 
+from .context_file_loader import load_text_file
 from .message_store import MessageStore
 from .representation_registry import RepresentationRegistry
 from .relevance_slot_builder import RelevanceSlotBuilder
@@ -42,8 +43,10 @@ class ContextBuilder:
         message_store: MessageStore,
         relevance_slot_builder: Optional[RelevanceSlotBuilder] = None,
         model_context_tokens: Optional[int] = None,
+        standards_file_path: Optional[str] = None,
+        rules_file_path: Optional[str] = None,
     ) -> None:
-        """Initialize with session store, representation registry, message store."""
+        """Init with session store, registry, message store; optional file paths."""
         self._session_store = session_store
         self._representation_registry = representation_registry
         self._message_store = message_store
@@ -51,6 +54,8 @@ class ContextBuilder:
         self._model_context_tokens = (
             model_context_tokens or DEFAULT_MODEL_CONTEXT_TOKENS
         )
+        self._standards_file_path = (standards_file_path or "").strip() or None
+        self._rules_file_path = (rules_file_path or "").strip() or None
 
     def build(
         self,
@@ -106,10 +111,20 @@ class ContextBuilder:
             len(session.standards),
             len(session.session_rules),
         )
-        standards_blocks = [{"role": "system", "content": s} for s in session.standards]
-        session_rules_blocks = [
-            {"role": "system", "content": r} for r in session.session_rules
-        ]
+        standards_list: List[str] = []
+        if self._standards_file_path:
+            file_standards = load_text_file(self._standards_file_path)
+            if file_standards:
+                standards_list.append(file_standards)
+        standards_list.extend(session.standards)
+        rules_list: List[str] = []
+        if self._rules_file_path:
+            file_rules = load_text_file(self._rules_file_path)
+            if file_rules:
+                rules_list.append(file_rules)
+        rules_list.extend(session.session_rules)
+        standards_blocks = [{"role": "system", "content": s} for s in standards_list]
+        session_rules_blocks = [{"role": "system", "content": r} for r in rules_list]
         trimmed = TrimmedContext(
             standards=standards_blocks,
             session_rules=session_rules_blocks,

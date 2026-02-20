@@ -1,0 +1,50 @@
+[
+  {
+    "type": "function",
+    "function": {
+      "name": "list_servers",
+      "description": "List servers registered in the MCP Proxy. Use to discover server_id before call_server or help.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "page": { "type": "integer", "description": "Page number (1-based)." },
+          "page_size": { "type": "integer", "description": "Servers per page." },
+          "filter_enabled": { "type": "boolean", "description": "If true, only enabled servers." }
+        }
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "call_server",
+      "description": "Execute a command on a server. Requires server_id (from list_servers) and command name.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "server_id": { "type": "string", "description": "Server ID from list_servers." },
+          "copy_number": { "type": "integer", "default": 1 },
+          "command": { "type": "string", "description": "Command name." },
+          "params": { "type": "object", "description": "Command parameters." }
+        },
+        "required": ["server_id", "command"]
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "help",
+      "description": "Get help for a server or command. Requires server_id.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "server_id": { "type": "string" },
+          "copy_number": { "type": "integer", "default": 1 },
+          "command": { "type": "string" }
+        },
+        "required": ["server_id"]
+      }
+    }
+  }
+]

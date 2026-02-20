@@ -21,3 +21,8 @@ ollama_model: "llama3.1"
 # allowed_commands: []   # allow-list (used with deny_by_default or as filter with allow_by_default)
 # forbidden_commands: [] # always excluded
 # commands_policy: allow_by_default  # or deny_by_default
+
+# Optional: paths to files auto-injected into model context when present
+# rules_file_path: "config/rules.md"       # rules text → context (session_rules order)
+# standards_file_path: "config/standards.md"  # standards text → context
+# tools_file_path: "config/tools.json"     # JSON array of OLLAMA tools → tools in request

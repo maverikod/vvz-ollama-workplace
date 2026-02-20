@@ -113,3 +113,40 @@ def test_build_includes_standards_and_session_rules() -> None:
     assert serialized[1]["content"] == "Standard B"
     assert serialized[2]["content"] == "Rule one"
     assert serialized[3]["content"] == "Rule two"
+
+
+def test_build_prepends_file_standards_and_rules(tmp_path: Path) -> None:
+    """build() prepends content from standards_file_path and rules_file_path when set."""
+    standards_file = tmp_path / "standards.md"
+    standards_file.write_text("File standards block.", encoding="utf-8")
+    rules_file = tmp_path / "rules.md"
+    rules_file.write_text("File rules block.", encoding="utf-8")
+    session_store = InMemorySessionStore()
+    session_store.create(
+        {
+            "id": "s1",
+            "model": "llama3.2",
+            "standards": ["Session standard"],
+            "session_rules": ["Session rule"],
+        }
+    )
+    reg = RepresentationRegistry()
+    from ollama_workstation.ollama_representation import OllamaRepresentation
+
+    reg.register("llama3.2", OllamaRepresentation())
+    msg_store = StubMessageStore([])
+    builder = ContextBuilder(
+        session_store,
+        reg,
+        msg_store,
+        standards_file_path=str(standards_file),
+        rules_file_path=str(rules_file),
+    )
+    trimmed, serialized = builder.build(
+        "s1", {}, 4096, last_n_messages=10, min_semantic_tokens=256
+    )
+    # File content first, then session content
+    assert serialized[0]["content"] == "File standards block."
+    assert serialized[1]["content"] == "Session standard"
+    assert serialized[2]["content"] == "File rules block."
+    assert serialized[3]["content"] == "Session rule"
