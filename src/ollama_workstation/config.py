@@ -10,7 +10,13 @@ from __future__ import annotations
 import os
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional
+
+from ollama_workstation.commands_policy_config import (
+    COMMANDS_POLICY_ALLOW_BY_DEFAULT,
+    COMMANDS_POLICY_VALUES,
+    CommandsPolicyConfig,
+)
 
 # Default max tool-call rounds per chat (per tech spec)
 DEFAULT_MAX_TOOL_ROUNDS = 10
@@ -43,6 +49,8 @@ class WorkstationConfig:
     proxy_token: Optional[str] = None
     proxy_token_header: Optional[str] = None
     ollama_api_key: Optional[str] = None
+    # Optional: commands policy (allowed/forbidden/policy); step 01
+    commands_policy_config: Optional[CommandsPolicyConfig] = None
 
     def __post_init__(self) -> None:
         """Normalize URLs (strip trailing slash) and validate."""
@@ -105,6 +113,7 @@ def load_config(config_path: Optional[str] = None) -> WorkstationConfig:
             if path.suffix in (".yaml", ".yml"):
                 try:
                     import yaml  # type: ignore[import-untyped]
+
                     data = yaml.safe_load(raw) or {}
                 except ImportError:
                     raise ImportError(
@@ -113,31 +122,39 @@ def load_config(config_path: Optional[str] = None) -> WorkstationConfig:
                     ) from None
             else:
                 import json
+
                 data = json.loads(raw)
 
-    # Override / fill from environment
-    mcp_proxy_url = os.environ.get(ENV_MCP_PROXY_URL) or data.get("mcp_proxy_url", "")
-    ollama_base_url = os.environ.get(ENV_OLLAMA_BASE_URL) or data.get(
-        "ollama_base_url", ""
-    )
-    ollama_model = os.environ.get(ENV_OLLAMA_MODEL) or data.get("ollama_model", "")
+    # Support adapter-style config: values may be under ollama_workstation
+    ow: Dict[str, Any] = data.get("ollama_workstation") or {}
+
+    def _get(key: str, default: Any = "") -> Any:
+        """Get config value from root or ollama_workstation section."""
+        return data.get(key) or ow.get(key, default)
+
+    # Override / fill from environment (env overrides file)
+    mcp_proxy_url = os.environ.get(ENV_MCP_PROXY_URL) or _get("mcp_proxy_url", "")
+    ollama_base_url = os.environ.get(ENV_OLLAMA_BASE_URL) or _get("ollama_base_url", "")
+    ollama_model = os.environ.get(ENV_OLLAMA_MODEL) or _get("ollama_model", "")
     ollama_timeout = _parse_number(
-        os.environ.get(ENV_OLLAMA_TIMEOUT) or data.get("ollama_timeout"),
+        os.environ.get(ENV_OLLAMA_TIMEOUT) or _get("ollama_timeout"),
         DEFAULT_OLLAMA_TIMEOUT,
     )
     max_tool_rounds = _parse_int(
-        os.environ.get(ENV_MAX_TOOL_ROUNDS) or data.get("max_tool_rounds"),
+        os.environ.get(ENV_MAX_TOOL_ROUNDS) or _get("max_tool_rounds"),
         DEFAULT_MAX_TOOL_ROUNDS,
     )
-    proxy_token = os.environ.get("OLLAMA_WORKSTATION_PROXY_TOKEN") or data.get(
+    proxy_token = os.environ.get("OLLAMA_WORKSTATION_PROXY_TOKEN") or _get(
         "proxy_token"
     )
     proxy_token_header = os.environ.get(
         "OLLAMA_WORKSTATION_PROXY_TOKEN_HEADER"
-    ) or data.get("proxy_token_header")
-    ollama_api_key = os.environ.get("OLLAMA_WORKSTATION_OLLAMA_API_KEY") or data.get(
+    ) or _get("proxy_token_header")
+    ollama_api_key = os.environ.get("OLLAMA_WORKSTATION_OLLAMA_API_KEY") or _get(
         "ollama_api_key"
     )
+
+    commands_policy_config = _load_commands_policy_config(ow)
 
     return WorkstationConfig(
         mcp_proxy_url=mcp_proxy_url,
@@ -148,4 +165,28 @@ def load_config(config_path: Optional[str] = None) -> WorkstationConfig:
         proxy_token=proxy_token,
         proxy_token_header=proxy_token_header,
         ollama_api_key=ollama_api_key,
+        commands_policy_config=commands_policy_config,
+    )
+
+
+def _load_commands_policy_config(ow: Dict[str, Any]) -> Optional[CommandsPolicyConfig]:
+    """Build CommandsPolicyConfig from ollama_workstation section if present."""
+    allowed = ow.get("allowed_commands")
+    forbidden = ow.get("forbidden_commands")
+    policy = ow.get("commands_policy")
+    if policy is None and allowed is None and forbidden is None:
+        return None
+    allowed_list: List[str] = list(allowed) if isinstance(allowed, list) else []
+    forbidden_list: List[str] = list(forbidden) if isinstance(forbidden, list) else []
+    policy_str = (
+        str(policy).strip() if policy is not None else COMMANDS_POLICY_ALLOW_BY_DEFAULT
+    )
+    if policy_str not in COMMANDS_POLICY_VALUES:
+        raise ValueError(
+            "commands_policy must be one of %s" % (COMMANDS_POLICY_VALUES,)
+        )
+    return CommandsPolicyConfig(
+        allowed_commands=tuple(allowed_list),
+        forbidden_commands=tuple(forbidden_list),
+        commands_policy=policy_str,
     )

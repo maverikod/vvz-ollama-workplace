@@ -81,3 +81,51 @@ def test_ollama_models_whitespace_only_invalid() -> None:
     errors = validate_project_config(app_config)
     assert len(errors) == 1
     assert "ollama_models[0]" in errors[0]
+
+
+def test_commands_policy_valid() -> None:
+    """Valid commands_policy and lists add no errors (step 01)."""
+    app_config = {
+        "server": {"protocol": "http"},
+        "ollama_workstation": {
+            "commands_policy": "allow_by_default",
+            "allowed_commands": ["a.b"],
+            "forbidden_commands": [],
+        },
+    }
+    assert validate_project_config(app_config) == []
+
+
+def test_commands_policy_invalid_value() -> None:
+    """commands_policy must be allow_by_default or deny_by_default."""
+    app_config = {
+        "server": {"protocol": "http"},
+        "ollama_workstation": {"commands_policy": "allow_all"},
+    }
+    errors = validate_project_config(app_config)
+    assert len(errors) == 1
+    assert "commands_policy" in errors[0]
+    assert "allow_by_default" in errors[0]
+
+
+def test_allowed_commands_must_be_list() -> None:
+    """allowed_commands must be a list."""
+    app_config = {
+        "server": {"protocol": "http"},
+        "ollama_workstation": {"allowed_commands": "a.b"},
+    }
+    errors = validate_project_config(app_config)
+    assert len(errors) == 1
+    assert "allowed_commands" in errors[0]
+    assert "list" in errors[0]
+
+
+def test_forbidden_commands_element_must_be_string() -> None:
+    """forbidden_commands elements must be strings."""
+    app_config = {
+        "server": {"protocol": "http"},
+        "ollama_workstation": {"forbidden_commands": ["a.b", 123]},
+    }
+    errors = validate_project_config(app_config)
+    assert len(errors) == 1
+    assert "forbidden_commands[1]" in errors[0]

@@ -76,6 +76,27 @@ def test_load_config_ignores_ollama_models_extra_key() -> None:
         Path(path).unlink(missing_ok=True)
 
 
+def test_load_config_commands_policy_section() -> None:
+    """Config with allowed_commands, forbidden_commands, commands_policy (step 01)."""
+    data = (
+        '{"ollama_workstation":{"mcp_proxy_url":"http://p:1",'
+        '"ollama_base_url":"http://o:2","ollama_model":"m",'
+        '"commands_policy":"deny_by_default",'
+        '"allowed_commands":["cmd.server"],"forbidden_commands":[]}}'
+    )
+    with tempfile.NamedTemporaryFile(suffix=".json", delete=False) as f:
+        f.write(data.encode())
+        path = f.name
+    try:
+        cfg = load_config(path)
+        assert cfg.commands_policy_config is not None
+        assert cfg.commands_policy_config.commands_policy == "deny_by_default"
+        assert cfg.commands_policy_config.allowed_commands == ("cmd.server",)
+        assert cfg.commands_policy_config.forbidden_commands == ()
+    finally:
+        Path(path).unlink(missing_ok=True)
+
+
 def test_load_config_optional_fields_and_defaults() -> None:
     """Optional ollama_timeout and max_tool_rounds get defaults."""
     os.environ["OLLAMA_WORKSTATION_MCP_PROXY_URL"] = "http://x:1"

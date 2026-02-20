@@ -37,4 +37,27 @@ def validate_project_config(app_config: dict) -> list[str]:
                         "non-empty string" % i
                     )
                     break
+
+    # Commands policy (step 01)
+    policy = ow.get("commands_policy")
+    if policy is not None:
+        if not isinstance(policy, str) or policy not in (
+            "allow_by_default",
+            "deny_by_default",
+        ):
+            errors.append(
+                "ollama_workstation.commands_policy must be "
+                "allow_by_default or deny_by_default"
+            )
+    for key in ("allowed_commands", "forbidden_commands"):
+        val = ow.get(key)
+        if val is not None and not isinstance(val, list):
+            errors.append("ollama_workstation.%s must be a list" % key)
+        elif isinstance(val, list):
+            for i, item in enumerate(val):
+                if not isinstance(item, str):
+                    errors.append(
+                        "ollama_workstation.%s[%s] must be a string" % (key, i)
+                    )
+                    break
     return errors
