@@ -16,14 +16,14 @@
 ## Objects
 
 - **SessionInitCommand:** Executes SessionStore.create(attrs); returns { session_id: uuid4 } (or similar). Registers as adapter command.
-- **SessionUpdateCommand:** Parameters: session_id, optional model, optional allowed_commands, optional forbidden_commands. Calls SessionStore.update(session_id, attrs). Registers as adapter command.
+- **SessionUpdateCommand:** Parameters: session_id, optional model, optional allowed_commands, optional forbidden_commands, optional standards, optional session_rules (per main plan §3.5.2). Calls SessionStore.update(session_id, attrs). Registers as adapter command.
 - **AddCommandToSessionCommand:** Parameters: session_id, command_id. Checks config forbidden_commands; if command_id in config forbidden, log error and return error response; else update session (add to allowed or remove from forbidden). Registers as adapter command.
 - **RemoveCommandFromSessionCommand:** Parameters: session_id, command_id. Updates session (remove from allowed or add to forbidden). Registers as adapter command.
 
 ## Inputs / outputs
 
 - **Input (init):** Optional model, optional lists. **Output:** session_id (UUID4).
-- **Input (update):** session_id, optional model, optional allowed_commands, optional forbidden_commands. **Output:** success or error.
+- **Input (update):** session_id, optional model, optional allowed_commands, optional forbidden_commands, optional standards, optional session_rules. **Output:** success or error.
 - **Input (add):** session_id, command_id. **Output:** success or error (e.g. "command X is forbidden by config and cannot be added to session").
 - **Input (remove):** session_id, command_id. **Output:** success.
 
@@ -35,7 +35,7 @@
 
 ## References
 
-- Main plan: [§1.9 Per-session commands](../DYNAMIC_COMMANDS_AND_MEMORY_PLAN.md#19-per-session-commands-add--remove-priority-of-config-over-session), [§4.1 Session](../DYNAMIC_COMMANDS_AND_MEMORY_PLAN.md#41-session), [§3.5.2 Session store (schema)](../DYNAMIC_COMMANDS_AND_MEMORY_PLAN.md#352-session-store-session-entity). SessionUpdateCommand: main plan Object model table and §1.8.
+- Main plan: [§1.9 Per-session commands](../DYNAMIC_COMMANDS_AND_MEMORY_PLAN.md#19-per-session-commands-add--remove-priority-of-config-over-session), [§4.1 Session](../DYNAMIC_COMMANDS_AND_MEMORY_PLAN.md#41-session) (session-init JSON format), [§3.5.2 Session store (schema)](../DYNAMIC_COMMANDS_AND_MEMORY_PLAN.md#352-session-store-session-entity). SessionUpdateCommand: main plan Object model table and §1.8.
 - Objects and diagrams: [00_objects_and_diagrams.md](00_objects_and_diagrams.md) (SessionInitCommand, SessionUpdateCommand, AddCommandToSessionCommand, RemoveCommandFromSessionCommand), [diagram: session init and model change](00_objects_and_diagrams.md#7-diagram-session-init-and-model-change).
 - Prev: [step_12_call_stack_and_depth.md](step_12_call_stack_and_depth.md). Depends on steps 01, 05. Step 06 uses session data.
 
