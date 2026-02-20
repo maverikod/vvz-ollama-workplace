@@ -102,15 +102,15 @@ This document lists ambiguities and open points identified in the [Dynamic comma
 
 ---
 
-## 10. Chunker and vectorizer (separate services, existing clients)
+## 10. Chunker and vectorizer (chunker does both; embed client for query)
 
-- **Issue:** Plan §4.2 referred to a single "external chunking service" (BM25, vectors, chunks). API contract and behaviour when unavailable were not specified.
-- **Resolution:** **Chunker** and **vectorizer** are **separate external services**. **Ready-made clients** exist for both; the worker uses these clients (no new API to define). Chunker: input message text/metadata → output text chunks, BM25 tokens. Vectorizer: input text (e.g. chunks) → output embeddings. Auth, retries, and behaviour when a service is down are aligned with the existing clients. Main plan §4.2, §4.2a, §4.6 updated accordingly.
+- **Issue:** Plan §4.2 referred to chunker and vectorizer; API contract and who calls whom were not specified.
+- **Resolution:** The **chunker** (e.g. svo-chunker, client: svo_client) **chunks and vectorizes in one go** — it calls the vectorizer internally. The worker calls **only the chunker** for the index pipeline; the chunker returns chunks, BM25 tokens, and vectors. The **embed/vectorizer client** (e.g. embed_client) is used **at query time only** — to obtain the **query embedding** for semantic search (embed the search query text). So: chunker = index (chunk + embed); embed client = query (embed the query). Main plan §4.2, §4.2a, §4.2b, §4.6 updated accordingly.
 
 ## 10a. Redis ↔ vector index (e.g. FAISS) and index update
 
 - **Issue:** How Redis and the vector/BM25 index interact and how the index is updated was not specified; FAISS was not mentioned.
-- **Resolution:** Main plan §4.2a added: Redis holds raw messages; worker reads unprocessed messages, calls **chunker** and **vectorizer** (separate services, existing clients), writes vectors to vector index (e.g. FAISS) and BM25/chunk data to a store; marks processed. Update strategy: incremental or batch; persistence of index and store required. §4.2b adds explicit **search methods**: semantic (by embedding) and BM25 (by tokens), both with session_id filter and top_k.
+- **Resolution:** Main plan §4.2a added: Redis holds raw messages; worker reads unprocessed messages, calls **chunker only** (chunker returns chunks, BM25, vectors); writes vectors to vector index (e.g. FAISS) and BM25/chunk data to a store; marks processed. **Embed client** used at query time to get query embedding for semantic search. Update strategy: incremental or batch; persistence of index and store required. §4.2b: semantic search uses embed client for query_embedding, then k-NN; BM25 by tokens; both with session_id filter and top_k.
 
 ## 10b. ContextBuilder message source
 
@@ -159,7 +159,7 @@ This document lists ambiguities and open points identified in the [Dynamic comma
 | 9d | Redis: described structure (schema); embedding not in Redis | Resolved: §3.2a (schema); §3.3/3.4 (no embedding in Redis; vectors in DB table + index) |
 | 9e | Chunk store: only chunk_id; vectors in DB; reindex | Resolved: §3.5.4, §4.2a, §4.2b (chunk_id + Lua resolution; vector table; reindex) |
 | 9f | Soft delete; no FAISS remove; filter + reindex | Resolved: is_deleted in DB; filter before sort; reindex from non-deleted only |
-| 10 | Chunker and vectorizer | Resolved: separate services; existing clients; worker uses them |
+| 10 | Chunker and vectorizer | Resolved: chunker chunks+vectorizes (calls vectorizer internally); embed client for query embedding only |
 | 10a | Redis ↔ FAISS/index and search methods | Resolved: §4.2a (worker, index update), §4.2b (semantic + BM25 search) |
 | 10b | ContextBuilder message source | TBD at impl: Redis client vs MessageStore abstraction |
 | 11 | RelevanceSlotBuilder full vs stub | Resolved: first impl = fixed-order; config flag for unified later |
@@ -170,11 +170,11 @@ This document lists ambiguities and open points identified in the [Dynamic comma
 
 ## 14. Post-change consistency check
 
-After adding message_id as primary key, chunker+vectorizer as separate services with existing clients, RelevanceSlotBuilder first impl = fixed-order, RepresentationRegistry population at startup, chat flow integration checklist, and external data sources (Database, DatabaseManager, priority), the following was verified and fixed:
+After adding message_id as primary key, chunker (chunks+vectorizes) and embed client (query only), RelevanceSlotBuilder first impl = fixed-order, RepresentationRegistry population at startup, chat flow integration checklist, and external data sources (Database, DatabaseManager, priority), the following was verified and fixed:
 
 - **Main plan Object model table:** SessionUpdateCommand was missing; added row for SessionUpdateCommand (session_id, optional model, allowed_commands, forbidden_commands).
-- **step_10:** Wording "embedding and chunker" → "chunker and vectorizer (embedding) services" for alignment with separate services.
-- **14 §10a:** Resolution text now mentions "calls chunker and vectorizer (separate services, existing clients)" for consistency with §4.2a.
+- **step_10:** Wording "embedding and chunker" → "chunker (chunk+vectorize) and embed client (query)" for alignment with §4.2a.
+- **14 §10 / §10a:** Chunker does chunking and vectorization; embed client used at query time for query embedding. Main plan §4.2, §4.2a, §4.2b updated.
 - **External data sources:** Main plan §4.4e (priority), §4.4f (Database, DatabaseManager; chunk_metadata_adapter); §4.6 summary and §4.5 config mention external sources; 00_objects_and_diagrams and step_11 reference Database/DatabaseManager and optional integration.
 - **Vector table and soft delete (9f):** §3.5.4 and §4.2a: vector table schema (chunk_id UUID4, vector, vector_index_id from FAISS add, is_deleted); add flow (DB first → FAISS add → store ID); soft delete (mark only; filter in all queries); no removal from FAISS; reindex from non-deleted only.
 
