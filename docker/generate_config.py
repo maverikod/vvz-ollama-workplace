@@ -95,6 +95,9 @@ def main() -> None:
         "commands_policy": "allow_by_default",
         "command_discovery_interval_sec": 0,
         "session_store_type": "memory",
+        "redis_host": "localhost",
+        "redis_port": 6379,
+        "redis_key_prefix": "message",
     }
 
     path.write_text(json.dumps(data, indent=2, ensure_ascii=False), encoding="utf-8")

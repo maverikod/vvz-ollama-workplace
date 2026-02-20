@@ -55,6 +55,11 @@ class WorkstationConfig:
     command_discovery_interval_sec: int = 0
     # Optional: session store type e.g. "memory" (step 05)
     session_store_type: str = "memory"
+    # Optional: Redis for message stream (step 09): host, port, password, key_prefix
+    redis_host: str = "localhost"
+    redis_port: int = 6379
+    redis_password: Optional[str] = None
+    redis_key_prefix: str = "message"
 
     def __post_init__(self) -> None:
         """Normalize URLs (strip trailing slash) and validate."""
@@ -166,6 +171,12 @@ def load_config(config_path: Optional[str] = None) -> WorkstationConfig:
     )
     command_discovery_interval_sec = max(0, cmd_disc_sec)
     session_store_type = str(_get("session_store_type") or "memory").strip() or "memory"
+    redis_host = str(_get("redis_host") or "localhost").strip() or "localhost"
+    redis_port = _parse_int(_get("redis_port"), 6379)
+    redis_password = _get("redis_password")
+    if redis_password is not None:
+        redis_password = str(redis_password).strip() or None
+    redis_key_prefix = str(_get("redis_key_prefix") or "message").strip() or "message"
 
     return WorkstationConfig(
         mcp_proxy_url=mcp_proxy_url,
@@ -179,6 +190,10 @@ def load_config(config_path: Optional[str] = None) -> WorkstationConfig:
         commands_policy_config=commands_policy_config,
         command_discovery_interval_sec=command_discovery_interval_sec,
         session_store_type=session_store_type,
+        redis_host=redis_host,
+        redis_port=redis_port,
+        redis_password=redis_password,
+        redis_key_prefix=redis_key_prefix,
     )
 
 

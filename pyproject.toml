@@ -12,6 +12,7 @@ dependencies = [
     "mcp-proxy-adapter",
     "httpx",
     "PyYAML",
+    "redis",
 ]
 
 [project.optional-dependencies]
@@ -28,6 +29,7 @@ where = ["src"]
 
 [tool.black]
 line-length = 88
+# Align with flake8 (max-line-length = 88). Run: black src tests
 target-version = ["py310", "py311", "py312"]
 
 [tool.mypy]
@@ -35,6 +37,10 @@ python_version = "3.12"
 warn_return_any = true
 warn_unused_ignores = true
 ignore_missing_imports = true
+
+[tool.flake8]
+max-line-length = 88
+# Align with black (line-length = 88). Run: flake8 src tests
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"

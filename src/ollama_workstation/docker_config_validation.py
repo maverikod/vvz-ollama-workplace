@@ -75,4 +75,11 @@ def validate_project_config(app_config: dict) -> list[str]:
     store_type = ow.get("session_store_type")
     if store_type is not None and not isinstance(store_type, str):
         errors.append("ollama_workstation.session_store_type must be a string")
+    rport = ow.get("redis_port")
+    if rport is not None:
+        try:
+            if int(rport) < 1 or int(rport) > 65535:
+                errors.append("ollama_workstation.redis_port must be 1-65535")
+        except (TypeError, ValueError):
+            errors.append("ollama_workstation.redis_port must be an integer")
     return errors
