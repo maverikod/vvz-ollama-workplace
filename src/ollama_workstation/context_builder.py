@@ -100,6 +100,12 @@ class ContextBuilder:
         relevance = self._relevance_slot_builder.fill_slot(
             current_message, session_id, remainder
         )
+        logger.debug(
+            "context_build session_id=%s standards_count=%s session_rules_count=%s",
+            session_id,
+            len(session.standards),
+            len(session.session_rules),
+        )
         standards_blocks = [{"role": "system", "content": s} for s in session.standards]
         session_rules_blocks = [
             {"role": "system", "content": r} for r in session.session_rules

@@ -7,6 +7,7 @@ email: vasilyvz@gmail.com
 
 from __future__ import annotations
 
+import logging
 import os
 from pathlib import Path
 from typing import Any, Dict, Optional
@@ -51,8 +52,10 @@ class SessionInitCommand(Command):
 
     name = "session_init"
     descr = (
-        "Create session. Params: model, allowed_commands, "
-        "forbidden_commands. Returns session_id (UUID4)."
+        "Create a new session and return its session_id (UUID4). Optional: model "
+        "(default for this session), allowed_commands (allow-list), "
+        "forbidden_commands (forbid-list). Use session_id in session_update and "
+        "add_command_to_session / remove_command_from_session."
     )
 
     @classmethod
@@ -63,17 +66,42 @@ class SessionInitCommand(Command):
             "properties": {
                 "model": {
                     "type": "string",
-                    "description": "Model id (optional at create).",
+                    "description": (
+                        "OLLAMA model id for this session (optional at create). "
+                        "Used as default when session is used in ollama_chat."
+                    ),
                 },
                 "allowed_commands": {
                     "type": "array",
                     "items": {"type": "string"},
-                    "description": "Optional allow-list for this session.",
+                    "description": (
+                        "Allow-list of command names for this session. If set, only "
+                        "these commands are available (proxy command IDs)."
+                    ),
                 },
                 "forbidden_commands": {
                     "type": "array",
                     "items": {"type": "string"},
-                    "description": "Optional forbid-list for this session.",
+                    "description": (
+                        "Forbid-list of command names. Cannot be used for this session "
+                        "even if allowed by config."
+                    ),
+                },
+                "standards": {
+                    "type": "array",
+                    "items": {"type": "string"},
+                    "description": (
+                        "Canonical standards text blocks for context. Included in "
+                        "context order before session_rules and messages (plan §4.3)."
+                    ),
+                },
+                "session_rules": {
+                    "type": "array",
+                    "items": {"type": "string"},
+                    "description": (
+                        "Session rules text blocks. Included in context after "
+                        "standards, before last N messages (plan §4.3)."
+                    ),
                 },
             },
             "required": [],
@@ -81,6 +109,7 @@ class SessionInitCommand(Command):
 
     @classmethod
     def get_result_schema(cls) -> Dict[str, Any]:
+        """Return JSON Schema for success result with session_id."""
         return {
             "type": "object",
             "properties": {
@@ -95,6 +124,7 @@ class SessionInitCommand(Command):
 
     @classmethod
     def get_error_schema(cls) -> Dict[str, Any]:
+        """Return JSON Schema for error result with message."""
         return {
             "type": "object",
             "properties": {"message": {"type": "string"}},
@@ -102,6 +132,7 @@ class SessionInitCommand(Command):
 
     @classmethod
     def get_metadata(cls) -> Dict[str, Any]:
+        """Return command metadata: name, description, schemas."""
         desc = (cls.descr or "").strip()
         return {
             "name": cls.name,
@@ -118,10 +149,35 @@ class SessionInitCommand(Command):
         **kwargs: Any,
     ) -> Any:
         """Create session via SessionStore.create(parameters); return id."""
-        params = parameters or {}
+        params = dict(parameters or {})
+        # Adapter/proxy may pass command params as kwargs instead of parameters.
+        for key in (
+            "model",
+            "allowed_commands",
+            "forbidden_commands",
+            "standards",
+            "session_rules",
+            "id",
+            "created_at",
+        ):
+            if key in kwargs and kwargs[key] is not None:
+                params[key] = kwargs[key]
+        _logger = logging.getLogger(__name__)
+        _logger.debug(
+            "session_init params_keys=%s",
+            list(params.keys()),
+        )
         try:
             store = _get_session_store(config_path)
             session = store.create(params)
+            logger = _logger
+            if session.standards or session.session_rules:
+                logger.info(
+                    "session_init created session_id=%s standards=%s rules=%s",
+                    session.id,
+                    len(session.standards),
+                    len(session.session_rules),
+                )
             return SuccessResult(data={"session_id": session.id})
         except Exception as e:  # noqa: BLE001
             return ErrorResult(message=str(e), code=-32603)
