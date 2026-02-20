@@ -94,6 +94,7 @@ def main() -> None:
         "forbidden_commands": [],
         "commands_policy": "allow_by_default",
         "command_discovery_interval_sec": 0,
+        "session_store_type": "memory",
     }
 
     path.write_text(json.dumps(data, indent=2, ensure_ascii=False), encoding="utf-8")

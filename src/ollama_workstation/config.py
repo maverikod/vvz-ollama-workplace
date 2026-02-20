@@ -53,6 +53,8 @@ class WorkstationConfig:
     commands_policy_config: Optional[CommandsPolicyConfig] = None
     # Optional: command discovery refresh interval in seconds; 0 = startup only (step 03)
     command_discovery_interval_sec: int = 0
+    # Optional: session store type e.g. "memory" (step 05)
+    session_store_type: str = "memory"
 
     def __post_init__(self) -> None:
         """Normalize URLs (strip trailing slash) and validate."""
@@ -163,6 +165,7 @@ def load_config(config_path: Optional[str] = None) -> WorkstationConfig:
         0,
     )
     command_discovery_interval_sec = max(0, cmd_disc_sec)
+    session_store_type = str(_get("session_store_type") or "memory").strip() or "memory"
 
     return WorkstationConfig(
         mcp_proxy_url=mcp_proxy_url,
@@ -175,6 +178,7 @@ def load_config(config_path: Optional[str] = None) -> WorkstationConfig:
         ollama_api_key=ollama_api_key,
         commands_policy_config=commands_policy_config,
         command_discovery_interval_sec=command_discovery_interval_sec,
+        session_store_type=session_store_type,
     )
 
 

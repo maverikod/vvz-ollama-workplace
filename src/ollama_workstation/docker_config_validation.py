@@ -72,4 +72,7 @@ def validate_project_config(app_config: dict) -> list[str]:
             errors.append(
                 "ollama_workstation.command_discovery_interval_sec must be an integer"
             )
+    store_type = ow.get("session_store_type")
+    if store_type is not None and not isinstance(store_type, str):
+        errors.append("ollama_workstation.session_store_type must be a string")
     return errors
