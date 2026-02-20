@@ -37,9 +37,7 @@ def test_build_effective_tool_list_config_forbidden_excluded() -> None:
     ]
     alias_reg = CommandAliasRegistry()
     safe = SafeNameTranslator()
-    tools, reg = build_effective_tool_list(
-        session, policy, discovered, alias_reg, safe
-    )
+    tools, reg = build_effective_tool_list(session, policy, discovered, alias_reg, safe)
     assert len(tools) == 1
     assert tools[0][0] == "ok_srv"
     reg.resolve("ok_srv")
@@ -59,16 +57,14 @@ def test_build_effective_tool_list_alias_used() -> None:
     alias_reg = CommandAliasRegistry()
     alias_reg.set_alias("echo.srv", "m1", "tool_echo")
     safe = SafeNameTranslator()
-    tools, reg = build_effective_tool_list(
-        session, policy, discovered, alias_reg, safe
-    )
+    tools, reg = build_effective_tool_list(session, policy, discovered, alias_reg, safe)
     assert len(tools) == 1
     assert tools[0][0] == "tool_echo"
     assert reg.resolve("tool_echo") == ("echo", "srv")
 
 
 def test_builder_class_build() -> None:
-    """EffectiveToolListBuilder.build returns same shape as build_effective_tool_list."""
+    """EffectiveToolListBuilder.build same shape as build_effective_tool_list."""
     session = Session.create(session_id="s1", model="m1")
     discovered = [
         ("a.b", CommandSchema("a", "A", {}), True),
@@ -81,3 +77,52 @@ def test_builder_class_build() -> None:
     assert len(tools) == 1
     assert tools[0][0] == "a_b"
     assert reg.resolve("a_b") == ("a", "b")
+
+
+def test_vectorization_added_when_available() -> None:
+    """Vectorization commands are added when discovered and not forbidden."""
+    policy = CommandsPolicyConfig(
+        allowed_commands=(),
+        forbidden_commands=(),
+        commands_policy=COMMANDS_POLICY_ALLOW_BY_DEFAULT,
+    )
+    session = Session.create(session_id="s1", model="m1")
+    embed_id = "embed_execute.embedding-service"
+    discovered = [
+        ("echo.srv", CommandSchema("echo", "Echo", {}), True),
+        (embed_id, CommandSchema("embed_execute", "Embed", {}), True),
+    ]
+    alias_reg = CommandAliasRegistry()
+    safe = SafeNameTranslator()
+    tools, reg = build_effective_tool_list(session, policy, discovered, alias_reg, safe)
+    display_names = [t[0] for t in tools]
+    assert "echo_srv" in display_names
+    assert "embed_execute_embedding_service" in display_names
+    resolved = reg.resolve("embed_execute_embedding_service")
+    assert resolved == ("embed_execute", "embedding-service")
+
+
+def test_vectorization_excluded_when_forbidden() -> None:
+    """Vectorization command is not added when in session forbidden_commands."""
+    policy = CommandsPolicyConfig(
+        allowed_commands=(),
+        forbidden_commands=(),
+        commands_policy=COMMANDS_POLICY_ALLOW_BY_DEFAULT,
+    )
+    session = Session.create(
+        session_id="s1",
+        model="m1",
+        forbidden_commands=["embed_execute.embedding-service"],
+    )
+    discovered = [
+        (
+            "embed_execute.embedding-service",
+            CommandSchema("embed_execute", "E", {}),
+            True,
+        ),
+    ]
+    alias_reg = CommandAliasRegistry()
+    safe = SafeNameTranslator()
+    tools, _ = build_effective_tool_list(session, policy, discovered, alias_reg, safe)
+    display_names = [t[0] for t in tools]
+    assert "embed_execute_embedding_service" not in display_names

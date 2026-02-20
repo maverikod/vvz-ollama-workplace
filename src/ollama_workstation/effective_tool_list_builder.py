@@ -21,6 +21,13 @@ from .tool_call_registry import ToolCallRegistry
 
 logger = logging.getLogger(__name__)
 
+# Command IDs to always include when available (e.g. vectorization for RAG).
+# Format: command_name.server_id (see command_discovery.make_command_id).
+VECTORIZATION_COMMAND_IDS = (
+    "embed_execute.embedding-service",
+    "embed.embedding-service",
+)
+
 
 def build_effective_tool_list(
     session: Session,
@@ -54,6 +61,17 @@ def build_effective_tool_list(
     effective_ids = [c for c in candidate_ids if c not in session_forbidden]
     if session_allowed is not None:
         effective_ids = [c for c in effective_ids if c in session_allowed]
+
+    # Always add vectorization when available and not forbidden.
+    effective_set = set(effective_ids)
+    for vid in VECTORIZATION_COMMAND_IDS:
+        if (
+            vid not in session_forbidden
+            and vid in id_to_schema
+            and vid not in effective_set
+        ):
+            effective_ids.append(vid)
+            effective_set.add(vid)
 
     model_id = session.model or ""
 
