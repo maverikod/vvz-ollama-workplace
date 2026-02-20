@@ -12,33 +12,54 @@ import os
 from pathlib import Path
 from typing import Any, Dict, Optional
 
+import redis
 from mcp_proxy_adapter.commands.base import Command
 from mcp_proxy_adapter.commands.result import SuccessResult, ErrorResult
 
 from ..config import load_config
-from ..session_store import SessionStore, InMemorySessionStore
+from ..session_store import (
+    InMemorySessionStore,
+    RedisSessionStore,
+    SessionStore,
+)
 
 _DEFAULT_CONFIG_PATH = os.environ.get(
     "ADAPTER_CONFIG_PATH", "/app/config/adapter_config.json"
 )
 
-
 _default_memory_store: Optional[SessionStore] = None
+_default_redis_store: Optional[SessionStore] = None
 
 
 def _get_session_store(config_path: Optional[str]) -> SessionStore:
     """
     Return SessionStore from config.
-    Shared in-memory store when type is memory.
+    Memory: shared in-memory. Redis: shared Redis-backed store (sessions table:
+    key session:{id}, hash with model, allowed_commands, forbidden_commands,
+    standards, session_rules, created_at).
     """
-    global _default_memory_store
+    global _default_memory_store, _default_redis_store
     default_exists = Path(_DEFAULT_CONFIG_PATH).exists()
     path = config_path or (_DEFAULT_CONFIG_PATH if default_exists else None)
     config = load_config(path)
-    if (config.session_store_type or "").strip().lower() == "memory":
+    store_type = (config.session_store_type or "").strip().lower()
+    if store_type == "memory":
         if _default_memory_store is None:
             _default_memory_store = InMemorySessionStore()
         return _default_memory_store
+    if store_type == "redis":
+        if _default_redis_store is None:
+            redis_client = redis.Redis(
+                host=config.redis_host,
+                port=config.redis_port,
+                password=config.redis_password or None,
+                decode_responses=True,
+            )
+            _default_redis_store = RedisSessionStore(
+                redis_client,
+                key_prefix="session",
+            )
+        return _default_redis_store
     if _default_memory_store is None:
         _default_memory_store = InMemorySessionStore()
     return _default_memory_store
