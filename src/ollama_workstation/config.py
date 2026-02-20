@@ -51,6 +51,8 @@ class WorkstationConfig:
     ollama_api_key: Optional[str] = None
     # Optional: commands policy (allowed/forbidden/policy); step 01
     commands_policy_config: Optional[CommandsPolicyConfig] = None
+    # Optional: command discovery refresh interval in seconds; 0 = startup only (step 03)
+    command_discovery_interval_sec: int = 0
 
     def __post_init__(self) -> None:
         """Normalize URLs (strip trailing slash) and validate."""
@@ -155,6 +157,12 @@ def load_config(config_path: Optional[str] = None) -> WorkstationConfig:
     )
 
     commands_policy_config = _load_commands_policy_config(ow)
+    cmd_disc_sec = _parse_int(
+        os.environ.get("OLLAMA_WORKSTATION_COMMAND_DISCOVERY_INTERVAL_SEC")
+        or _get("command_discovery_interval_sec"),
+        0,
+    )
+    command_discovery_interval_sec = max(0, cmd_disc_sec)
 
     return WorkstationConfig(
         mcp_proxy_url=mcp_proxy_url,
@@ -166,6 +174,7 @@ def load_config(config_path: Optional[str] = None) -> WorkstationConfig:
         proxy_token_header=proxy_token_header,
         ollama_api_key=ollama_api_key,
         commands_policy_config=commands_policy_config,
+        command_discovery_interval_sec=command_discovery_interval_sec,
     )
 
 

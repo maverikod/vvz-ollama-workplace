@@ -60,4 +60,16 @@ def validate_project_config(app_config: dict) -> list[str]:
                         "ollama_workstation.%s[%s] must be a string" % (key, i)
                     )
                     break
+    interval = ow.get("command_discovery_interval_sec")
+    if interval is not None:
+        try:
+            val = int(interval)
+            if val < 0:
+                errors.append(
+                    "ollama_workstation.command_discovery_interval_sec must be >= 0"
+                )
+        except (TypeError, ValueError):
+            errors.append(
+                "ollama_workstation.command_discovery_interval_sec must be an integer"
+            )
     return errors

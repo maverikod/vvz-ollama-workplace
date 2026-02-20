@@ -129,3 +129,23 @@ def test_forbidden_commands_element_must_be_string() -> None:
     errors = validate_project_config(app_config)
     assert len(errors) == 1
     assert "forbidden_commands[1]" in errors[0]
+
+
+def test_command_discovery_interval_sec_valid() -> None:
+    """command_discovery_interval_sec >= 0 is valid (step 03)."""
+    app_config = {
+        "server": {"protocol": "http"},
+        "ollama_workstation": {"command_discovery_interval_sec": 60},
+    }
+    assert validate_project_config(app_config) == []
+
+
+def test_command_discovery_interval_sec_negative_invalid() -> None:
+    """command_discovery_interval_sec < 0 is invalid."""
+    app_config = {
+        "server": {"protocol": "http"},
+        "ollama_workstation": {"command_discovery_interval_sec": -1},
+    }
+    errors = validate_project_config(app_config)
+    assert len(errors) == 1
+    assert "command_discovery_interval_sec" in errors[0]
