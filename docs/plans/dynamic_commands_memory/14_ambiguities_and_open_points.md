@@ -115,7 +115,7 @@ This document lists ambiguities and open points identified in the [Dynamic comma
 ## 10b. ContextBuilder message source
 
 - **Issue:** Step_10 says "load messages from Redis/semantic store"; it is unspecified whether ContextBuilder uses a Redis client directly or a thin abstraction (e.g. MessageStore.get_messages(session_id)).
-- **Resolution / TBD:** Acceptable as implementation-phase choice. Use direct Redis client or a thin MessageStore interface (get_messages(session_id) → list of messages, e.g. by message_id order); document in step_10 implementation.
+- **Resolution:** **Closed.** We use a **MessageStore** abstraction (interface `get_messages(session_id)`). ContextBuilder depends on MessageStore only; default implementation is **RedisMessageStore** (reads from Redis). Documented in `src/ollama_workstation/message_store.py` and `context_builder.py`.
 
 ---
 
@@ -161,7 +161,7 @@ This document lists ambiguities and open points identified in the [Dynamic comma
 | 9f | Soft delete; no FAISS remove; filter + reindex | Resolved: is_deleted in DB; filter before sort; reindex from non-deleted only |
 | 10 | Chunker and vectorizer | Resolved: chunker chunks+vectorizes (calls vectorizer internally); embed client for query embedding only |
 | 10a | Redis ↔ FAISS/index and search methods | Resolved: §4.2a (worker, index update), §4.2b (semantic + BM25 search) |
-| 10b | ContextBuilder message source | TBD at impl: Redis client vs MessageStore abstraction |
+| 10b | ContextBuilder message source | Resolved: MessageStore abstraction; default RedisMessageStore |
 | 11 | RelevanceSlotBuilder full vs stub | Resolved: first impl = fixed-order; config flag for unified later |
 | 12 | Session-init name and response | Resolved: JSON — command name, session_id (response), parameters (session record fields) |
 | 13 | Config generator and validator | Resolved: §6.4; adapter first, project overlay; step 01 deliverable includes both; steps 05, 09, 10, 12 extend both when adding config |
@@ -178,4 +178,4 @@ After adding message_id as primary key, chunker (chunks+vectorizes) and embed cl
 - **External data sources:** Main plan §4.4e (priority), §4.4f (Database, DatabaseManager; chunk_metadata_adapter); §4.6 summary and §4.5 config mention external sources; 00_objects_and_diagrams and step_11 reference Database/DatabaseManager and optional integration.
 - **Vector table and soft delete (9f):** §3.5.4 and §4.2a: vector table schema (chunk_id UUID4, vector, vector_index_id from FAISS add, is_deleted); add flow (DB first → FAISS add → store ID); soft delete (mark only; filter in all queries); no removal from FAISS; reindex from non-deleted only.
 
-No remaining ambiguities introduced by these changes. Open points remain only: #10b (message source at impl — Redis client vs MessageStore abstraction).
+No remaining ambiguities introduced by these changes. #10b closed in step_10 implementation (MessageStore + RedisMessageStore).

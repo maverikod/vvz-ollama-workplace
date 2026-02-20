@@ -98,6 +98,11 @@ def main() -> None:
         "redis_host": "localhost",
         "redis_port": 6379,
         "redis_key_prefix": "message",
+        "max_context_tokens": 4096,
+        "last_n_messages": 10,
+        "min_semantic_tokens": 256,
+        "min_documentation_tokens": 0,
+        "relevance_slot_mode": "fixed_order",
     }
 
     path.write_text(json.dumps(data, indent=2, ensure_ascii=False), encoding="utf-8")

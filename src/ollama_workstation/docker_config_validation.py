@@ -82,4 +82,24 @@ def validate_project_config(app_config: dict) -> list[str]:
                 errors.append("ollama_workstation.redis_port must be 1-65535")
         except (TypeError, ValueError):
             errors.append("ollama_workstation.redis_port must be an integer")
+    for key, default in (
+        ("max_context_tokens", 4096),
+        ("last_n_messages", 10),
+        ("min_semantic_tokens", 256),
+        ("min_documentation_tokens", 0),
+    ):
+        val = ow.get(key)
+        if val is not None:
+            try:
+                ival = int(val)
+                if ival < 0:
+                    errors.append("ollama_workstation.%s must be >= 0" % key)
+            except (TypeError, ValueError):
+                errors.append("ollama_workstation.%s must be an integer" % key)
+    rmode = ow.get("relevance_slot_mode")
+    if rmode is not None and rmode not in ("fixed_order", "unified_by_relevance"):
+        errors.append(
+            "ollama_workstation.relevance_slot_mode must be "
+            "fixed_order or unified_by_relevance"
+        )
     return errors

@@ -60,6 +60,12 @@ class WorkstationConfig:
     redis_port: int = 6379
     redis_password: Optional[str] = None
     redis_key_prefix: str = "message"
+    # Context (step 10): max_context_tokens, last_n_messages, min_semantic_tokens, etc.
+    max_context_tokens: int = 4096
+    last_n_messages: int = 10
+    min_semantic_tokens: int = 256
+    min_documentation_tokens: int = 0
+    relevance_slot_mode: str = "fixed_order"
 
     def __post_init__(self) -> None:
         """Normalize URLs (strip trailing slash) and validate."""
@@ -177,6 +183,13 @@ def load_config(config_path: Optional[str] = None) -> WorkstationConfig:
     if redis_password is not None:
         redis_password = str(redis_password).strip() or None
     redis_key_prefix = str(_get("redis_key_prefix") or "message").strip() or "message"
+    max_context_tokens = max(1, _parse_int(_get("max_context_tokens"), 4096))
+    last_n_messages = max(0, _parse_int(_get("last_n_messages"), 10))
+    min_semantic_tokens = max(0, _parse_int(_get("min_semantic_tokens"), 256))
+    min_documentation_tokens = max(0, _parse_int(_get("min_documentation_tokens"), 0))
+    relevance_slot_mode = (
+        str(_get("relevance_slot_mode") or "fixed_order").strip() or "fixed_order"
+    )
 
     return WorkstationConfig(
         mcp_proxy_url=mcp_proxy_url,
@@ -194,6 +207,11 @@ def load_config(config_path: Optional[str] = None) -> WorkstationConfig:
         redis_port=redis_port,
         redis_password=redis_password,
         redis_key_prefix=redis_key_prefix,
+        max_context_tokens=max_context_tokens,
+        last_n_messages=last_n_messages,
+        min_semantic_tokens=min_semantic_tokens,
+        min_documentation_tokens=min_documentation_tokens,
+        relevance_slot_mode=relevance_slot_mode,
     )
 
 
