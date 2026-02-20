@@ -22,7 +22,8 @@ CONFIG_DIR="${SCRIPT_DIR}/config"
 LOGS_DIR="${SCRIPT_DIR}/logs"
 CACHE_DIR="${SCRIPT_DIR}/cache"
 DATA_DIR="${SCRIPT_DIR}/data"
-# OLLAMA models and runtime data live in DATA_DIR; mount persists across builds
+# Redis persistence (bases); OLLAMA models and runtime in DATA_DIR
+REDIS_DATA_DIR="${SCRIPT_DIR}/redis_data"
 MODELS_AND_DATA_DIR="${DATA_DIR}"
 CERTS_DIR="${SCRIPT_DIR}/certs"
 # Prefer mtls_certificates (proxy-trusted certs) when present
@@ -32,8 +33,8 @@ if [ -f "${MTLS_DIR}/ca.crt" ] && [ -f "${MTLS_DIR}/client.crt" ] && [ -f "${MTL
   echo "Using certs from mtls_certificates/ (proxy-trusted)."
 fi
 
-# Create all mounted dirs so host paths exist; data dir keeps OLLAMA models between runs
-for d in "${CONFIG_DIR}" "${LOGS_DIR}" "${CACHE_DIR}" "${DATA_DIR}" "${SCRIPT_DIR}/certs"; do
+# Create all mounted dirs so host paths exist (bases, configs, logs, models)
+for d in "${CONFIG_DIR}" "${LOGS_DIR}" "${CACHE_DIR}" "${DATA_DIR}" "${REDIS_DATA_DIR}" "${SCRIPT_DIR}/certs"; do
   mkdir -p "$d"
 done
 
@@ -45,18 +46,23 @@ echo "Stopping old container ${CONTAINER_NAME} (if any)..."
 docker stop "${CONTAINER_NAME}" 2>/dev/null || true
 docker rm "${CONTAINER_NAME}" 2>/dev/null || true
 
-echo "Starting container ${CONTAINER_NAME} on network ${NETWORK_NAME}..."
-# User 1000:1000. Mounted dirs persist across rebuilds; OLLAMA models live in /app/data (DATA_DIR).
+# Redis port on host (free port for tests); omit REDIS_HOST_PORT to not publish
+REDIS_HOST_PORT="${REDIS_HOST_PORT:-63790}"
+echo "Starting container ${CONTAINER_NAME} on network ${NETWORK_NAME} (restart=always, user 1000:1000)..."
+# Restart policy: always. Bases, configs, logs, models mounted from host. Redis published for tests.
 docker run -d \
   --name "${CONTAINER_NAME}" \
+  --restart=always \
   --network "${NETWORK_NAME}" \
   -p 8015:8015 \
+  -p "${REDIS_HOST_PORT}:6379" \
   -u 1000:1000 \
   -v "${CERTS_DIR}:/app/certs:ro" \
   -v "${CONFIG_DIR}:/app/config" \
-  -v "${CACHE_DIR}:/app/cache" \
   -v "${LOGS_DIR}:/app/logs" \
+  -v "${CACHE_DIR}:/app/cache" \
   -v "${MODELS_AND_DATA_DIR}:/app/data" \
+  -v "${REDIS_DATA_DIR}:/app/redis_data" \
   -e CERTS_DIR=/app/certs \
   -e ADAPTER_PORT=8015 \
   -e ADVERTISED_HOST="${CONTAINER_NAME}" \
@@ -66,5 +72,10 @@ docker run -d \
   -e OLLAMA_PRELOAD_MODELS="${OLLAMA_PRELOAD_MODELS:-llama3.2,qwen3}" \
   "${IMAGE_NAME}"
 
-echo "Done. Container ${CONTAINER_NAME} is running (adapter https port 8015, user 1000:1000)."
-echo "Mounts (model and data persist in data/): certs=${CERTS_DIR}, config=${CONFIG_DIR}, cache=${CACHE_DIR}, logs=${LOGS_DIR}, data=${DATA_DIR}"
+echo "Done. Container ${CONTAINER_NAME} is running (adapter 8015, Redis ${REDIS_HOST_PORT}:6379, user 1000:1000, restart=always, network=${NETWORK_NAME})."
+echo "Mounts: certs, config, logs, cache, data (models), redis_data (bases)."
+
+if [ -n "${RUN_SERVER_TESTS}" ]; then
+  echo "Running server test pipeline..."
+  "${SCRIPT_DIR}/test_server.sh"
+fi
