@@ -39,4 +39,6 @@ def test_session_empty_id_raises() -> None:
             model="m",
             allowed_commands=(),
             forbidden_commands=(),
+            standards=(),
+            session_rules=(),
         )

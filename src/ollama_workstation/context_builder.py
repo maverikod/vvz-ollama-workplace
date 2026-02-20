@@ -60,16 +60,19 @@ class ContextBuilder:
         last_n_messages: int,
         min_semantic_tokens: int,
         min_documentation_tokens: int = 0,
+        model_override: Optional[str] = None,
     ) -> tuple[TrimmedContext, List[Dict[str, Any]]]:
         """
         Load session and messages; apply order; trim; fill relevance slot; serialize.
         Returns (TrimmedContext, serialized_messages).
-        Raises ContextBuilderError if session/model missing or remainder too small.
+        model_override: use this for representation when session.model is not set.
+        Raises ContextBuilderError if session missing or remainder too small.
         """
         session = self._session_store.get(session_id)
         if session is None:
             raise ContextBuilderError("Session not found: %s" % session_id)
-        if not session.model:
+        effective_model = (model_override or (session.model or "")).strip()
+        if not effective_model:
             raise ContextBuilderError(
                 "Session model not set; set model via session update or init"
             )
@@ -97,13 +100,19 @@ class ContextBuilder:
         relevance = self._relevance_slot_builder.fill_slot(
             current_message, session_id, remainder
         )
+        standards_blocks = [{"role": "system", "content": s} for s in session.standards]
+        session_rules_blocks = [
+            {"role": "system", "content": r} for r in session.session_rules
+        ]
         trimmed = TrimmedContext(
-            standards=[],
-            session_rules=[],
+            standards=standards_blocks,
+            session_rules=session_rules_blocks,
             last_n_messages=last_n,
             relevance_slot_content=relevance,
         )
-        representation = self._representation_registry.get_representation(session.model)
+        representation = self._representation_registry.get_representation(
+            effective_model
+        )
         ordered = (
             trimmed.standards
             + trimmed.session_rules

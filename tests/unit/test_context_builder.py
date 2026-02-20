@@ -16,8 +16,9 @@ from ollama_workstation.context_builder import (  # noqa: E402
     ContextBuilderError,
 )
 from ollama_workstation.message_store import MessageStore  # noqa: E402
-from ollama_workstation.representation_registry import RepresentationRegistry  # noqa: E402
-from ollama_workstation.session_entity import Session  # noqa: E402
+from ollama_workstation.representation_registry import (  # noqa: E402
+    RepresentationRegistry,
+)
 from ollama_workstation.session_store import InMemorySessionStore  # noqa: E402
 
 
@@ -66,12 +67,49 @@ def test_build_returns_trimmed_and_serialized() -> None:
     from ollama_workstation.ollama_representation import OllamaRepresentation
 
     reg.register("llama3.2", OllamaRepresentation())
-    msg_store = StubMessageStore([
-        {"source": "user", "body": "Hi", "created_at": "2025-01-01T00:00:00Z"},
-    ])
+    msg_store = StubMessageStore(
+        [
+            {"source": "user", "body": "Hi", "created_at": "2025-01-01T00:00:00Z"},
+        ]
+    )
     builder = ContextBuilder(session_store, reg, msg_store)
     trimmed, serialized = builder.build(
         "s1", {}, 4096, last_n_messages=10, min_semantic_tokens=256
     )
     assert trimmed.last_n_messages == [{"role": "user", "content": "Hi"}]
     assert len(serialized) >= 1
+
+
+def test_build_includes_standards_and_session_rules() -> None:
+    """build() includes session.standards and session.session_rules in TrimmedContext."""
+    session_store = InMemorySessionStore()
+    session_store.create(
+        {
+            "id": "s1",
+            "model": "llama3.2",
+            "standards": ["Standard A", "Standard B"],
+            "session_rules": ["Rule one", "Rule two"],
+        }
+    )
+    reg = RepresentationRegistry()
+    from ollama_workstation.ollama_representation import OllamaRepresentation
+
+    reg.register("llama3.2", OllamaRepresentation())
+    msg_store = StubMessageStore([])
+    builder = ContextBuilder(session_store, reg, msg_store)
+    trimmed, serialized = builder.build(
+        "s1", {}, 4096, last_n_messages=10, min_semantic_tokens=256
+    )
+    assert trimmed.standards == [
+        {"role": "system", "content": "Standard A"},
+        {"role": "system", "content": "Standard B"},
+    ]
+    assert trimmed.session_rules == [
+        {"role": "system", "content": "Rule one"},
+        {"role": "system", "content": "Rule two"},
+    ]
+    # Order: standards -> session_rules -> last_n_messages -> relevance_slot
+    assert serialized[0]["content"] == "Standard A"
+    assert serialized[1]["content"] == "Standard B"
+    assert serialized[2]["content"] == "Rule one"
+    assert serialized[3]["content"] == "Rule two"

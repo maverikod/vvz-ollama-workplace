@@ -52,6 +52,8 @@ class InMemorySessionStore(SessionStore):
             model=attrs.get("model"),
             allowed_commands=attrs.get("allowed_commands"),
             forbidden_commands=attrs.get("forbidden_commands"),
+            standards=attrs.get("standards"),
+            session_rules=attrs.get("session_rules"),
             created_at=attrs.get("created_at"),
             session_id=attrs.get("id"),
         )
@@ -66,6 +68,8 @@ class InMemorySessionStore(SessionStore):
         s = self._sessions[sid]
         allowed = attrs.get("allowed_commands")
         forbidden = attrs.get("forbidden_commands")
+        standards = attrs.get("standards")
+        session_rules = attrs.get("session_rules")
         new_s = Session(
             id=s.id,
             model=attrs.get("model") if "model" in attrs else s.model,
@@ -74,6 +78,10 @@ class InMemorySessionStore(SessionStore):
             ),
             forbidden_commands=(
                 tuple(forbidden) if forbidden is not None else s.forbidden_commands
+            ),
+            standards=tuple(standards) if standards is not None else s.standards,
+            session_rules=(
+                tuple(session_rules) if session_rules is not None else s.session_rules
             ),
             created_at=s.created_at,
         )
