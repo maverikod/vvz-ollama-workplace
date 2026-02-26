@@ -12,6 +12,7 @@ from typing import Any
 from .commands import (
     AddCommandToSessionCommand,
     GetModelContextCommand,
+    GetModelStateCommand,
     InvokeToolCommand,
     OllamaChatCommand,
     RemoveCommandFromSessionCommand,
@@ -40,5 +41,6 @@ def register_ollama_workstation(registry: Any) -> None:
     registry.register(AddCommandToSessionCommand, "custom")
     registry.register(RemoveCommandFromSessionCommand, "custom")
     registry.register(GetModelContextCommand, "custom")
+    registry.register(GetModelStateCommand, "custom")
     registry.register(InvokeToolCommand, "custom")
     registry.register(SetDefaultModelCommand, "custom")

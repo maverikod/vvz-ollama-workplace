@@ -12,6 +12,7 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "src"))
 from ollama_workstation.commands import (  # noqa: E402
+    GetModelStateCommand,
     ServerStatusCommand,
     SetDefaultModelCommand,
 )
@@ -83,6 +84,22 @@ async def test_server_status_command_returns_state() -> None:
         assert "status" in result.data
         assert result.data["status"] in ("ready", "loading_models")
         assert "active_model" in result.data
+    finally:
+        set_model_ready(False)
+
+
+@pytest.mark.asyncio
+async def test_get_model_state_command() -> None:
+    """get_model_state returns status and model (same data as get_state)."""
+    set_ready()
+    set_model_ready(True)
+    try:
+        cmd = GetModelStateCommand()
+        result = await cmd.execute()
+        assert result.to_dict().get("success") is True
+        assert result.data["status"] == "ready"
+        assert "active_model" in result.data
+        assert "current_model" in result.data
     finally:
         set_model_ready(False)
 
