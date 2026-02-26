@@ -14,9 +14,21 @@ from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
 import httpx
 
+from .command_alias_registry import CommandAliasRegistry
+from .command_discovery import CommandDiscovery
 from .config import WorkstationConfig
+from .direct_server_client import call_command as direct_call_command
+from .direct_server_client import get_help as direct_get_help
+from .tools import HELP_REFERENCE_TEXT
+from .effective_tool_list_builder import EffectiveToolListBuilder
+from .ollama_representation import OllamaRepresentation, register_ollama_models
+from .model_loading_state import get_active_model, is_model_ready
+from .ollama_client import get_ollama_client
 from .proxy_client import ProxyClient, ProxyClientError
-from .tools import get_ollama_tools
+from .representation_registry import RepresentationRegistry
+from .safe_name_translator import SafeNameTranslator
+from .context_representation import ContextRepresentation
+from .session_entity import Session
 
 if TYPE_CHECKING:
     from .tool_call_registry import ToolCallRegistry
@@ -33,15 +45,35 @@ def _tool_message(tool_name: str, content: str) -> Dict[str, Any]:
     }
 
 
+def _server_url_cache_from_list_servers(raw: Dict[str, Any]) -> Dict[str, str]:
+    """Build server_id -> server_url from list_servers response (proxy = DNS)."""
+    out: Dict[str, str] = {}
+    servers = raw.get("servers") or raw.get("items") or []
+    if not isinstance(servers, list):
+        return out
+    for srv in servers:
+        if not isinstance(srv, dict):
+            continue
+        sid = (srv.get("server_id") or srv.get("id") or "").strip()
+        url = (srv.get("server_url") or srv.get("url") or "").strip()
+        if sid and url:
+            out[sid] = url
+    return out
+
+
 async def _run_tool(
     proxy: ProxyClient,
     tool_name: str,
     arguments: Dict[str, Any],
+    server_url_cache: Optional[Dict[str, str]] = None,
+    representation: Optional[ContextRepresentation] = None,
 ) -> str:
     """
-    Execute one tool call via proxy; return content string for tool message.
-    On error return error string so model sees it (do not drop conversation).
+    Execute one tool (canonical). Proxy only for list_servers; call_server/help
+    go directly to the server. If representation is set, result is translated
+    via format_tool_result.
     """
+    cache = server_url_cache if server_url_cache is not None else {}
     try:
         if tool_name == "list_servers":
             out = await proxy.list_servers(
@@ -49,39 +81,48 @@ async def _run_tool(
                 page_size=arguments.get("page_size"),
                 filter_enabled=arguments.get("filter_enabled"),
             )
+            cache.update(_server_url_cache_from_list_servers(out))
         elif tool_name == "call_server":
-            server_id = arguments.get("server_id")
-            command = arguments.get("command")
-            if not server_id or not str(server_id).strip():
+            server_id = (arguments.get("server_id") or "").strip()
+            command = (arguments.get("command") or "").strip()
+            if not server_id:
                 return json.dumps(
-                    {
-                        "error": "call_server requires server_id (from list_servers).",
-                    }
+                    {"error": "call_server requires server_id (from list_servers)."}
                 )
-            if not command or not str(command).strip():
+            if not command:
+                return json.dumps({"error": "call_server requires command name."})
+            if server_id not in cache:
+                raw = await proxy.list_servers()
+                cache.update(_server_url_cache_from_list_servers(raw))
+            server_url = cache.get(server_id)
+            if not server_url:
                 return json.dumps(
-                    {
-                        "error": "call_server requires command name.",
-                    }
+                    {"error": "server_id %s not found in server list." % server_id}
                 )
-            out = await proxy.call_server(
-                server_id=server_id,
-                command=command,
-                copy_number=arguments.get("copy_number"),
+            out = await direct_call_command(
+                server_url,
+                command,
                 params=arguments.get("params"),
             )
         elif tool_name == "help":
-            server_id = arguments.get("server_id")
-            if not server_id or not str(server_id).strip():
+            server_id = (arguments.get("server_id") or "").strip()
+            if not server_id:
                 return json.dumps(
                     {
                         "error": "help requires server_id (from list_servers). "
                         "Call list_servers first to get server_id values.",
                     }
                 )
-            out = await proxy.help(
-                server_id=server_id,
-                copy_number=arguments.get("copy_number"),
+            if server_id not in cache:
+                raw = await proxy.list_servers()
+                cache.update(_server_url_cache_from_list_servers(raw))
+            server_url = cache.get(server_id)
+            if not server_url:
+                return json.dumps(
+                    {"error": "server_id %s not found in server list." % server_id}
+                )
+            out = await direct_get_help(
+                server_url,
                 command=arguments.get("command"),
             )
         else:
@@ -95,9 +136,140 @@ async def _run_tool(
         logger.exception("Tool %s failed: %s", tool_name, e)
         return json.dumps({"error": str(e)})
 
+    if representation is not None:
+        return representation.format_tool_result(out)
     if isinstance(out, dict):
         return json.dumps(out)
     return str(out)
+
+
+async def run_tool(
+    config: WorkstationConfig,
+    tool_name: str,
+    arguments: Dict[str, Any],
+) -> str:
+    """
+    Execute one tool. list_servers via proxy only; call_server and help
+    go directly to the server. Returns content string as the model would see.
+    """
+    proxy = ProxyClient(config)
+    cache: Dict[str, str] = {}
+    try:
+        return await _run_tool(proxy, tool_name, arguments, server_url_cache=cache)
+    finally:
+        await proxy.close()
+
+
+async def run_tool_like_model(
+    config: WorkstationConfig,
+    tool_name: str,
+    arguments: Dict[str, Any],
+) -> str:
+    """
+    Invoke a tool the same way the model does (canonical then representation).
+    Builds discovery + registry, resolves, calls server directly; raw result
+    is translated via representation.format_tool_result to standard form.
+    """
+    proxy = ProxyClient(config)
+    registry = RepresentationRegistry(default=OllamaRepresentation())
+    register_ollama_models(registry, getattr(config, "ollama_models", None) or [])
+    representation = registry.get_representation(
+        get_active_model() or config.ollama_model or ""
+    )
+    server_url_cache: Dict[str, str] = {}
+    try:
+        raw = await proxy.list_servers()
+        server_url_cache.update(_server_url_cache_from_list_servers(raw))
+        discovery = CommandDiscovery(
+            proxy,
+            discovery_interval_sec=getattr(config, "command_discovery_interval_sec", 0),
+        )
+        await discovery.refresh()
+        discovered = discovery.get_discovered_commands(available_only=False)
+        builder = EffectiveToolListBuilder(
+            CommandAliasRegistry(),
+            SafeNameTranslator(),
+        )
+        minimal_session = Session.create()
+        _tool_list, tool_registry = builder.build(
+            minimal_session,
+            config.commands_policy_config,
+            discovered,
+            preferred_server_id=getattr(config, "adapter_server_id", None) or None,
+        )
+        try:
+            tool_registry.resolve(tool_name)
+        except KeyError:
+            if tool_name == "help" and (
+                arguments.get("command_name") or arguments.get("cmdname")
+            ):
+                return await _run_help_for_model(
+                    proxy,
+                    tool_registry,
+                    arguments,
+                    server_url_cache,
+                    representation,
+                )
+            if tool_name in ("list_servers", "call_server", "help"):
+                return await _run_tool(
+                    proxy,
+                    tool_name,
+                    arguments,
+                    server_url_cache=server_url_cache,
+                    representation=representation,
+                )
+            return representation.format_tool_result(
+                {"error": "Unknown tool: %s" % tool_name}
+            )
+        return await _run_session_tool(
+            proxy,
+            tool_registry,
+            tool_name,
+            arguments,
+            server_url_cache,
+            representation,
+        )
+    finally:
+        await proxy.close()
+
+
+async def _run_help_for_model(
+    proxy: ProxyClient,
+    tool_registry: "ToolCallRegistry",
+    arguments: Dict[str, Any],
+    server_url_cache: Dict[str, str],
+    representation: ContextRepresentation,
+) -> str:
+    """
+    Run help by command name: resolve command_name to server, get full
+    description from that server. Short and full descriptions come from the
+    server that provides the command.
+    """
+    command_name = (
+        (arguments.get("command_name") or arguments.get("cmdname")) or ""
+    ).strip()
+    if not command_name:
+        return representation.format_tool_result({"help": HELP_REFERENCE_TEXT})
+    try:
+        cmd, server_id = tool_registry.resolve(command_name)
+    except KeyError:
+        return representation.format_tool_result(
+            {"error": "Unknown command: %s" % command_name}
+        )
+    if server_id not in server_url_cache:
+        raw = await proxy.list_servers()
+        server_url_cache.update(_server_url_cache_from_list_servers(raw))
+    server_url = server_url_cache.get(server_id)
+    if not server_url:
+        return representation.format_tool_result(
+            {"error": "server_id %s not found." % server_id}
+        )
+    try:
+        out = await direct_get_help(server_url, command=cmd)
+        return representation.format_tool_result(out)
+    except Exception as e:  # noqa: BLE001
+        logger.warning("help(%s) failed: %s", command_name, e)
+        return representation.format_tool_result({"error": str(e)})
 
 
 async def _run_session_tool(
@@ -105,34 +277,41 @@ async def _run_session_tool(
     tool_registry: "ToolCallRegistry",
     tool_name: str,
     arguments: Dict[str, Any],
+    server_url_cache: Dict[str, str],
+    representation: ContextRepresentation,
 ) -> str:
     """
-    Execute one session-scoped tool: resolve display_name to (command, server_id),
-    call proxy.call_server(server_id, command, params). Model never sees server_id.
+    Execute one session-scoped tool (canonical: resolve, direct call);
+    then translate raw result via representation.format_tool_result.
     """
     try:
         command_name, server_id = tool_registry.resolve(tool_name)
+        if server_id not in server_url_cache:
+            raw = await proxy.list_servers()
+            server_url_cache.update(_server_url_cache_from_list_servers(raw))
+        server_url = server_url_cache.get(server_id)
+        if not server_url:
+            return representation.format_tool_result(
+                {"error": "server_id %s not found in server list." % server_id}
+            )
         params = {k: v for k, v in arguments.items() if k not in ("copy_number",)}
-        out = await proxy.call_server(
-            server_id=server_id,
-            command=command_name,
-            copy_number=arguments.get("copy_number"),
-            params=params,
-        )
+        raw_out = await direct_call_command(server_url, command_name, params=params)
+        return representation.format_tool_result(raw_out)
     except KeyError as e:
         logger.warning("Session tool %s not in registry: %s", tool_name, e)
-        return json.dumps({"error": "Unknown tool: %s" % tool_name})
+        return representation.format_tool_result(
+            {"error": "Unknown tool: %s" % tool_name}
+        )
     except ProxyClientError as e:
         logger.warning(
             "Tool %s proxy error (status=%s): %s", tool_name, e.status, e.message
         )
-        return json.dumps({"error": e.message, "status": e.status})
+        return representation.format_tool_result(
+            {"error": e.message, "status": e.status}
+        )
     except Exception as e:  # noqa: BLE001
         logger.exception("Tool %s failed: %s", tool_name, e)
-        return json.dumps({"error": str(e)})
-    if isinstance(out, dict):
-        return json.dumps(out)
-    return str(out)
+        return representation.format_tool_result({"error": str(e)})
 
 
 async def run_chat_flow(
@@ -144,40 +323,49 @@ async def run_chat_flow(
     session_tools: Optional[List[Dict[str, Any]]] = None,
     tool_registry: Optional["ToolCallRegistry"] = None,
     tools_from_file: Optional[List[Dict[str, Any]]] = None,
+    representation: Optional[ContextRepresentation] = None,
 ) -> Dict[str, Any]:
     """
-    Run the OLLAMA chat loop with tools.
-
-    When session_tools and tool_registry are set, the model sees only those
-    tools (no list_servers/call_server/help); proxy and server_id are hidden.
-    Otherwise uses tools_from_file (if provided) or default proxy tools.
+    Run the chat loop with tools. Canonical layer (resolve, direct call) runs
+    first; representation layer translates tool results to standard form.
 
     Args:
-        config: Workstation config (proxy URL, OLLAMA URL, model, timeouts).
-        messages: Initial messages.
-        model: Override config model if set.
-        stream: If True, request streaming (may defer in implementation).
-        max_tool_rounds: Override config max_tool_rounds if set.
-        session_tools: Optional OLLAMA-format tools (session allow-list only).
-        tool_registry: When session_tools set, used to resolve tool name to
-            (command_name, server_id) for proxy.call_server.
-
-    Returns:
-        Dict with "message", "history", and optionally "error" if failed.
+        representation: Used to format_tool_result(raw) for tool message content.
+            If None, a default is used (OllamaRepresentation).
     """
-    use_model = model or config.ollama_model
+    use_model = model or get_active_model() or config.ollama_model
+    if representation is None:
+        from .ollama_representation import OllamaRepresentation
+
+        representation = OllamaRepresentation()
     use_max_rounds = (
         max_tool_rounds if max_tool_rounds is not None else config.max_tool_rounds
     )
+    # Model sees only server-originated tools (from discovery). list_servers /
+    # call_server / help are used internally and never sent to the model.
     tools = (
         session_tools
         if session_tools is not None and tool_registry is not None
-        else (tools_from_file if tools_from_file else get_ollama_tools())
+        else (tools_from_file if tools_from_file else [])
     )
+    if not is_model_ready():
+        return {
+            "message": "",
+            "history": list(messages),
+            "error": "Model not ready; waiting for OLLAMA to respond.",
+        }
+
     history: List[Dict[str, Any]] = list(messages)
     proxy = ProxyClient(config)
+    server_url_cache: Dict[str, str] = {}
     use_registry = tool_registry is not None
     t_flow_start = time.perf_counter()
+    total_prompt_tokens = 0
+    total_eval_tokens = 0
+    ollama_client = get_ollama_client(
+        config.ollama_base_url,
+        config.ollama_timeout,
+    )
 
     logger.info(
         "chat_flow start model=%s max_rounds=%s session_tools=%s message_count=%s",
@@ -197,6 +385,18 @@ async def run_chat_flow(
             body["stream"] = True
         # Non-streaming: we need full response with possible tool_calls
         body["stream"] = False
+
+        # Log context size for token usage evaluation (chars and rough token estimate).
+        ctx_msg_count = len(history)
+        ctx_content_chars = sum(len(str(m.get("content") or "")) for m in history)
+        ctx_tokens_estimate = ctx_content_chars // 4
+        logger.info(
+            "chat_flow context_size round=%s messages=%s chars=%s tokens_est=%s",
+            round_num + 1,
+            ctx_msg_count,
+            ctx_content_chars,
+            ctx_tokens_estimate,
+        )
 
         # Log what the model sees (tool names + message summary).
         tool_names = []
@@ -221,6 +421,21 @@ async def run_chat_flow(
             tool_names,
             msg_summary,
         )
+        # Log context content so it is visible what the model receives.
+        _CONTEXT_PREVIEW_CHARS = 500
+        for i, m in enumerate(history):
+            role = m.get("role", "?")
+            content = (m.get("content") or "").strip().replace("\n", " ")
+            preview = content[:_CONTEXT_PREVIEW_CHARS] + (
+                "..." if len(content) > _CONTEXT_PREVIEW_CHARS else ""
+            )
+            if preview:
+                logger.info(
+                    "chat_flow model_context message[%s] role=%s content_preview=%s",
+                    i,
+                    role,
+                    preview,
+                )
 
         try:
             logger.debug(
@@ -230,13 +445,28 @@ async def run_chat_flow(
                 use_model,
             )
             t_ollama_start = time.perf_counter()
-            async with httpx.AsyncClient(timeout=config.ollama_timeout) as client:
-                resp = await client.post(
-                    f"{config.ollama_base_url}/api/chat",
-                    json=body,
-                )
-                resp.raise_for_status()
-                data = resp.json()
+            resp = await ollama_client.post(
+                f"{config.ollama_base_url}/api/chat",
+                json=body,
+            )
+            resp.raise_for_status()
+            data = resp.json()
+            # Log token usage from OLLAMA response (for cost/effect evaluation).
+            prompt_tokens = data.get("prompt_eval_count")
+            eval_tokens = data.get("eval_count")
+            if prompt_tokens is not None:
+                total_prompt_tokens += int(prompt_tokens)
+            if eval_tokens is not None:
+                total_eval_tokens += int(eval_tokens)
+            logger.info(
+                "chat_flow token_usage round=%s prompt_eval=%s eval=%s "
+                "total_prompt=%s total_eval=%s",
+                round_num + 1,
+                prompt_tokens,
+                eval_tokens,
+                total_prompt_tokens,
+                total_eval_tokens,
+            )
             logger.info(
                 "chat_flow OLLAMA round=%s duration_sec=%.3f",
                 round_num + 1,
@@ -269,6 +499,12 @@ async def run_chat_flow(
                     "service name); (2) model '%s' exists (GET /api/tags); "
                     "(3) Ollama is running."
                 ) % (config.ollama_base_url, use_model)
+            if total_prompt_tokens or total_eval_tokens:
+                logger.info(
+                    "chat_flow error_exit total_prompt_tokens=%s total_eval_tokens=%s",
+                    total_prompt_tokens,
+                    total_eval_tokens,
+                )
             return {
                 "message": "",
                 "history": history,
@@ -280,6 +516,12 @@ async def run_chat_flow(
                 round_num + 1,
                 e,
             )
+            if total_prompt_tokens or total_eval_tokens:
+                logger.info(
+                    "chat_flow error_exit total_prompt_tokens=%s total_eval_tokens=%s",
+                    total_prompt_tokens,
+                    total_eval_tokens,
+                )
             return {
                 "message": "",
                 "history": history,
@@ -299,9 +541,13 @@ async def run_chat_flow(
         if not tool_calls:
             await proxy.close()
             logger.info(
-                "chat_flow done duration_sec=%.3f rounds=%s",
+                "chat_flow done duration_sec=%.3f rounds=%s "
+                "total_prompt=%s total_eval=%s total=%s",
                 time.perf_counter() - t_flow_start,
                 round_num + 1,
+                total_prompt_tokens,
+                total_eval_tokens,
+                total_prompt_tokens + total_eval_tokens,
             )
             return {"message": content, "history": history}
 
@@ -338,14 +584,35 @@ async def run_chat_flow(
             try:
                 t_tool_start = time.perf_counter()
                 if use_registry and tool_registry is not None:
-                    logger.debug(
-                        "chat_flow session_tool server_id from registry: %s", tname
-                    )
-                    content_str = await _run_session_tool(
-                        proxy, tool_registry, tname, args_dict
-                    )
+                    if tname == "help":
+                        content_str = await _run_help_for_model(
+                            proxy,
+                            tool_registry,
+                            args_dict,
+                            server_url_cache,
+                            representation,
+                        )
+                    else:
+                        logger.debug(
+                            "chat_flow session_tool server_id from registry: %s",
+                            tname,
+                        )
+                        content_str = await _run_session_tool(
+                            proxy,
+                            tool_registry,
+                            tname,
+                            args_dict,
+                            server_url_cache,
+                            representation,
+                        )
                 else:
-                    content_str = await _run_tool(proxy, tname, args_dict)
+                    content_str = await _run_tool(
+                        proxy,
+                        tname,
+                        args_dict,
+                        server_url_cache,
+                        representation=representation,
+                    )
                 logger.info(
                     "chat_flow tool round=%s tool=%s duration_sec=%.3f",
                     round_num + 1,
@@ -359,7 +626,7 @@ async def run_chat_flow(
                     tname,
                     e,
                 )
-                content_str = json.dumps({"error": str(e)})
+                content_str = representation.format_tool_result({"error": str(e)})
             history.append(_tool_message(tname, content_str))
 
     await proxy.close()

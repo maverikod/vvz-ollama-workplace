@@ -23,8 +23,9 @@ class ServerStatusCommand(Command):
 
     name = "server_status"
     descr = (
-        "Return status: ready or loading_models; when loading, "
-        "current_model and message."
+        "Return adapter status: ready (can accept requests) or loading_models (pulling "
+        "OLLAMA models at startup). When loading_models, current_model and message "
+        "indicate which model is being pulled and optional progress."
     )
 
     @classmethod
@@ -34,7 +35,7 @@ class ServerStatusCommand(Command):
 
     @classmethod
     def get_result_schema(cls) -> Dict[str, Any]:
-        """Result: status, current_model, message."""
+        """Result: status, current_model, message, active_model."""
         return {
             "type": "object",
             "properties": {
@@ -50,6 +51,10 @@ class ServerStatusCommand(Command):
                 "message": {
                     "type": ["string", "null"],
                     "description": "Status message",
+                },
+                "active_model": {
+                    "type": ["string", "null"],
+                    "description": "Runtime default model (hot-swap); null=config",
                 },
             },
             "required": ["status"],
@@ -77,6 +82,7 @@ class ServerStatusCommand(Command):
                         "status": "ready",
                         "current_model": None,
                         "message": None,
+                        "active_model": "llama3.2",
                     },
                 },
                 "loading": {

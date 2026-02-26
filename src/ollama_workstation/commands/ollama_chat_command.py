@@ -21,8 +21,10 @@ from mcp_proxy_adapter.commands.result import SuccessResult, ErrorResult
 
 from ..chat_flow import run_chat_flow
 from ..command_alias_registry import CommandAliasRegistry
+from ..tools import MODEL_HELP_TOOL
 from ..command_discovery import CommandDiscovery
 from ..config import load_config
+from ..model_loading_state import get_active_model, get_state
 from ..context_builder import ContextBuilder, ContextBuilderError
 from ..context_file_loader import load_tools_json
 from ..effective_tool_list_builder import EffectiveToolListBuilder
@@ -32,10 +34,11 @@ from ..safe_name_translator import SafeNameTranslator
 from ..message_store import RedisMessageStore
 from ..tool_call_registry import ToolCallRegistry
 from ..message_stream_writer import MessageStreamWriter
-from ..ollama_representation import OllamaRepresentation
+from ..ollama_representation import OllamaRepresentation, register_ollama_models
 from ..redis_message_record import RedisMessageRecord
 from ..representation_registry import RepresentationRegistry
 from ..relevance_slot_builder import RelevanceSlotBuilder
+from ..vectorization_client import EmbedProxyClient
 from .ollama_chat_schema import (
     get_ollama_chat_error_schema,
     get_ollama_chat_metadata,
@@ -154,6 +157,12 @@ class OllamaChatCommand(Command):
         tools_from_file: Optional[List[Dict[str, Any]]] = None
         if getattr(config, "tools_file_path", None):
             tools_from_file = load_tools_json(config.tools_file_path)
+        state = get_state()
+        if state.get("status") != "ready":
+            return SuccessResult(
+                data={"ready": False, "server_status": state},
+            )
+
         if session_id and (content is not None and str(content).strip()):
             return await self._execute_session_mode(
                 config=config,
@@ -224,7 +233,7 @@ class OllamaChatCommand(Command):
             return ErrorResult(
                 message="Session not found: %s" % session_id, code=-32602
             )
-        use_model = model or session.model or config.ollama_model
+        use_model = model or session.model or get_active_model() or config.ollama_model
         logger.debug("ollama_chat session loaded model=%s", use_model)
 
         try:
@@ -244,10 +253,21 @@ class OllamaChatCommand(Command):
             redis_client,
             key_prefix=config.redis_key_prefix,
         )
-        # Form context: trim, last_n, relevance slot, then append current message.
+        # Form context: trim, last_n, relevance slot (vector when embed available).
         registry = RepresentationRegistry(default=OllamaRepresentation())
+        register_ollama_models(registry, getattr(config, "ollama_models", None) or [])
+        proxy_for_embed = ProxyClient(config)
+        embed_client = EmbedProxyClient(
+            proxy_for_embed,
+            embedding_server_id=getattr(
+                config, "embedding_server_id", "embedding-service"
+            ),
+            embedding_command=getattr(config, "embedding_command", "embed"),
+        )
         relevance_builder = RelevanceSlotBuilder(
-            mode=getattr(config, "relevance_slot_mode", "fixed_order") or "fixed_order"
+            message_store=message_store,
+            mode=getattr(config, "relevance_slot_mode", "fixed_order") or "fixed_order",
+            vectorization_client=embed_client,
         )
         context_builder = ContextBuilder(
             session_store=store,
@@ -261,7 +281,7 @@ class OllamaChatCommand(Command):
         current_message = {"role": "user", "content": content}
         try:
             t0 = time.perf_counter()
-            _trimmed, serialized = context_builder.build(
+            _trimmed, serialized = await context_builder.build(
                 session_id=session_id,
                 current_message=current_message,
                 max_context_tokens=getattr(config, "max_context_tokens", 4096),
@@ -271,10 +291,14 @@ class OllamaChatCommand(Command):
                 model_override=use_model,
             )
             history = serialized + [current_message]
+            ctx_chars = sum(len(str(m.get("content") or "")) for m in history)
             logger.info(
-                "ollama_chat context_build duration_sec=%.3f history_len=%s",
+                "ollama_chat context_build duration_sec=%.3f history_len=%s "
+                "content_chars=%s tokens_est=%s",
                 time.perf_counter() - t0,
                 len(history),
+                ctx_chars,
+                ctx_chars // 4,
             )
         except ContextBuilderError as e:
             logger.warning("ollama_chat context_builder failed, using fallback: %s", e)
@@ -290,6 +314,7 @@ class OllamaChatCommand(Command):
             history.append(current_message)
 
         # Session tools only: model sees session list; no proxy/server_id.
+        representation = registry.get_representation(use_model)
         session_tools_ollama: Optional[List[Dict[str, Any]]] = None
         tool_registry = None
         try:
@@ -298,7 +323,8 @@ class OllamaChatCommand(Command):
                 proxy_for_discovery,
                 discovery_interval_sec=getattr(
                     config, "command_discovery_interval_sec", 0
-                ),
+                )
+                or 0,
             )
             await discovery.refresh()
             discovered = discovery.get_discovered_commands(available_only=False)
@@ -308,18 +334,27 @@ class OllamaChatCommand(Command):
             )
             _tool_list, tool_registry = builder.build(
                 session,
-                getattr(config, "commands_policy_config", None),
+                config.commands_policy_config,
                 discovered,
+                preferred_server_id=getattr(config, "adapter_server_id", None) or None,
             )
-            session_tools_ollama = OllamaRepresentation().serialize_tools(_tool_list)
+            session_tools_ollama = representation.serialize_tools(_tool_list)
+            # Model gets a help tool: full description by command name from same server.
+            session_tools_ollama.append(MODEL_HELP_TOOL)
         except Exception as e:  # noqa: BLE001
-            session_tools_ollama = []
+            session_tools_ollama = [MODEL_HELP_TOOL]
             tool_registry = ToolCallRegistry()
             logger.warning(
                 "ollama_chat session_tools_build_failed session_id=%s error=%s",
                 session_id,
                 e,
                 exc_info=True,
+            )
+
+        state = get_state()
+        if state.get("status") != "ready":
+            return SuccessResult(
+                data={"ready": False, "server_status": state},
             )
 
         logger.info(
@@ -337,6 +372,7 @@ class OllamaChatCommand(Command):
             session_tools=session_tools_ollama,
             tool_registry=tool_registry,
             tools_from_file=tools_from_file,
+            representation=representation,
         )
         logger.info(
             "ollama_chat chat_flow duration_sec=%.3f",
