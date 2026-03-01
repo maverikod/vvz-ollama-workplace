@@ -24,6 +24,8 @@ from .effective_tool_list_builder import EffectiveToolListBuilder
 from .ollama_representation import OllamaRepresentation, register_ollama_models
 from .model_loading_state import get_active_model, is_model_ready
 from .ollama_client import get_ollama_client
+from .model_provider_resolver import resolve_model_endpoint
+from .commercial_chat_client import chat_completion as commercial_chat_completion
 from .proxy_client import ProxyClient, ProxyClientError
 from .representation_registry import RepresentationRegistry
 from .safe_name_translator import SafeNameTranslator
@@ -334,6 +336,7 @@ async def run_chat_flow(
             If None, a default is used (OllamaRepresentation).
     """
     use_model = model or get_active_model() or config.ollama_model
+    endpoint = resolve_model_endpoint(use_model, config)
     if representation is None:
         from .ollama_representation import OllamaRepresentation
 
@@ -348,7 +351,7 @@ async def run_chat_flow(
         if session_tools is not None and tool_registry is not None
         else (tools_from_file if tools_from_file else [])
     )
-    if not is_model_ready():
+    if endpoint.is_ollama and not is_model_ready():
         return {
             "message": "",
             "history": list(messages),
@@ -363,7 +366,7 @@ async def run_chat_flow(
     total_prompt_tokens = 0
     total_eval_tokens = 0
     ollama_client = get_ollama_client(
-        config.ollama_base_url,
+        config.model_server_url or config.ollama_base_url,
         config.ollama_timeout,
     )
 
@@ -438,19 +441,35 @@ async def run_chat_flow(
                 )
 
         try:
-            logger.debug(
-                "chat_flow OLLAMA request round=%s url=%s/api/chat model=%s",
-                round_num + 1,
-                config.ollama_base_url,
-                use_model,
-            )
             t_ollama_start = time.perf_counter()
-            resp = await ollama_client.post(
-                f"{config.ollama_base_url}/api/chat",
-                json=body,
-            )
-            resp.raise_for_status()
-            data = resp.json()
+            if endpoint.is_ollama:
+                model_server = endpoint.base_url
+                logger.debug(
+                    "chat_flow OLLAMA request round=%s url=%s/api/chat model=%s",
+                    round_num + 1,
+                    model_server,
+                    use_model,
+                )
+                resp = await ollama_client.post(
+                    f"{model_server}/api/chat",
+                    json=body,
+                )
+                resp.raise_for_status()
+                data = resp.json()
+            else:
+                logger.debug(
+                    "chat_flow commercial request round=%s provider=%s model=%s",
+                    round_num + 1,
+                    endpoint.provider,
+                    endpoint.model_id,
+                )
+                data = await commercial_chat_completion(
+                    endpoint,
+                    history,
+                    tools=tools if tools else None,
+                    stream=False,
+                    timeout=config.ollama_timeout,
+                )
             # Log token usage from OLLAMA response (for cost/effect evaluation).
             prompt_tokens = data.get("prompt_eval_count")
             eval_tokens = data.get("eval_count")
@@ -486,19 +505,24 @@ async def run_chat_flow(
             )
         except httpx.HTTPStatusError as e:
             logger.exception(
-                "chat_flow OLLAMA HTTP error round=%s status=%s response=%s",
+                "chat_flow HTTP error round=%s status=%s response=%s",
                 round_num + 1,
                 e.response.status_code if e.response else None,
                 getattr(e.response, "text", "")[:500] if e.response else None,
             )
             err_msg = str(e)
-            if e.response.status_code == 404:
-                err_msg = (
-                    "OLLAMA 404 at %s/api/chat. Check: (1) ollama_base_url "
-                    "points to Ollama (Docker: host.docker.internal:11434 or "
-                    "service name); (2) model '%s' exists (GET /api/tags); "
-                    "(3) Ollama is running."
-                ) % (config.ollama_base_url, use_model)
+            if e.response and e.response.status_code == 404:
+                if endpoint.is_ollama:
+                    err_msg = (
+                        "OLLAMA 404 at %s/api/chat. Check: (1) model_server_url "
+                        "points to Ollama; (2) model '%s' exists (GET /api/tags); "
+                        "(3) Ollama is running."
+                    ) % (endpoint.base_url, use_model)
+                else:
+                    err_msg = (
+                        "Model API 404 for %s at %s. Check provider_urls and "
+                        "API key for %s."
+                    ) % (use_model, endpoint.base_url, endpoint.provider)
             if total_prompt_tokens or total_eval_tokens:
                 logger.info(
                     "chat_flow error_exit total_prompt_tokens=%s total_eval_tokens=%s",

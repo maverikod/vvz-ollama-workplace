@@ -51,6 +51,14 @@
     "ollama_model": "llama3.2",
     "ollama_models": ["llama3.2", "gemini-2.0-flash", "gpt-4o-mini", "claude-3-5-haiku-20241022", "grok-2", "deepseek-chat"],
     "available_providers": ["ollama", "google", "anthropic", "openai", "xai", "deepseek"],
+    "model_providers": {
+      "ollama": {"url": "http://127.0.0.1:11434"},
+      "google": {"url": "https://generativelanguage.googleapis.com/v1beta", "api_key": "YOUR_GOOGLE_API_KEY"},
+      "anthropic": {"url": "https://api.anthropic.com/v1", "api_key": "YOUR_ANTHROPIC_API_KEY"},
+      "openai": {"url": "https://api.openai.com/v1", "api_key": "YOUR_OPENAI_API_KEY"},
+      "xai": {"url": "https://api.x.ai/v1", "api_key": "YOUR_XAI_GROK_API_KEY"},
+      "deepseek": {"url": "https://api.deepseek.com/v1", "api_key": "YOUR_DEEPSEEK_API_KEY"}
+    },
     "google_api_key": "YOUR_GOOGLE_API_KEY",
     "anthropic_api_key": "YOUR_ANTHROPIC_API_KEY",
     "openai_api_key": "YOUR_OPENAI_API_KEY",
