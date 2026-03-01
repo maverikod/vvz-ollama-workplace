@@ -7,9 +7,12 @@ email: vasilyvz@gmail.com
 """
 
 import argparse
+import asyncio
 import json
+import logging
 import sys
 import threading
+import time
 from pathlib import Path
 
 from mcp_proxy_adapter.api.app import create_app
@@ -24,7 +27,26 @@ from mcp_proxy_adapter.commands.command_registry import (
 )
 
 from ollama_workstation.docker_config_validation import validate_project_config
-from ollama_workstation.model_loader import run_model_loading
+from ollama_workstation.model_loading_state import (
+    set_loading,
+    set_model_ready,
+    set_ready,
+)
+from ollama_workstation.model_loader import run_model_loading, warm_up_models
+from ollama_workstation.ollama_client import start_readiness_ping_thread
+
+# So that chat_flow, ollama_chat_command, proxy_client INFO appear in adapter logs.
+logging.getLogger("ollama_workstation").setLevel(logging.INFO)
+
+# Server description for proxy catalog.
+OLLAMA_WORKSTATION_SERVER_DESCRIPTION = (
+    "OLLAMA Workstation: MCP adapter that runs chat with local OLLAMA and gives the "
+    "model access to MCP Proxy tools (list_servers, call_server, help). Use "
+    "ollama_chat to send messages and get replies; model can call any server. "
+    "Session commands (session_init, session_update, add_command_to_session, "
+    "remove_command_from_session) manage per-session allow/forbid lists. "
+    "server_status reports adapter readiness or model loading."
+)
 
 
 def register_commands() -> None:
@@ -74,6 +96,25 @@ def main() -> int:
     app_config["server"].setdefault("debug", False)
     app_config["server"].setdefault("log_level", "INFO")
 
+    # Patch sync command timeout (mcp_proxy_adapter uses 30s) for long-running chat.
+    command_timeout = 120
+    ow = app_config.get("ollama_workstation") or {}
+    if isinstance(ow, dict):
+        command_timeout = int(ow.get("command_execution_timeout_seconds", 120))
+    if command_timeout != 30:
+        _orig_wait_for = asyncio.wait_for
+
+        def _patched_wait_for(aw, timeout=None, *args, **kwargs):
+            if timeout == 30.0:
+                timeout = float(command_timeout)
+            return _orig_wait_for(aw, timeout=timeout, *args, **kwargs)
+
+        asyncio.wait_for = _patched_wait_for
+        print(
+            "Command execution timeout patched: 30s -> %ss" % command_timeout,
+            file=sys.stderr,
+        )
+
     cfg = get_config()
     cfg.config_path = str(cfg_path)
     setattr(cfg, "model", model)
@@ -83,20 +124,61 @@ def main() -> int:
 
     app = create_app(
         title="OLLAMA Workstation Adapter",
-        description="MCP Adapter with ollama_chat",
+        description=OLLAMA_WORKSTATION_SERVER_DESCRIPTION,
         version="1.0.0",
         app_config=app_config,
         config_path=str(cfg_path),
     )
 
     register_commands()
-    # Start model loading in background so server can report loading state
-    loader = threading.Thread(
-        target=run_model_loading,
-        args=(str(cfg_path),),
-        daemon=True,
-    )
-    loader.start()
+
+    ow = app_config.get("ollama_workstation") or {}
+    oo = (ow.get("ollama") or {}) if isinstance(ow, dict) else {}
+    model_list = []
+    model_server_url = ""
+    if isinstance(ow, dict):
+        model_server_url = (
+            oo.get("model_server_url") or oo.get("base_url") or "http://127.0.0.1:11434"
+        ).strip()
+        start_readiness_ping_thread(model_server_url)
+        model_list = list(oo.get("models") or [])
+        if not model_list and oo.get("model"):
+            model_list = [str(oo.get("model", "")).strip()]
+        model_list = [m for m in model_list if isinstance(m, str) and m.strip()]
+
+    def _model_loading_worker() -> None:
+        """Run in background: ensure container if configured, load and warm via API."""
+        set_loading(None, "Model loading started...")
+        print("Model loading started (background). Use server_status.", file=sys.stderr)
+        t0 = time.perf_counter()
+        try:
+            run_model_loading(str(cfg_path))
+            if model_list and model_server_url:
+                timeout = float(oo.get("timeout", 120))
+                warm_up_models(model_server_url, model_list, timeout_sec=timeout)
+            set_model_ready(True)
+            set_ready()
+            print(
+                "Model loading finished in %.2fs" % (time.perf_counter() - t0),
+                file=sys.stderr,
+            )
+        except Exception as e:
+            print("Model loading failed: %s" % e, file=sys.stderr)
+            set_ready()
+            set_model_ready(False)
+
+    if model_list or ow:
+        t = threading.Thread(
+            target=_model_loading_worker, daemon=True, name="model-load"
+        )
+        t.start()
+        print(
+            "Server starting; model loading in background. Use server_status.",
+            file=sys.stderr,
+        )
+    else:
+        set_model_ready(True)
+
     host = app_config.get("server", {}).get("host", "0.0.0.0")
     port = int(app_config.get("server", {}).get("port", 8443))
 
