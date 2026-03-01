@@ -24,6 +24,14 @@ Then run the container; OLLAMA will start inside the container and the adapter w
 
 If **ollama_chat** returns 404, the requested model is usually not pulled. Either pull it once (e.g. `docker exec <container> ollama pull llama3.2`) or set `OLLAMA_PULL_MODEL=1` when running the container so the default model is pulled on first start (slow on first run).
 
+**Empty message or timeout:** If the model reply is empty or the request stops after ~60s, increase `ollama_timeout` in `ollama_workstation` config (e.g. 120). Cold model or long context can exceed 60s. In container logs, a `500` on `POST /api/chat` after ~1m usually means OLLAMA hit an internal timeout or error; retry or increase timeouts.
+
+**SERVER_UNAVAILABLE from proxy:** Often means the adapter raised an error before returning. Check adapter logs (`docker logs <container>`). If you see `Command timed out after 120.00s` (or similar), the command (e.g. `ollama_chat`) exceeded the adapter’s execution timeout. Increase `ollama_workstation.command_execution_timeout_seconds` in the adapter config (e.g. 300) and restart the container; also ensure `ollama_timeout` is high enough for slow or cold model responses.
+
+**No cold start:** The adapter runs model loading and **warm-up** (pull missing models, then one minimal chat per model) **before** starting the HTTP server. So the first `ollama_chat` is served when the model is already loaded. See `run_adapter.py` and `model_loader.warm_up_models`.
+
+**Keep model in memory:** The entrypoint sets `OLLAMA_KEEP_ALIVE=-1` by default (never unload). So the model is not reset between requests. Override with env when running (e.g. `-e OLLAMA_KEEP_ALIVE=30m` for 30 minutes idle).
+
 ## Auto-registration with MCP proxy
 
 The adapter is configured with `registration.enabled: true` and `auto_on_startup: true`. On startup, the adapter’s lifespan:
@@ -69,3 +77,56 @@ The proxy uses mTLS and only accepts clients with a certificate it trusts. Use t
 If you use the proxy’s own CA, put it as `mtls_certificates/ca.crt` and generate server/client certs signed by that CA with CN = container name; see `mtls_certificates/README.md`.
 
 **Troubleshooting:** If you see "Proxy not available at https://mcp-proxy:3004", see [registration_troubleshooting.md](registration_troubleshooting.md).
+
+## Test container (code mounted, no rebuild)
+
+A **test** container with name suffix `-test` (e.g. `ollama-adapter-test`) uses the **same image** but mounts project code from the host so you can change code without rebuilding the image.
+
+**Run (from project root):**
+
+```bash
+./docker/run_test_container.sh
+```
+
+**Requirements:** The image must exist (run `./docker/build_and_run.sh` at least once).
+
+**Behaviour:**
+
+- Container name: `ollama-adapter-test` (set in `docker/run.conf` as `CONTAINER_NAME_TEST`).
+- Ports on host: adapter **8016**, Redis **63791** (so it can run alongside the main container on 8015/63790).
+- Mounts (read-only): `src/`, `scripts/`, `pyproject.toml` from the project; config, logs, data, redis_data are the same dirs as for the main container (or separate if you change paths).
+- No `restart=always`; after code changes, restart with: `docker restart ollama-adapter-test`.
+
+To run the Redis verification pipeline against the test container’s Redis: `REDIS_PORT=63791 ./scripts/run_verify_pipeline.sh` (or `verify_redis_pipeline.py`).
+
+## Commercial models (cheapest options)
+
+For Google, Anthropic, and OpenAI the project defines the **cheapest** (lowest-cost) model id per provider. Set the corresponding API key and use these model ids in `ollama_model` / `ollama_models` or in session:
+
+| Provider   | Cheapest model id              | Config key          |
+|-----------|--------------------------------|---------------------|
+| Google    | `gemini-2.0-flash`             | `google_api_key`    |
+| Anthropic | `claude-3-5-haiku-20241022`    | `anthropic_api_key` |
+| OpenAI    | `gpt-4o-mini`                  | `openai_api_key`    |
+| xAI Grok  | `grok-2`                       | `xai_api_key`      |
+| DeepSeek  | `deepseek-chat`                | `deepseek_api_key`  |
+
+Constants: `ollama_workstation.provider_models.CHEAPEST_MODEL_BY_PROVIDER`, `get_cheapest_model(provider)`. In config set `available_providers` (e.g. `["ollama", "google"]`) and the required key; use the model id in sessions or as default `ollama_model`.
+
+## Local config with API keys (gitignored)
+
+To keep API keys out of the repo, use a **local** config file that is gitignored:
+
+1. **Copy the example** (same structure as main config, with placeholder keys):
+   ```bash
+   cp config/adapter_config.local.json.example config/adapter_config.local.json
+   ```
+2. **Edit** `config/adapter_config.local.json`: replace `YOUR_GOOGLE_API_KEY`, `YOUR_ANTHROPIC_API_KEY`, etc., with your real keys.
+3. **Run** with that config:
+   ```bash
+   export ADAPTER_CONFIG_PATH=config/adapter_config.local.json
+   # then start the adapter / container as usual
+   ```
+   In Docker, pass the path when generating or mounting config, e.g. ensure the container receives config from a volume that contains your `adapter_config.local.json` and set `ADAPTER_CONFIG_PATH=/app/config/adapter_config.local.json`.
+
+The file **`config/adapter_config.local.json`** is listed in `.gitignore` and must **never** be committed. Only `config/adapter_config.local.json.example` (with placeholders) is in the repo.

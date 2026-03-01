@@ -6,6 +6,7 @@ Author: Vasiliy Zdanovskiy
 email: vasilyvz@gmail.com
 """
 
+import json
 import os
 import sys
 import tempfile
@@ -19,6 +20,9 @@ from ollama_workstation.config import (  # noqa: E402
     WorkstationConfig,
     DEFAULT_MAX_TOOL_ROUNDS,
     DEFAULT_OLLAMA_TIMEOUT,
+)
+from ollama_workstation.docker_config_validation import (  # noqa: E402
+    validate_project_config,
 )
 
 
@@ -112,17 +116,63 @@ def test_load_config_optional_fields_and_defaults() -> None:
                 del os.environ[k]
 
 
+def test_load_config_available_providers(tmp_path: Path) -> None:
+    """available_providers loaded from file or env as list or comma-separated."""
+    path = tmp_path / "cfg.json"
+    path.write_text(
+        '{"ollama_workstation": {"mcp_proxy_url": "http://proxy:3004", '
+        '"ollama_base_url": "http://localhost:11434", "ollama_model": "m", '
+        '"available_providers": ["ollama", "google"]}}'
+    )
+    cfg = load_config(str(path))
+    assert cfg.available_providers == ("ollama", "google")
+
+
 def test_config_validation_required() -> None:
     """Missing required fields raise ValueError."""
+    from ollama_workstation.commands_policy_config import (
+        COMMANDS_POLICY_DENY_BY_DEFAULT,
+        CommandsPolicyConfig,
+    )
+
+    default_policy = CommandsPolicyConfig(
+        allowed_commands=(),
+        forbidden_commands=(),
+        commands_policy=COMMANDS_POLICY_DENY_BY_DEFAULT,
+    )
     with pytest.raises(ValueError, match="mcp_proxy_url"):
         WorkstationConfig(
             mcp_proxy_url="",
             ollama_base_url="http://o:2",
             ollama_model="m",
+            commands_policy_config=default_policy,
         )
     with pytest.raises(ValueError, match="ollama_model"):
         WorkstationConfig(
             mcp_proxy_url="http://p:1",
             ollama_base_url="http://o:2",
             ollama_model="",
+            commands_policy_config=default_policy,
         )
+
+
+def test_local_config_example_loads_and_validates() -> None:
+    """Local config example (all providers, placeholder keys) loads and validates."""
+    root = Path(__file__).resolve().parents[2]
+    path = root / "config" / "adapter_config.local.json.example"
+    if not path.exists():
+        pytest.skip("config/adapter_config.local.json.example not found")
+    raw = path.read_text(encoding="utf-8")
+    data = json.loads(raw)
+    errors = validate_project_config(data)
+    msg = "local config example should validate: %s" % (errors,)
+    assert not errors, msg
+    cfg = load_config(str(path))
+    assert cfg.mcp_proxy_url
+    assert cfg.ollama_model
+    assert "ollama" in (cfg.available_providers or ())
+    assert cfg.google_api_key
+    assert cfg.anthropic_api_key
+    assert cfg.openai_api_key
+    assert cfg.xai_api_key
+    assert cfg.deepseek_api_key
