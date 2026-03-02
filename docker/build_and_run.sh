@@ -16,7 +16,8 @@ if [ -f "${SCRIPT_DIR}/run.conf" ]; then
 fi
 IMAGE_NAME="${IMAGE_NAME:-ollama-adapter}"
 CONTAINER_NAME="${CONTAINER_NAME:-ollama-adapter}"
-NETWORK_NAME="${NETWORK_NAME:-smart-assistant}"
+# Step 15 runtime contract: network is fixed and mandatory.
+NETWORK_NAME="smart-assistant"
 
 CONFIG_DIR="${SCRIPT_DIR}/config"
 LOGS_DIR="${SCRIPT_DIR}/logs"
@@ -37,6 +38,11 @@ fi
 for d in "${CONFIG_DIR}" "${LOGS_DIR}" "${CACHE_DIR}" "${DATA_DIR}" "${REDIS_DATA_DIR}" "${SCRIPT_DIR}/certs"; do
   mkdir -p "$d"
 done
+
+if ! docker network inspect "${NETWORK_NAME}" >/dev/null 2>&1; then
+  echo "Creating required docker network ${NETWORK_NAME}..."
+  docker network create "${NETWORK_NAME}" >/dev/null
+fi
 
 # Mounts: certs, config, cache, logs, data. Run as user:group 1000:1000.
 echo "Building image ${IMAGE_NAME}..."
@@ -69,11 +75,35 @@ docker run -d \
   -e OLLAMA_MODELS=/app/data \
   -e OLLAMA_HOME=/app/data \
   -e HOME=/app/data \
-  -e OLLAMA_PRELOAD_MODELS="${OLLAMA_PRELOAD_MODELS:-llama3.2,qwen3}" \
+  -e OLLAMA_PRELOAD_MODELS="${OLLAMA_PRELOAD_MODELS:-llama3.2,qwen3,qwen2.5-coder:1.5b}" \
+  -e OLLAMA_KEEP_ALIVE="${OLLAMA_KEEP_ALIVE:--1}" \
+  -e OLLAMA_LLM_LIBRARY="${OLLAMA_LLM_LIBRARY:-cpu}" \
   "${IMAGE_NAME}"
 
 echo "Done. Container ${CONTAINER_NAME} is running (adapter 8015, Redis ${REDIS_HOST_PORT}:6379, user 1000:1000, restart=always, network=${NETWORK_NAME})."
+echo "Ollama: OLLAMA_LLM_LIBRARY=${OLLAMA_LLM_LIBRARY:-cpu} (CPU-only). Set OLLAMA_LLM_LIBRARY= to use GPU."
 echo "Mounts: certs, config, logs, cache, data (models), redis_data (bases)."
+
+echo "Validating runtime contract for ${CONTAINER_NAME}..."
+CONTAINER_USER="$(docker inspect -f '{{.Config.User}}' "${CONTAINER_NAME}")"
+if [ "${CONTAINER_USER}" != "1000:1000" ]; then
+  echo "ERROR: runtime contract violation: user mapping is '${CONTAINER_USER}', expected '1000:1000'."
+  exit 1
+fi
+
+if ! docker inspect -f '{{if index .NetworkSettings.Networks "smart-assistant"}}ok{{end}}' "${CONTAINER_NAME}" | grep -qx "ok"; then
+  echo "ERROR: runtime contract violation: container is not attached to network smart-assistant."
+  exit 1
+fi
+
+MOUNTS_VIEW="$(docker inspect -f '{{range .Mounts}}{{printf "%s:%s\n" .Source .Destination}}{{end}}' "${CONTAINER_NAME}")"
+for required_mount in "/app/config" "/app/logs" "/app/cache" "/app/data"; do
+  if ! printf '%s\n' "${MOUNTS_VIEW}" | grep -q ":${required_mount}$"; then
+    echo "ERROR: runtime contract violation: required mount ${required_mount} is missing."
+    exit 1
+  fi
+done
+echo "Runtime contract validated: mounts, user=1000:1000, network=smart-assistant."
 
 if [ -n "${RUN_SERVER_TESTS}" ]; then
   echo "Running server test pipeline..."
