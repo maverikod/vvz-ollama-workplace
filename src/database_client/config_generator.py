@@ -59,6 +59,23 @@ def _env_overlay() -> dict[str, Any]:
             out["request_timeout_seconds"] = int(rt)
         except ValueError:
             pass
+    retry_max = os.environ.get("DATABASE_CLIENT_RETRY_MAX_ATTEMPTS")
+    if retry_max:
+        try:
+            out["retry_max_attempts"] = int(retry_max)
+        except ValueError:
+            pass
+    retry_backoff = os.environ.get("DATABASE_CLIENT_RETRY_BACKOFF_SECONDS")
+    if retry_backoff:
+        try:
+            out["retry_backoff_seconds"] = float(retry_backoff)
+        except ValueError:
+            pass
+    metrics = os.environ.get("DATABASE_CLIENT_METRICS_ENABLED", "").strip().lower()
+    if metrics in ("true", "1", "yes"):
+        out["metrics_enabled"] = True
+    elif metrics in ("false", "0", "no"):
+        out["metrics_enabled"] = False
     out["log_level"] = os.environ.get("DATABASE_CLIENT_LOG_LEVEL") or ""
     return out
 

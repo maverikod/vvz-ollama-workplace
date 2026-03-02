@@ -7,11 +7,14 @@ email: vasilyvz@gmail.com
 
 import json
 from pathlib import Path
+from typing import Any
 
 import pytest
 
 from database_client.config_generator import (
+    _default_client_template,
     generate_client_config,
+    generate_from_merged,
     merge_settings,
 )
 
@@ -45,6 +48,68 @@ def test_merge_settings_args_override_env_override_template() -> None:
     out = merge_settings(t, env, args)
     assert out["a"] == 10
     assert out["b"] == 20
+
+
+def test_merge_settings_skips_empty_overlay_values() -> None:
+    """Empty string and None in overlay do not overwrite template."""
+    t = {"a": 1}
+    env = {"a": "", "b": None}
+    out = merge_settings(t, env)
+    assert out["a"] == 1
+    assert "b" not in out
+
+
+def test_default_client_template_has_expected_keys() -> None:
+    """Default template contains endpoint, certs, retry, timeouts."""
+    t = _default_client_template(Path("mtls_certificates"))
+    assert "output_path" in t
+    assert "certs_dir" in t
+    assert "base_url" in t
+    assert "client_cert_file" in t
+    assert "client_key_file" in t
+    assert "ca_cert_file" in t
+    assert "connect_timeout_seconds" in t
+    assert "request_timeout_seconds" in t
+    assert "retry_max_attempts" in t
+    assert "retry_backoff_seconds" in t
+    assert "log_level" in t
+    assert "metrics_enabled" in t
+
+
+def test_generate_from_merged_writes_config(tmp_path: Path) -> None:
+    """generate_from_merged produces valid config with args overlay."""
+    certs = _make_certs_dir(tmp_path)
+    out_file = tmp_path / "generated_client.json"
+    generate_from_merged(
+        args_overlay={
+            "output_path": str(out_file),
+            "certs_dir": str(certs),
+            "base_url": "https://db.example.com:8017",
+        }
+    )
+    assert out_file.is_file()
+    data = json.loads(out_file.read_text(encoding="utf-8"))
+    assert (
+        data.get("database_client", {}).get("base_url") == "https://db.example.com:8017"
+    )
+    assert data.get("client", {}).get("protocol") == "mtls"
+
+
+def test_generate_from_merged_default_output_path(
+    tmp_path: Path, monkeypatch: Any
+) -> None:
+    """When output_path not set, default path is config/database_client_config.json."""
+    monkeypatch.chdir(tmp_path)
+    certs = _make_certs_dir(tmp_path)
+    (tmp_path / "config").mkdir(exist_ok=True)
+    generate_from_merged(
+        args_overlay={
+            "certs_dir": str(certs),
+            "base_url": "https://localhost:8017",
+        }
+    )
+    default_path = tmp_path / "config" / "database_client_config.json"
+    assert default_path.is_file()
 
 
 def test_generate_client_config_writes_consumable_config(tmp_path: Path) -> None:
