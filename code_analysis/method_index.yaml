@@ -1,0 +1,188 @@
+AddCommandToSessionCommand:
+- get_schema
+- get_result_schema
+- get_error_schema
+- get_metadata
+CallStack:
+- __init__
+- push
+- pop
+- current_depth
+CommandAliasRegistry:
+- __init__
+- get_display_name
+- set_alias
+CommandDiscovery:
+- __init__
+- _parse_command
+- get_discovered_commands
+CommandSchema:
+- __post_init__
+CommandsPolicyConfig:
+- __post_init__
+- filter_candidates
+ContextBuilder:
+- __init__
+ContextBuilderError: []
+ContextRepresentation:
+- serialize_tools
+- serialize_messages
+- format_tool_result
+- max_context_tokens
+DatabaseClientConfigError:
+- __init__
+- messages
+DirectChatCommand:
+- get_schema
+- get_result_schema
+- get_error_schema
+- get_metadata
+DirectEmbedVectorizationClient:
+- __init__
+DirectoryDocumentationSource:
+- __init__
+- list_items
+- get_content
+DocumentationSlotBuilder:
+- __init__
+- build
+DocumentationSource:
+- list_items
+- get_content
+EffectiveToolListBuilder:
+- __init__
+- build
+EmbedProxyClient:
+- __init__
+GetModelContextCommand:
+- get_schema
+- get_result_schema
+- get_error_schema
+- get_metadata
+GetModelStateCommand:
+- get_schema
+- get_result_schema
+- get_error_schema
+- get_metadata
+InMemorySessionStore:
+- __init__
+- get
+- create
+- update
+InvokeToolCommand:
+- get_schema
+- get_result_schema
+- get_error_schema
+- get_metadata
+MessageSource: []
+MessageStore:
+- get_messages
+MessageStreamWriter:
+- __init__
+- write
+ModelCallDepthGuard:
+- __init__
+- can_enter_model_call
+- error_if_over_depth
+ModelCallingToolAllowList:
+- __init__
+- may_call_model
+- add
+ModelEndpoint: []
+ModelWorkspaceClientConfigError:
+- __init__
+- messages
+OllamaChatCommand:
+- get_schema
+- get_result_schema
+- get_error_schema
+- get_metadata
+OllamaRepresentation:
+- serialize_tools
+- serialize_messages
+- format_tool_result
+ProxyClient:
+- __init__
+ProxyClientError:
+- __init__
+RedisMessageRecord:
+- __post_init__
+RedisMessageStore:
+- __init__
+- get_messages
+RedisSessionStore:
+- __init__
+- _key
+- get
+- create
+- update
+RelevanceSlotBuilder:
+- __init__
+- _gather_candidates
+RemoveCommandFromSessionCommand:
+- get_schema
+- get_result_schema
+- get_error_schema
+- get_metadata
+RepresentationRegistry:
+- __init__
+- register
+- register_type
+- get_representation
+SafeNameTranslator:
+- to_safe_name
+ServerStatusCommand:
+- get_schema
+- get_result_schema
+- get_error_schema
+- get_metadata
+Session:
+- __post_init__
+- create
+SessionInitCommand:
+- get_schema
+- get_result_schema
+- get_error_schema
+- get_metadata
+SessionStore:
+- get
+- create
+- update
+SessionUpdateCommand:
+- get_schema
+- get_result_schema
+- get_error_schema
+- get_metadata
+SetDefaultModelCommand:
+- get_schema
+- get_result_schema
+- get_error_schema
+- get_metadata
+StubMessageStore:
+- __init__
+- get_messages
+- __init__
+- get_messages
+StubRep:
+- serialize_tools
+- serialize_messages
+- format_tool_result
+StubRepresentation:
+- serialize_tools
+- serialize_messages
+- format_tool_result
+ToolCallRegistry:
+- __init__
+- register
+- resolve
+- __contains__
+TrimmedContext: []
+VectorizationClient: []
+VectorizationError:
+- __init__
+WorkstationConfig:
+- __post_init__
+_MockRedis:
+- __init__
+- hgetall
+- hset

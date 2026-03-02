@@ -1,0 +1,363 @@
+issues:
+  any_type_usage: []
+  classes_without_docstrings:
+  - class: StubRep
+    file: /home/vasilyvz/projects/ollama/tests/unit/test_representation_registry.py
+    line: 22
+  files_too_large:
+  - exceeds_limit: 47
+    file: /home/vasilyvz/projects/ollama/src/ollama_workstation/docker_config_validation.py
+    limit: 400
+    lines: 447
+  - exceeds_limit: 266
+    file: /home/vasilyvz/projects/ollama/src/ollama_workstation/chat_flow.py
+    limit: 400
+    lines: 666
+  - exceeds_limit: 78
+    file: /home/vasilyvz/projects/ollama/src/ollama_workstation/config.py
+    limit: 400
+    lines: 478
+  - exceeds_limit: 16
+    file: /home/vasilyvz/projects/ollama/src/ollama_workstation/commands/get_model_context_command.py
+    limit: 400
+    lines: 416
+  - exceeds_limit: 77
+    file: /home/vasilyvz/projects/ollama/src/ollama_workstation/commands/ollama_chat_command.py
+    limit: 400
+    lines: 477
+  files_without_docstrings:
+  - /home/vasilyvz/projects/ollama/tests/__init__.py
+  - /home/vasilyvz/projects/ollama/tests/integration/__init__.py
+  - /home/vasilyvz/projects/ollama/tests/unit/__init__.py
+  generic_exception_usage: []
+  imports_in_middle: []
+  invalid_imports:
+  - description: Module 'ensure_ollama_models' cannot be imported
+    file: /home/vasilyvz/projects/ollama/tests/unit/test_ensure_ollama_models.py
+    line: 34
+    module: ensure_ollama_models
+    type: import
+  - description: Module 'ensure_ollama_models' cannot be imported
+    file: /home/vasilyvz/projects/ollama/tests/unit/test_ensure_ollama_models.py
+    line: 69
+    module: ensure_ollama_models
+    type: import
+  - description: Module 'ensure_ollama_models' cannot be imported
+    file: /home/vasilyvz/projects/ollama/tests/unit/test_ensure_ollama_models.py
+    line: 119
+    module: ensure_ollama_models
+    type: import
+  - description: Module 'ensure_ollama_models' cannot be imported
+    file: /home/vasilyvz/projects/ollama/tests/unit/test_ensure_ollama_models.py
+    line: 162
+    module: ensure_ollama_models
+    type: import
+  - description: Module 'ensure_ollama_models' cannot be imported
+    file: /home/vasilyvz/projects/ollama/tests/unit/test_ensure_ollama_models.py
+    line: 194
+    module: ensure_ollama_models
+    type: import
+  - description: Module 'ensure_ollama_models' cannot be imported
+    file: /home/vasilyvz/projects/ollama/tests/unit/test_ensure_ollama_models.py
+    line: 236
+    module: ensure_ollama_models
+    type: import
+  - description: Module 'generate_config' cannot be imported
+    file: /home/vasilyvz/projects/ollama/tests/unit/test_generate_config.py
+    line: 36
+    module: generate_config
+    type: import
+  - description: Module 'generate_config' cannot be imported
+    file: /home/vasilyvz/projects/ollama/tests/unit/test_generate_config.py
+    line: 69
+    module: generate_config
+    type: import
+  - description: Module 'generate_config' cannot be imported
+    file: /home/vasilyvz/projects/ollama/tests/unit/test_generate_config.py
+    line: 214
+    module: generate_config
+    type: import
+  methods_with_pass: []
+  methods_without_docstrings:
+  - class: null
+    file: /home/vasilyvz/projects/ollama/scripts/verify_ollama.py
+    line: 20
+    method: main
+  - class: null
+    file: /home/vasilyvz/projects/ollama/scripts/generate_full_config.py
+    line: 93
+    method: main
+  - class: StubMessageStore
+    file: /home/vasilyvz/projects/ollama/scripts/verify_context_limits.py
+    line: 39
+    method: __init__
+  - class: StubMessageStore
+    file: /home/vasilyvz/projects/ollama/scripts/verify_context_limits.py
+    line: 42
+    method: get_messages
+  - class: null
+    file: /home/vasilyvz/projects/ollama/scripts/verify_context_limits.py
+    line: 257
+    method: main
+  - class: null
+    file: /home/vasilyvz/projects/ollama/scripts/verify_context_limits.py
+    line: 39
+    method: __init__
+  - class: null
+    file: /home/vasilyvz/projects/ollama/scripts/verify_context_limits.py
+    line: 42
+    method: get_messages
+  - class: null
+    file: /home/vasilyvz/projects/ollama/scripts/verify_vectorizer_context_and_tools.py
+    line: 58
+    method: _jsonrpc
+  - class: null
+    file: /home/vasilyvz/projects/ollama/scripts/verify_vectorizer_context_and_tools.py
+    line: 88
+    method: _result_data
+  - class: null
+    file: /home/vasilyvz/projects/ollama/scripts/verify_vectorizer_context_and_tools.py
+    line: 101
+    method: main
+  - class: null
+    file: /home/vasilyvz/projects/ollama/scripts/check_provider_endpoints.py
+    line: 39
+    method: provider_for_model
+  - class: null
+    file: /home/vasilyvz/projects/ollama/scripts/check_provider_endpoints.py
+    line: 49
+    method: _is_local_ollama
+  - class: null
+    file: /home/vasilyvz/projects/ollama/scripts/check_provider_endpoints.py
+    line: 90
+    method: main
+  - class: null
+    file: /home/vasilyvz/projects/ollama/scripts/verify_models_availability.py
+    line: 38
+    method: _get_config_path
+  - class: null
+    file: /home/vasilyvz/projects/ollama/scripts/verify_models_availability.py
+    line: 142
+    method: main
+  - class: null
+    file: /home/vasilyvz/projects/ollama/scripts/list_provider_models.py
+    line: 68
+    method: main
+  - class: null
+    file: /home/vasilyvz/projects/ollama/scripts/verify_model_session_chat.py
+    line: 27
+    method: _jsonrpc
+  - class: null
+    file: /home/vasilyvz/projects/ollama/scripts/verify_model_session_chat.py
+    line: 47
+    method: main
+  - class: null
+    file: /home/vasilyvz/projects/ollama/scripts/verify_redis_pipeline.py
+    line: 31
+    method: main
+  - class: null
+    file: /home/vasilyvz/projects/ollama/scripts/check_tools_access.py
+    line: 58
+    method: _config_path
+  - class: null
+    file: /home/vasilyvz/projects/ollama/scripts/check_tools_access.py
+    line: 173
+    method: main
+  - class: ModelWorkspaceClientConfigError
+    file: /home/vasilyvz/projects/ollama/src/model_workspace_client/config_validator.py
+    line: 33
+    method: __init__
+  - class: null
+    file: /home/vasilyvz/projects/ollama/src/model_workspace_client/config_validator.py
+    line: 33
+    method: __init__
+  - class: VectorizationError
+    file: /home/vasilyvz/projects/ollama/src/ollama_workstation/vectorization_client.py
+    line: 32
+    method: __init__
+  - class: null
+    file: /home/vasilyvz/projects/ollama/src/ollama_workstation/vectorization_client.py
+    line: 32
+    method: __init__
+  - class: null
+    file: /home/vasilyvz/projects/ollama/src/ollama_workstation/config.py
+    line: 297
+    method: _opt_key
+  - class: null
+    file: /home/vasilyvz/projects/ollama/src/ollama_workstation/config_cli.py
+    line: 24
+    method: _parse_generate_args
+  - class: null
+    file: /home/vasilyvz/projects/ollama/src/ollama_workstation/config_cli.py
+    line: 294
+    method: _cmd_generate
+  - class: null
+    file: /home/vasilyvz/projects/ollama/src/ollama_workstation/config_cli.py
+    line: 301
+    method: _parse_validate_args
+  - class: null
+    file: /home/vasilyvz/projects/ollama/src/ollama_workstation/config_cli.py
+    line: 321
+    method: _cmd_validate
+  - class: null
+    file: /home/vasilyvz/projects/ollama/src/ollama_workstation/config_cli.py
+    line: 365
+    method: main
+  - class: DatabaseClientConfigError
+    file: /home/vasilyvz/projects/ollama/src/database_client/config_validator.py
+    line: 31
+    method: __init__
+  - class: null
+    file: /home/vasilyvz/projects/ollama/src/database_client/config_validator.py
+    line: 31
+    method: __init__
+  - class: StubMessageStore
+    file: /home/vasilyvz/projects/ollama/tests/unit/test_context_builder.py
+    line: 28
+    method: __init__
+  - class: StubMessageStore
+    file: /home/vasilyvz/projects/ollama/tests/unit/test_context_builder.py
+    line: 31
+    method: get_messages
+  - class: null
+    file: /home/vasilyvz/projects/ollama/tests/unit/test_context_builder.py
+    line: 28
+    method: __init__
+  - class: null
+    file: /home/vasilyvz/projects/ollama/tests/unit/test_context_builder.py
+    line: 31
+    method: get_messages
+  - class: null
+    file: /home/vasilyvz/projects/ollama/tests/unit/test_command_discovery.py
+    line: 35
+    method: _default_config
+  - class: null
+    file: /home/vasilyvz/projects/ollama/tests/unit/test_ensure_ollama_models.py
+    line: 111
+    method: run_side_effect
+  - class: null
+    file: /home/vasilyvz/projects/ollama/tests/unit/test_ensure_ollama_models.py
+    line: 228
+    method: run_side_effect
+  - class: StubRep
+    file: /home/vasilyvz/projects/ollama/tests/unit/test_representation_registry.py
+    line: 23
+    method: serialize_tools
+  - class: StubRep
+    file: /home/vasilyvz/projects/ollama/tests/unit/test_representation_registry.py
+    line: 26
+    method: serialize_messages
+  - class: StubRep
+    file: /home/vasilyvz/projects/ollama/tests/unit/test_representation_registry.py
+    line: 29
+    method: format_tool_result
+  - class: null
+    file: /home/vasilyvz/projects/ollama/tests/unit/test_representation_registry.py
+    line: 23
+    method: serialize_tools
+  - class: null
+    file: /home/vasilyvz/projects/ollama/tests/unit/test_representation_registry.py
+    line: 26
+    method: serialize_messages
+  - class: null
+    file: /home/vasilyvz/projects/ollama/tests/unit/test_representation_registry.py
+    line: 29
+    method: format_tool_result
+  - class: null
+    file: /home/vasilyvz/projects/ollama/tests/unit/test_chat_flow.py
+    line: 25
+    method: config
+  - class: null
+    file: /home/vasilyvz/projects/ollama/tests/unit/test_chat_flow.py
+    line: 61
+    method: post
+  - class: _MockRedis
+    file: /home/vasilyvz/projects/ollama/tests/unit/test_session_store.py
+    line: 60
+    method: __init__
+  - class: _MockRedis
+    file: /home/vasilyvz/projects/ollama/tests/unit/test_session_store.py
+    line: 63
+    method: hgetall
+  - class: _MockRedis
+    file: /home/vasilyvz/projects/ollama/tests/unit/test_session_store.py
+    line: 66
+    method: hset
+  - class: null
+    file: /home/vasilyvz/projects/ollama/tests/unit/test_session_store.py
+    line: 60
+    method: __init__
+  - class: null
+    file: /home/vasilyvz/projects/ollama/tests/unit/test_session_store.py
+    line: 63
+    method: hgetall
+  - class: null
+    file: /home/vasilyvz/projects/ollama/tests/unit/test_session_store.py
+    line: 66
+    method: hset
+  - class: null
+    file: /home/vasilyvz/projects/ollama/tests/unit/test_session_commands.py
+    line: 24
+    method: _make_store
+  - class: null
+    file: /home/vasilyvz/projects/ollama/tests/unit/test_tools.py
+    line: 10
+    method: test_tools_count
+  - class: null
+    file: /home/vasilyvz/projects/ollama/tests/unit/test_tools.py
+    line: 15
+    method: test_tool_names
+  - class: null
+    file: /home/vasilyvz/projects/ollama/tests/unit/test_tools.py
+    line: 21
+    method: test_each_tool_has_required_fields
+  - class: null
+    file: /home/vasilyvz/projects/ollama/tests/unit/test_tools.py
+    line: 30
+    method: test_list_servers_parameters
+  - class: null
+    file: /home/vasilyvz/projects/ollama/tests/unit/test_tools.py
+    line: 37
+    method: test_call_server_parameters
+  - class: null
+    file: /home/vasilyvz/projects/ollama/tests/unit/test_tools.py
+    line: 47
+    method: test_help_parameters
+  - class: null
+    file: /home/vasilyvz/projects/ollama/tests/unit/test_proxy_client.py
+    line: 28
+    method: config
+  - class: null
+    file: /home/vasilyvz/projects/ollama/tests/unit/test_config_cli.py
+    line: 16
+    method: _run_cli
+  - class: null
+    file: /home/vasilyvz/projects/ollama/docker/ensure_ollama_models.py
+    line: 52
+    method: main
+  - class: null
+    file: /home/vasilyvz/projects/ollama/docker/run_adapter.py
+    line: 107
+    method: _patched_wait_for
+  - class: null
+    file: /home/vasilyvz/projects/ollama/docker/generate_config.py
+    line: 36
+    method: main
+  - class: null
+    file: /home/vasilyvz/projects/ollama/container/generate_config.py
+    line: 32
+    method: main
+  not_implemented_in_non_abstract: []
+summary:
+  any_type_usage: 0
+  classes_without_docstrings: 1
+  files_too_large: 5
+  files_without_docstrings: 3
+  generic_exception_usage: 0
+  imports_in_middle: 0
+  invalid_imports: 9
+  max_lines_limit: 400
+  methods_with_pass: 0
+  methods_without_docstrings: 67
+  not_implemented_in_non_abstract: 0
+  total_issues: 85
