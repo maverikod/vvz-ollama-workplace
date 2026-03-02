@@ -3,7 +3,6 @@ AddCommandToSessionCommand:
 - get_result_schema
 - get_error_schema
 - get_metadata
-Args: []
 CallStack:
 - __init__
 - push
@@ -31,6 +30,8 @@ ContextRepresentation:
 - format_tool_result
 - max_context_tokens
 DatabaseClientConfigError:
+- __init__
+- messages
 - __init__
 - messages
 DirectChatCommand:
@@ -93,6 +94,8 @@ ModelEndpoint: []
 ModelWorkspaceClientConfigError:
 - __init__
 - messages
+- __init__
+- messages
 OllamaChatCommand:
 - get_schema
 - get_result_schema
@@ -104,6 +107,7 @@ OllamaRepresentation:
 - format_tool_result
 ProxyClient:
 - __init__
+- _use_ws_first
 ProxyClientError:
 - __init__
 RedisMessageRecord:
@@ -183,6 +187,9 @@ VectorizationError:
 - __init__
 WorkstationConfig:
 - __post_init__
+_DummyRegistry:
+- __init__
+- register
 _MockRedis:
 - __init__
 - hgetall

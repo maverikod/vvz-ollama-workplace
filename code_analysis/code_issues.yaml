@@ -4,29 +4,15 @@ issues:
   - class: StubRep
     file: /home/vasilyvz/projects/ollama/tests/unit/test_representation_registry.py
     line: 22
-  - class: Args
-    file: /home/vasilyvz/projects/ollama/tests/unit/test_model_workspace_client_config_cli.py
-    line: 59
-  - class: Args
-    file: /home/vasilyvz/projects/ollama/tests/unit/test_model_workspace_client_config_cli.py
-    line: 81
-  - class: Args
-    file: /home/vasilyvz/projects/ollama/tests/unit/test_model_workspace_client_config_cli.py
-    line: 93
-  - class: Args
-    file: /home/vasilyvz/projects/ollama/tests/unit/test_model_workspace_client_config_cli.py
-    line: 119
-  - class: Args
-    file: /home/vasilyvz/projects/ollama/tests/unit/test_model_workspace_client_config_cli.py
-    line: 142
-  - class: Args
-    file: /home/vasilyvz/projects/ollama/tests/unit/test_model_workspace_client_config_cli.py
-    line: 165
   files_too_large:
-  - exceeds_limit: 2
+  - exceeds_limit: 1
     file: /home/vasilyvz/projects/ollama/src/model_workspace_client/config_cli.py
     limit: 400
-    lines: 402
+    lines: 401
+  - exceeds_limit: 1
+    file: /home/vasilyvz/projects/ollama/src/model_workspace_client/build/lib/model_workspace_client/config_cli.py
+    limit: 400
+    lines: 401
   - exceeds_limit: 47
     file: /home/vasilyvz/projects/ollama/src/ollama_workstation/docker_config_validation.py
     limit: 400
@@ -209,6 +195,30 @@ issues:
     file: /home/vasilyvz/projects/ollama/src/model_workspace_client/config_cli.py
     line: 303
     method: _parse_test_connection_args
+  - class: ModelWorkspaceClientConfigError
+    file: /home/vasilyvz/projects/ollama/src/model_workspace_client/build/lib/model_workspace_client/config_validator.py
+    line: 33
+    method: __init__
+  - class: null
+    file: /home/vasilyvz/projects/ollama/src/model_workspace_client/build/lib/model_workspace_client/config_validator.py
+    line: 33
+    method: __init__
+  - class: null
+    file: /home/vasilyvz/projects/ollama/src/model_workspace_client/build/lib/model_workspace_client/config_cli.py
+    line: 40
+    method: _parse_generate_args
+  - class: null
+    file: /home/vasilyvz/projects/ollama/src/model_workspace_client/build/lib/model_workspace_client/config_cli.py
+    line: 134
+    method: _parse_validate_args
+  - class: null
+    file: /home/vasilyvz/projects/ollama/src/model_workspace_client/build/lib/model_workspace_client/config_cli.py
+    line: 203
+    method: _parse_show_schema_args
+  - class: null
+    file: /home/vasilyvz/projects/ollama/src/model_workspace_client/build/lib/model_workspace_client/config_cli.py
+    line: 303
+    method: _parse_test_connection_args
   - class: null
     file: /home/vasilyvz/projects/ollama/src/database_server/config_cli.py
     line: 84
@@ -225,6 +235,10 @@ issues:
     file: /home/vasilyvz/projects/ollama/src/ollama_workstation/vectorization_client.py
     line: 32
     method: __init__
+  - class: null
+    file: /home/vasilyvz/projects/ollama/src/ollama_workstation/registration.py
+    line: 90
+    method: _metadata_wrapper
   - class: null
     file: /home/vasilyvz/projects/ollama/src/ollama_workstation/config.py
     line: 297
@@ -289,6 +303,46 @@ issues:
     file: /home/vasilyvz/projects/ollama/src/database_client/config_cli.py
     line: 306
     method: main
+  - class: DatabaseClientConfigError
+    file: /home/vasilyvz/projects/ollama/src/database_client/build/lib/database_client/config_validator.py
+    line: 31
+    method: __init__
+  - class: null
+    file: /home/vasilyvz/projects/ollama/src/database_client/build/lib/database_client/config_validator.py
+    line: 31
+    method: __init__
+  - class: null
+    file: /home/vasilyvz/projects/ollama/src/database_client/build/lib/database_client/config_cli.py
+    line: 97
+    method: _parse_generate_args
+  - class: null
+    file: /home/vasilyvz/projects/ollama/src/database_client/build/lib/database_client/config_cli.py
+    line: 177
+    method: _cmd_generate
+  - class: null
+    file: /home/vasilyvz/projects/ollama/src/database_client/build/lib/database_client/config_cli.py
+    line: 189
+    method: _parse_validate_args
+  - class: null
+    file: /home/vasilyvz/projects/ollama/src/database_client/build/lib/database_client/config_cli.py
+    line: 204
+    method: _cmd_validate
+  - class: null
+    file: /home/vasilyvz/projects/ollama/src/database_client/build/lib/database_client/config_cli.py
+    line: 218
+    method: _cmd_show_schema
+  - class: null
+    file: /home/vasilyvz/projects/ollama/src/database_client/build/lib/database_client/config_cli.py
+    line: 280
+    method: _parse_test_connection_args
+  - class: null
+    file: /home/vasilyvz/projects/ollama/src/database_client/build/lib/database_client/config_cli.py
+    line: 293
+    method: _cmd_test_connection
+  - class: null
+    file: /home/vasilyvz/projects/ollama/src/database_client/build/lib/database_client/config_cli.py
+    line: 306
+    method: main
   - class: null
     file: /home/vasilyvz/projects/ollama/src/model_workspace_server/config_cli.py
     line: 138
@@ -297,6 +351,22 @@ issues:
     file: /home/vasilyvz/projects/ollama/src/model_workspace_server/config_cli.py
     line: 273
     method: _parse_validate_args
+  - class: _DummyRegistry
+    file: /home/vasilyvz/projects/ollama/tests/unit/test_registration.py
+    line: 23
+    method: __init__
+  - class: _DummyRegistry
+    file: /home/vasilyvz/projects/ollama/tests/unit/test_registration.py
+    line: 26
+    method: register
+  - class: null
+    file: /home/vasilyvz/projects/ollama/tests/unit/test_registration.py
+    line: 23
+    method: __init__
+  - class: null
+    file: /home/vasilyvz/projects/ollama/tests/unit/test_registration.py
+    line: 26
+    method: register
   - class: StubMessageStore
     file: /home/vasilyvz/projects/ollama/tests/unit/test_context_builder.py
     line: 28
@@ -411,7 +481,7 @@ issues:
     method: test_help_parameters
   - class: null
     file: /home/vasilyvz/projects/ollama/tests/unit/test_proxy_client.py
-    line: 28
+    line: 30
     method: config
   - class: null
     file: /home/vasilyvz/projects/ollama/tests/unit/test_config_cli.py
@@ -436,14 +506,14 @@ issues:
   not_implemented_in_non_abstract: []
 summary:
   any_type_usage: 0
-  classes_without_docstrings: 7
-  files_too_large: 6
+  classes_without_docstrings: 1
+  files_too_large: 7
   files_without_docstrings: 3
   generic_exception_usage: 0
   imports_in_middle: 0
   invalid_imports: 9
   max_lines_limit: 400
   methods_with_pass: 0
-  methods_without_docstrings: 83
+  methods_without_docstrings: 104
   not_implemented_in_non_abstract: 0
-  total_issues: 108
+  total_issues: 124
