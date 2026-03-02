@@ -13,20 +13,31 @@ from model_workspace_server.config_validator import (
 )
 
 
-def _valid_mws_config() -> dict:
-    """Minimal valid model_workspace_server config dict (no file paths)."""
+def _valid_mws_config(
+    include_ws_transport: bool = False, ssl_dir: Path | None = None
+) -> dict:
+    """Minimal valid config. With include_ws_transport=True, pass ssl_dir for ws+TLS."""
+    server: dict = {
+        "advertised_host": "test-mws",
+        "servername": "test-mws",
+        "log_dir": "/app/logs",
+        "server_port": 8016,
+    }
+    if include_ws_transport and ssl_dir is not None:
+        server["ssl"] = {
+            "cert": str(ssl_dir / "cert.pem"),
+            "key": str(ssl_dir / "key.pem"),
+            "ca": str(ssl_dir / "ca.pem"),
+        }
+    transport: dict = {
+        "fallback_policy": "deny",
+        "verify_client": True,
+    }
+    if include_ws_transport:
+        transport["transport_type"] = "ws"
     return {
-        "server": {
-            "advertised_host": "test-mws",
-            "servername": "test-mws",
-            "log_dir": "/app/logs",
-            "server_port": 8016,
-        },
-        "transport": {
-            "transport_type": "ws",
-            "fallback_policy": "deny",
-            "verify_client": True,
-        },
+        "server": server,
+        "transport": transport,
         "model_workspace_server": {
             "runtime_identity": {
                 "instance_uuid": "uuid-123",
@@ -47,14 +58,14 @@ def test_validate_config_dict_valid() -> None:
 
 
 def test_validate_config_dict_missing_server() -> None:
-    """Missing server section returns exact field path and remediation."""
+    """Missing server section returns exact field path and [Remediation: ...]."""
     data = _valid_mws_config()
     del data["server"]
     errors = validate_config_dict(data)
     assert len(errors) >= 1
     assert "server" in errors[0]
     assert "missing" in errors[0].lower() or "required" in errors[0].lower()
-    assert "Remediation" in errors[0] or "Add" in errors[0]
+    assert "[Remediation:" in errors[0]
 
 
 def test_validate_config_dict_missing_model_workspace_server() -> None:
@@ -86,7 +97,7 @@ def test_validate_config_dict_server_no_advertised_host_nor_servername() -> None
 def test_validate_config_dict_transport_type_invalid() -> None:
     """Invalid transport_type returns exact path and allowed values."""
     data = _valid_mws_config()
-    data["transport"]["transport_type"] = "http"
+    data["transport"]["transport_type"] = "http"  # no ssl required when not ws
     errors = validate_config_dict(data)
     assert any("transport.transport_type" in e for e in errors)
     assert any("ws" in e for e in errors)
@@ -214,3 +225,58 @@ def test_validate_config_dict_verify_client_non_bool() -> None:
     data["transport"]["verify_client"] = "yes"
     errors = validate_config_dict(data)
     assert any("verify_client" in e for e in errors)
+
+
+def test_validate_config_dict_valid_ws_with_ssl(tmp_path: Path) -> None:
+    """Valid config with transport_type ws and existing server.ssl cert/key/ca."""
+    (tmp_path / "cert.pem").write_text("")
+    (tmp_path / "key.pem").write_text("")
+    (tmp_path / "ca.pem").write_text("")
+    config = _valid_mws_config(include_ws_transport=True, ssl_dir=tmp_path)
+    assert validate_config_dict(config) == []
+
+
+def test_validate_config_dict_ws_missing_server_ssl() -> None:
+    """When transport_type is ws, missing server.ssl is rejected."""
+    data = _valid_mws_config()
+    data["transport"]["transport_type"] = "ws"
+    # no server.ssl
+    errors = validate_config_dict(data)
+    assert any("server.ssl" in e and "required" in e.lower() for e in errors)
+
+
+def test_validate_config_dict_ws_missing_ssl_cert_key() -> None:
+    """When transport_type is ws, server.ssl without cert/key is rejected."""
+    data = _valid_mws_config()
+    data["transport"]["transport_type"] = "ws"
+    data["server"]["ssl"] = {}  # cert and key missing
+    errors = validate_config_dict(data)
+    assert any("server.ssl.cert" in e or "server.ssl.key" in e for e in errors)
+    data["server"]["ssl"] = {"cert": "", "key": ""}
+    errors2 = validate_config_dict(data)
+    assert any("server.ssl" in e for e in errors2)
+
+
+def test_validate_config_dict_ws_ssl_file_not_found() -> None:
+    """When transport_type is ws, server.ssl path that is not a file is rejected."""
+    data = _valid_mws_config()
+    data["transport"]["transport_type"] = "ws"
+    data["server"]["ssl"] = {
+        "cert": "/nonexistent/cert.pem",
+        "key": "/nonexistent/key.pem",
+    }
+    errors = validate_config_dict(data)
+    assert any("file not found" in e.lower() for e in errors)
+    assert any("server.ssl" in e for e in errors)
+
+
+def test_validate_config_dict_non_ws_no_ssl_required() -> None:
+    """When transport_type is not ws, server.ssl is not required."""
+    data = _valid_mws_config()  # no transport_type, no server.ssl
+    errors = validate_config_dict(data)
+    assert not any("server.ssl" in e for e in errors)
+    # explicit non-ws: no ssl requirement (only transport_type error)
+    data["transport"]["transport_type"] = "http"
+    errors2 = validate_config_dict(data)
+    assert any("transport.transport_type" in e for e in errors2)
+    assert not any("server.ssl" in e for e in errors2)

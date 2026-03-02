@@ -25,9 +25,9 @@ _MAX_MAX_CONNECTIONS = 100_000
 
 
 def _err(path: str, message: str, remediation: str = "") -> str:
-    """Format a single diagnostic with optional remediation."""
+    """Format a single diagnostic: path: message [Remediation: ...] when given."""
     if remediation:
-        return f"{path}: {message} Remediation: {remediation}"
+        return f"{path}: {message} [Remediation: {remediation}]"
     return f"{path}: {message}"
 
 
@@ -75,24 +75,73 @@ def _validate_transport(data: dict[str, Any]) -> list[str]:
             )
         )
 
-    # WS + TLS coherence: when transport is ws, server cert/key/ca must be present
-    if tt == "ws" or (tt is None and data.get("server")):
+    # WS + TLS coherence: when transport_type is ws, server.ssl.cert/key/ca required
+    if tt == "ws":
         server = data.get("server") or {}
-        for path_key, path in (
-            ("server.server_cert_file", server.get("server_cert_file")),
-            ("server.server_key_file", server.get("server_key_file")),
-            ("server.server_ca_cert_file", server.get("server_ca_cert_file")),
-        ):
-            if path and isinstance(path, str) and path.strip():
-                p = Path(path)
-                if not p.is_file():
-                    errors.append(
-                        _err(
-                            path_key,
-                            f"file not found: {path}",
-                            "Ensure TLS file exists or fix path in config.",
-                        )
+        if not isinstance(server, dict):
+            errors.append(
+                _err(
+                    "server",
+                    "must be an object when transport_type is ws",
+                    "Add server section with server.ssl (cert, key, ca).",
+                )
+            )
+        else:
+            ssl_cfg = server.get("ssl")
+            if ssl_cfg is None:
+                errors.append(
+                    _err(
+                        "server.ssl",
+                        "required when transport_type is ws",
+                        "Add server.ssl with cert, key, and ca paths.",
                     )
+                )
+            elif not isinstance(ssl_cfg, dict):
+                errors.append(
+                    _err(
+                        "server.ssl",
+                        f"must be an object, got {type(ssl_cfg).__name__}",
+                        "Set server.ssl to an object with cert, key, ca.",
+                    )
+                )
+            else:
+                for key in ("cert", "key"):
+                    val = ssl_cfg.get(key)
+                    if not val or not isinstance(val, str) or not val.strip():
+                        errors.append(
+                            _err(
+                                f"server.ssl.{key}",
+                                "required when transport_type is ws",
+                                f"Set server.ssl.{key} to a non-empty file path.",
+                            )
+                        )
+                    else:
+                        if not Path(val).is_file():
+                            errors.append(
+                                _err(
+                                    f"server.ssl.{key}",
+                                    f"file not found: {val}",
+                                    "Ensure TLS file exists or fix path in config.",
+                                )
+                            )
+                ca_val = ssl_cfg.get("ca")
+                if ca_val is not None:
+                    if not isinstance(ca_val, str) or not ca_val.strip():
+                        errors.append(
+                            _err(
+                                "server.ssl.ca",
+                                "must be non-empty when set",
+                                "Set server.ssl.ca to a file path or omit.",
+                            )
+                        )
+                    elif not Path(ca_val).is_file():
+                        errors.append(
+                            _err(
+                                "server.ssl.ca",
+                                f"file not found: {ca_val}",
+                                "Ensure TLS file exists or fix path in config.",
+                            )
+                        )
     return errors
 
 
