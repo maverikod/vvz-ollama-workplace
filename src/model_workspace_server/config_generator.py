@@ -14,6 +14,7 @@ import os
 import uuid
 from pathlib import Path
 from typing import Any
+from urllib.parse import urlparse
 
 from mcp_proxy_adapter.core.config.simple_config_generator import (
     SimpleConfigGenerator,
@@ -42,6 +43,29 @@ def merge_settings(
     return out
 
 
+def _resolve_registration_netloc(settings: dict[str, Any]) -> tuple[str, int]:
+    """
+    Resolve registration host and port: mcp_proxy_url (primary) or
+    registration_host + registration_port (fallback). No hardcoded default.
+    """
+    mcp_proxy_url = str(settings.get("mcp_proxy_url", "")).strip().rstrip("/")
+    if mcp_proxy_url:
+        parsed = urlparse(mcp_proxy_url)
+        if not parsed.scheme or not parsed.hostname:
+            raise ValueError("Invalid mcp_proxy_url: scheme and hostname are required")
+        host = parsed.hostname
+        port = int(parsed.port or (443 if parsed.scheme == "https" else 80))
+        return (host, port)
+    reg_host = settings.get("registration_host")
+    reg_port = settings.get("registration_port")
+    if reg_host is not None and reg_port is not None and str(reg_host).strip():
+        return (str(reg_host).strip(), int(reg_port))
+    raise ValueError(
+        "Proxy endpoint required: set mcp_proxy_url or "
+        "registration_host and registration_port"
+    )
+
+
 def _default_template(certs_dir: Path) -> dict[str, Any]:
     """Default settings template for model workspace server (WS-ready)."""
     return {
@@ -52,8 +76,6 @@ def _default_template(certs_dir: Path) -> dict[str, Any]:
         "server_cert_file": str(certs_dir / "server" / "test-server.crt"),
         "server_key_file": str(certs_dir / "server" / "test-server.key"),
         "server_ca_cert_file": str(certs_dir / "ca" / "ca.crt"),
-        "registration_host": "172.28.0.2",
-        "registration_port": 3004,
         "registration_protocol": "mtls",
         "registration_cert_file": str(certs_dir / "client" / "test-server.crt"),
         "registration_key_file": str(certs_dir / "client" / "test-server.key"),
@@ -71,7 +93,10 @@ def _default_template(certs_dir: Path) -> dict[str, Any]:
 
 
 def _env_overlay() -> dict[str, Any]:
-    """Build overlay from environment (env-driven generation)."""
+    """
+    Build overlay from environment. Proxy: MCP_PROXY_URL (primary),
+    MCP_PROXY_HOST + MCP_PROXY_PORT (fallback).
+    """
     certs_dir = os.environ.get("CERTS_DIR", "")
     out: dict[str, Any] = {}
     if certs_dir:
@@ -92,13 +117,19 @@ def _env_overlay() -> dict[str, Any]:
             pass
     out["advertised_host"] = os.environ.get("ADVERTISED_HOST") or ""
     out["log_dir"] = os.environ.get("MODEL_WORKSPACE_SERVER_LOG_DIR") or ""
-    out["registration_host"] = os.environ.get("MCP_PROXY_HOST") or ""
-    rport = os.environ.get("MCP_PROXY_PORT")
-    if rport:
-        try:
-            out["registration_port"] = int(rport)
-        except ValueError:
-            pass
+
+    mcp_proxy_url = os.environ.get("MCP_PROXY_URL", "").strip().rstrip("/")
+    if mcp_proxy_url:
+        out["mcp_proxy_url"] = mcp_proxy_url
+    else:
+        out["registration_host"] = os.environ.get("MCP_PROXY_HOST") or ""
+        rport = os.environ.get("MCP_PROXY_PORT")
+        if rport:
+            try:
+                out["registration_port"] = int(rport)
+            except ValueError:
+                pass
+
     out["instance_uuid"] = os.environ.get("REGISTRATION_INSTANCE_UUID") or ""
     out["registration_server_id"] = os.environ.get("REGISTRATION_SERVER_ID") or ""
     return out
@@ -113,7 +144,8 @@ def generate_server_config(settings: dict[str, Any]) -> None:
     runtime identity). Writes to settings["output_path"].
 
     Required keys: output_path, certs_dir (or full cert paths), server_port,
-    advertised_host, log_dir, registration_* (host, port, certs), instance_uuid.
+    advertised_host, log_dir; proxy endpoint: mcp_proxy_url (primary) or
+    registration_host + registration_port (fallback). No hardcoded proxy default.
     """
     out_path = settings.get("output_path")
     if out_path is None:
@@ -144,8 +176,7 @@ def generate_server_config(settings: dict[str, Any]) -> None:
     reg_ca = str(
         settings.get("registration_ca_cert_file") or certs_dir / "ca" / "ca.crt"
     )
-    reg_host = str(settings.get("registration_host", "172.28.0.2"))
-    reg_port = int(settings.get("registration_port", 3004))
+    reg_host, reg_port = _resolve_registration_netloc(settings)
 
     out_path.parent.mkdir(parents=True, exist_ok=True)
     generator = SimpleConfigGenerator()

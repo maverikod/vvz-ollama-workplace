@@ -11,6 +11,8 @@ from pathlib import Path
 import pytest
 
 from model_workspace_server.config_generator import (
+    _default_template,
+    _resolve_registration_netloc,
     generate_server_config,
     merge_settings,
 )
@@ -68,6 +70,7 @@ def test_generate_server_config_writes_ws_ready_config(tmp_path: Path) -> None:
         "server_port": 8016,
         "advertised_host": "test-mws",
         "log_dir": str(tmp_path / "logs"),
+        "mcp_proxy_url": "https://proxy.example.com:3004",
         "transport_type": "ws",
         "fallback_policy": "deny",
     }
@@ -90,6 +93,8 @@ def test_generate_server_config_writes_ws_ready_config(tmp_path: Path) -> None:
     assert mws["limits"].get("max_connections") == 100
     assert mws.get("log_dir") == str(tmp_path / "logs")
     assert "registration" in data
+    assert "proxy.example.com" in data["registration"].get("register_url", "")
+    assert "3004" in data["registration"].get("register_url", "")
 
 
 def test_generate_server_config_requires_output_path() -> None:
@@ -101,5 +106,50 @@ def test_generate_server_config_requires_output_path() -> None:
                 "server_port": 8016,
                 "advertised_host": "x",
                 "log_dir": "/app/logs",
+                "mcp_proxy_url": "https://proxy:3004",
             }
         )
+
+
+def test_default_template_has_no_hardcoded_proxy_ip() -> None:
+    """Default template must not contain hardcoded proxy IP (e.g. 172.28.0.2)."""
+    from pathlib import Path
+
+    t = _default_template(Path("mtls_certificates"))
+    assert "172.28" not in str(t.values())
+    assert t.get("registration_host") is None
+    assert t.get("registration_port") is None
+
+
+def test_resolve_registration_netloc_uses_mcp_proxy_url(tmp_path: Path) -> None:
+    """Registration host/port are derived from mcp_proxy_url when set."""
+    host, port = _resolve_registration_netloc(
+        {"mcp_proxy_url": "https://proxy.example.com:3004"}
+    )
+    assert host == "proxy.example.com"
+    assert port == 3004
+
+    host2, port2 = _resolve_registration_netloc({"mcp_proxy_url": "https://other:443"})
+    assert host2 == "other"
+    assert port2 == 443
+
+
+def test_resolve_registration_netloc_fallback_host_port() -> None:
+    """When mcp_proxy_url is missing, registration_host + registration_port used."""
+    host, port = _resolve_registration_netloc(
+        {"registration_host": "fallback.host", "registration_port": 3005}
+    )
+    assert host == "fallback.host"
+    assert port == 3005
+
+
+def test_resolve_registration_netloc_requires_proxy_endpoint() -> None:
+    """Raises when neither mcp_proxy_url nor registration_host/port set."""
+    with pytest.raises(ValueError, match="Proxy endpoint required"):
+        _resolve_registration_netloc({})
+    with pytest.raises(ValueError, match="Proxy endpoint required"):
+        _resolve_registration_netloc({"registration_host": "only"})
+    with pytest.raises(ValueError, match="Invalid mcp_proxy_url"):
+        _resolve_registration_netloc({"mcp_proxy_url": "https://"})
+    with pytest.raises(ValueError, match="Invalid mcp_proxy_url"):
+        _resolve_registration_netloc({"mcp_proxy_url": "no-scheme"})
