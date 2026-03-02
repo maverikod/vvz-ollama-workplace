@@ -33,6 +33,11 @@ database-client-config-cli = "database_client.config_cli:main"
 [tool.setuptools.packages.find]
 where = ["src"]
 
+[tool.client-packaging]
+root_publishable = false
+model_workspace_client_project = "src/model_workspace_client/pyproject.toml"
+database_client_project = "src/database_client/pyproject.toml"
+
 [tool.black]
 line-length = 88
 # Align with flake8 (max-line-length = 88). Run: black src tests

@@ -1,0 +1,20 @@
+[build-system]
+requires = ["setuptools>=61", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ollama-model-database-client"
+version = "0.1.0"
+description = "Database client package for Ollama workstation."
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "mcp-proxy-adapter",
+]
+
+[project.scripts]
+ollama-model-database-client-config-cli = "database_client.config_cli:main"
+
+[tool.setuptools]
+packages = ["database_client"]
+package-dir = { "database_client" = "." }
