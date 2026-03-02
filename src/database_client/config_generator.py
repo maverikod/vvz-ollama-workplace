@@ -1,11 +1,11 @@
 """
 Generate DB client config with endpoint/auth/TLS/retry configuration.
 
-Builds on adapter config contract: generates client config with client (TLS),
-server_validation, auth, and database_client section (base_url, certs, retries,
-timeouts, observability). Single adapter config format, consumable by
-standalone database_client package. Contract compatible with database server
-config schema (mTLS, same top-level sections).
+Builds on adapter base generator primitives (SimpleConfigGenerator): generates
+base adapter config first, then overlays client section (TLS) and
+database_client section (base_url, certs, retries, timeouts, observability).
+Single adapter config format, consumable by standalone database_client package.
+Contract compatible with database server config schema (mTLS).
 
 Author: Vasiliy Zdanovskiy
 email: vasilyvz@gmail.com
@@ -13,8 +13,14 @@ email: vasilyvz@gmail.com
 
 import json
 import os
+import uuid
 from pathlib import Path
 from typing import Any
+from urllib.parse import urlparse
+
+from mcp_proxy_adapter.core.config.simple_config_generator import (
+    SimpleConfigGenerator,
+)
 
 
 def _default_client_template(certs_dir: Path) -> dict[str, Any]:
@@ -102,16 +108,24 @@ def merge_settings(
     return out
 
 
+def _host_port_from_base_url(base_url: str) -> tuple[str, int]:
+    """Parse base_url (https://host:port) to (host, port) for adapter params."""
+    parsed = urlparse(base_url if "://" in base_url else "https://" + base_url)
+    scheme = (parsed.scheme or "https").lower()
+    host = parsed.hostname or "database-server"
+    port = parsed.port
+    if port is not None:
+        return (host, port)
+    return (host, 443 if scheme == "https" else 80)
+
+
 def generate_client_config(settings: dict[str, Any]) -> None:
     """
-    Generate adapter-compatible client config for database server.
+    Generate adapter-compatible client config using adapter base generator.
 
-    Writes JSON to settings["output_path"] with:
-    - client: enabled, protocol mtls, ssl (cert, key, ca)
-    - server_validation: disabled placeholder (adapter contract)
-    - auth: placeholder (adapter contract)
-    - database_client: base_url, auth/TLS paths, retries, timeouts,
-      observability (log_level, metrics_enabled).
+    Uses SimpleConfigGenerator to produce base adapter config, then overlays
+    client section (TLS) and database_client section (base_url, certs, retries,
+    timeouts, observability). Single adapter config format.
 
     Required keys: output_path, certs_dir (or client_cert_file, client_key_file,
     ca_cert_file), base_url.
@@ -134,6 +148,16 @@ def generate_client_config(settings: dict[str, Any]) -> None:
         settings.get("client_key_file") or certs_dir / "client" / "chunk-writer.key"
     )
     ca_crt = str(settings.get("ca_cert_file") or certs_dir / "ca" / "ca.crt")
+    server_cert = str(
+        settings.get("server_cert_file") or certs_dir / "server" / "chunk-retriever.crt"
+    )
+    server_key = str(
+        settings.get("server_key_file") or certs_dir / "server" / "chunk-retriever.key"
+    )
+
+    reg_host, reg_port = _host_port_from_base_url(base_url)
+    instance_uuid = settings.get("instance_uuid") or str(uuid.uuid4())
+    server_id = str(settings.get("registration_server_id") or "database-client")
 
     connect_timeout = int(settings.get("connect_timeout_seconds", 30))
     request_timeout = int(settings.get("request_timeout_seconds", 120))
@@ -144,55 +168,54 @@ def generate_client_config(settings: dict[str, Any]) -> None:
 
     out_path.parent.mkdir(parents=True, exist_ok=True)
 
-    data: dict[str, Any] = {
-        "client": {
-            "enabled": True,
-            "protocol": "mtls",
-            "ssl": {
-                "cert": client_cert,
-                "key": client_key,
-                "ca": ca_crt,
-                "crl": None,
-                "dnscheck": False,
-                "check_hostname": None,
-            },
-        },
-        "server_validation": {
-            "enabled": False,
-            "protocol": "http",
-            "ssl": None,
-            "timeout": 10,
-            "use_token": False,
-            "use_roles": False,
-            "tokens": {},
-            "roles": {},
-            "auth_header": "X-API-Key",
-            "roles_header": "X-Roles",
-            "health_path": "/health",
-            "check_hostname": False,
-        },
-        "auth": {
-            "use_token": False,
-            "use_roles": False,
-            "tokens": {},
-            "roles": {},
-        },
-        "database_client": {
-            "base_url": base_url,
-            "client_cert_file": client_cert,
-            "client_key_file": client_key,
-            "ca_cert_file": ca_crt,
-            "connect_timeout_seconds": connect_timeout,
-            "request_timeout_seconds": request_timeout,
-            "retry_max_attempts": retry_max,
-            "retry_backoff_seconds": retry_backoff,
-            "observability": {
-                "log_level": log_level,
-                "metrics_enabled": metrics_enabled,
-            },
+    generator = SimpleConfigGenerator()
+    generator.generate(
+        protocol="mtls",
+        with_proxy=True,
+        out_path=str(out_path),
+        server_host="0.0.0.0",
+        server_port=reg_port,
+        server_cert_file=server_cert,
+        server_key_file=server_key,
+        server_ca_cert_file=ca_crt,
+        registration_host=reg_host,
+        registration_port=reg_port,
+        registration_protocol="mtls",
+        registration_cert_file=client_cert,
+        registration_key_file=client_key,
+        registration_ca_cert_file=ca_crt,
+        registration_server_id=server_id,
+        registration_server_name="Database Client",
+        instance_uuid=instance_uuid,
+    )
+
+    data = json.loads(out_path.read_text(encoding="utf-8"))
+    data["client"] = {
+        "enabled": True,
+        "protocol": "mtls",
+        "ssl": {
+            "cert": client_cert,
+            "key": client_key,
+            "ca": ca_crt,
+            "crl": None,
+            "dnscheck": False,
+            "check_hostname": None,
         },
     }
-
+    data["database_client"] = {
+        "base_url": base_url,
+        "client_cert_file": client_cert,
+        "client_key_file": client_key,
+        "ca_cert_file": ca_crt,
+        "connect_timeout_seconds": connect_timeout,
+        "request_timeout_seconds": request_timeout,
+        "retry_max_attempts": retry_max,
+        "retry_backoff_seconds": retry_backoff,
+        "observability": {
+            "log_level": log_level,
+            "metrics_enabled": metrics_enabled,
+        },
+    }
     out_path.write_text(
         json.dumps(data, indent=2, ensure_ascii=False), encoding="utf-8"
     )
