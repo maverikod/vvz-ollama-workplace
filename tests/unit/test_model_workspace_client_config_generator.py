@@ -17,11 +17,13 @@ from model_workspace_client.config_generator import (
 
 
 def _make_certs_dir(tmp_path: Path) -> Path:
-    """Create minimal cert dir structure (client/ca) with placeholder files."""
+    """Create minimal cert dir structure (server/client/ca) with placeholder files."""
     certs = tmp_path / "certs"
-    for sub in ("client", "ca"):
+    for sub in ("server", "client", "ca"):
         (certs / sub).mkdir(parents=True)
     for name in (
+        "server/test-server.crt",
+        "server/test-server.key",
         "client/mcp-proxy.crt",
         "client/mcp-proxy.key",
         "ca/ca.crt",
@@ -101,3 +103,35 @@ def test_generate_client_config_requires_ws_endpoint(tmp_path: Path) -> None:
                 "ws_endpoint": "",
             }
         )
+
+
+def test_generate_client_config_uses_adapter_base_generator(tmp_path: Path) -> None:
+    """
+    Config is built on adapter base: base structure comes from SimpleConfigGenerator.
+
+    Asserts presence of top-level sections and key fields that only the adapter
+    base generator produces (server, registration, server_validation, auth,
+    queue_manager, transport). Overlay sections client and model_workspace_client
+    are asserted in test_generate_client_config_writes_consumable_config.
+    """
+    certs = _make_certs_dir(tmp_path)
+    out_file = tmp_path / "model_workspace_client_config.json"
+    generate_client_config(
+        {
+            "output_path": out_file,
+            "certs_dir": str(certs),
+            "ws_endpoint": "wss://model-workspace-server:8016",
+        }
+    )
+    data = json.loads(out_file.read_text(encoding="utf-8"))
+    assert "server" in data, "adapter base produces server section"
+    assert "host" in data["server"] or "port" in data["server"]
+    assert "ssl" in data["server"]
+    assert "registration" in data, "adapter base produces registration section"
+    assert "heartbeat" in data["registration"] or "register_url" in data["registration"]
+    assert "ssl" in data["registration"]
+    assert "server_validation" in data, "adapter base produces server_validation"
+    assert "auth" in data, "adapter base produces auth section"
+    assert "queue_manager" in data, "adapter base produces queue_manager section"
+    assert "client" in data, "overlay: client section"
+    assert "model_workspace_client" in data, "overlay: model_workspace_client section"
