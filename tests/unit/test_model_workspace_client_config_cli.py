@@ -5,6 +5,7 @@ Author: Vasiliy Zdanovskiy
 email: vasilyvz@gmail.com
 """
 
+import argparse
 import json
 import sys
 from pathlib import Path
@@ -55,12 +56,9 @@ def test_cli_help() -> None:
 
 def test_cmd_validate_missing_file(capsys: pytest.CaptureFixture[str]) -> None:
     """validate with missing config file returns EXIT_VALIDATION_ERROR."""
-
-    class Args:
-        config = "/nonexistent_config_12345.json"
-        quiet = False
-
-    code = _cmd_validate(Args())
+    code = _cmd_validate(
+        argparse.Namespace(config="/nonexistent_config_12345.json", quiet=False)
+    )
     assert code == EXIT_VALIDATION_ERROR
     out, err = capsys.readouterr()
     assert "not found" in err or "nonexistent" in err.lower()
@@ -79,12 +77,7 @@ def test_cmd_validate_invalid_client_section(
             }
         )
     )
-
-    class Args:
-        config = str(config_file)
-        quiet = False
-
-    code = _cmd_validate(Args())
+    code = _cmd_validate(argparse.Namespace(config=str(config_file), quiet=False))
     assert code == EXIT_VALIDATION_ERROR
     _, err = capsys.readouterr()
     assert "wss" in err or "required" in err or "client" in err.lower()
@@ -92,11 +85,7 @@ def test_cmd_validate_invalid_client_section(
 
 def test_cmd_show_schema_returns_valid_json(capsys: pytest.CaptureFixture[str]) -> None:
     """show-schema prints valid JSON with expected keys."""
-
-    class Args:
-        format = "json"
-
-    code = _cmd_show_schema(Args())
+    code = _cmd_show_schema(argparse.Namespace(format="json"))
     assert code == EXIT_OK
     out, _ = capsys.readouterr()
     schema = json.loads(out)
@@ -118,19 +107,18 @@ def test_cmd_generate_creates_file(tmp_path: Path) -> None:
     """generate writes config file and returns EXIT_OK."""
     certs = _make_certs_dir(tmp_path)
     out_file = tmp_path / "out_config.json"
-
-    class Args:
-        output = str(out_file)
-        certs_dir = str(certs)
-        ws_endpoint = "wss://test:8016"
-        connect_timeout = 30
-        request_timeout = 120
-        retry_max = 3
-        retry_backoff = 2.0
-        log_level = "INFO"
-        metrics_enabled = False
-
-    code = _cmd_generate(Args())
+    args = argparse.Namespace(
+        output=str(out_file),
+        certs_dir=str(certs),
+        ws_endpoint="wss://test:8016",
+        connect_timeout=30,
+        request_timeout=120,
+        retry_max=3,
+        retry_backoff=2.0,
+        log_level="INFO",
+        metrics_enabled=False,
+    )
+    code = _cmd_generate(args)
     assert code == EXIT_OK
     assert out_file.is_file()
     data = json.loads(out_file.read_text(encoding="utf-8"))
@@ -142,15 +130,8 @@ def test_cmd_generate_creates_file(tmp_path: Path) -> None:
 def test_cmd_test_connection_validates_first(tmp_path: Path) -> None:
     """test-connection runs validator first; invalid config -> EXIT_VALIDATION_ERROR."""
     config_file = tmp_path / "bad.json"
-    config_file.write_text(
-        json.dumps({"model_workspace_client": {}})
-    )  # missing ws_endpoint
-
-    class Args:
-        config = str(config_file)
-        quiet = True
-
-    code = _cmd_test_connection(Args())
+    config_file.write_text(json.dumps({"model_workspace_client": {}}))
+    code = _cmd_test_connection(argparse.Namespace(config=str(config_file), quiet=True))
     assert code == EXIT_VALIDATION_ERROR
 
 
@@ -173,12 +154,7 @@ def test_cmd_test_connection_connection_refused(
     from model_workspace_client import config_cli
 
     monkeypatch.setattr(config_cli, "validate_config", lambda _: None)
-
-    class Args:
-        config = str(config_file)
-        quiet = True
-
-    code = _cmd_test_connection(Args())
+    code = _cmd_test_connection(argparse.Namespace(config=str(config_file), quiet=True))
     assert code == EXIT_CONNECTION_ERROR
 
 
