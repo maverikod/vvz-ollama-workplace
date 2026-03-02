@@ -989,7 +989,7 @@ functions:
     - errors
     docstring: Append validation errors for client section (TLS coherence with adapter).
     file: /home/vasilyvz/projects/ollama/src/database_client/config_validator.py
-    line: 146
+    line: 142
     name: _validate_client_section
   /home/vasilyvz/projects/ollama/src/database_client/config_validator.py:_validate_database_client_section:
     args:
@@ -1018,7 +1018,7 @@ functions:
 
       message). Caller must not proceed with connection.'
     file: /home/vasilyvz/projects/ollama/src/database_client/config_validator.py
-    line: 211
+    line: 204
     name: validate_config
   /home/vasilyvz/projects/ollama/src/database_client/config_validator.py:validate_config_dict:
     args:
@@ -1032,7 +1032,7 @@ functions:
 
       contract (mTLS). Returns list of (field_path, message); empty if valid.'
     file: /home/vasilyvz/projects/ollama/src/database_client/config_validator.py
-    line: 170
+    line: 164
     name: validate_config_dict
   /home/vasilyvz/projects/ollama/src/database_server/config_generator.py:_default_template:
     args:
@@ -1373,7 +1373,7 @@ functions:
     docstring: 'Validate model_workspace_server section: runtime_identity, limits,
       log_dir.'
     file: /home/vasilyvz/projects/ollama/src/model_workspace_server/config_validator.py
-    line: 93
+    line: 98
     name: _validate_model_workspace_server_section
   /home/vasilyvz/projects/ollama/src/model_workspace_server/config_validator.py:_validate_server_section:
     args:
@@ -1381,7 +1381,7 @@ functions:
     docstring: 'Validate server section: log_dir, advertised_host/servername, port
       bounds.'
     file: /home/vasilyvz/projects/ollama/src/model_workspace_server/config_validator.py
-    line: 225
+    line: 232
     name: _validate_server_section
   /home/vasilyvz/projects/ollama/src/model_workspace_server/config_validator.py:_validate_transport:
     args:
@@ -1401,7 +1401,7 @@ functions:
 
       full validation including adapter base.'
     file: /home/vasilyvz/projects/ollama/src/model_workspace_server/config_validator.py
-    line: 269
+    line: 278
     name: validate_config_dict
   /home/vasilyvz/projects/ollama/src/model_workspace_server/config_validator.py:validate_config_file:
     args:
@@ -1420,7 +1420,7 @@ functions:
 
       and stop startup.'
     file: /home/vasilyvz/projects/ollama/src/model_workspace_server/config_validator.py
-    line: 283
+    line: 292
     name: validate_config_file
   /home/vasilyvz/projects/ollama/src/ollama_workstation/__init__.py:_setup_file_logging:
     args: []
@@ -3389,40 +3389,40 @@ functions:
     - tmp_path
     docstring: Create minimal cert dir structure (client/ca) with placeholder files.
     file: /home/vasilyvz/projects/ollama/tests/unit/test_database_client_config_generator.py
-    line: 21
+    line: 22
     name: _make_certs_dir
   ? /home/vasilyvz/projects/ollama/tests/unit/test_database_client_config_generator.py:test_default_client_template_has_expected_keys
   : args: []
     docstring: Default template contains endpoint, certs, retry, timeouts.
     file: /home/vasilyvz/projects/ollama/tests/unit/test_database_client_config_generator.py
-    line: 61
+    line: 62
     name: test_default_client_template_has_expected_keys
   ? /home/vasilyvz/projects/ollama/tests/unit/test_database_client_config_generator.py:test_generate_client_config_adapter_contract_sections
   : args:
     - tmp_path
     docstring: 'Config has adapter sections: client, server_validation, auth, database_client.'
     file: /home/vasilyvz/projects/ollama/tests/unit/test_database_client_config_generator.py
-    line: 168
+    line: 173
     name: test_generate_client_config_adapter_contract_sections
   ? /home/vasilyvz/projects/ollama/tests/unit/test_database_client_config_generator.py:test_generate_client_config_requires_base_url
   : args:
     - tmp_path
     docstring: generate_client_config raises when base_url is missing or empty.
     file: /home/vasilyvz/projects/ollama/tests/unit/test_database_client_config_generator.py
-    line: 154
+    line: 159
     name: test_generate_client_config_requires_base_url
   ? /home/vasilyvz/projects/ollama/tests/unit/test_database_client_config_generator.py:test_generate_client_config_requires_output_path
   : args: []
     docstring: generate_client_config raises when output_path is missing.
     file: /home/vasilyvz/projects/ollama/tests/unit/test_database_client_config_generator.py
-    line: 143
+    line: 148
     name: test_generate_client_config_requires_output_path
   ? /home/vasilyvz/projects/ollama/tests/unit/test_database_client_config_generator.py:test_generate_client_config_writes_consumable_config
   : args:
     - tmp_path
     docstring: Generated config is directly usable by database_client package.
     file: /home/vasilyvz/projects/ollama/tests/unit/test_database_client_config_generator.py
-    line: 110
+    line: 115
     name: test_generate_client_config_writes_consumable_config
   ? /home/vasilyvz/projects/ollama/tests/unit/test_database_client_config_generator.py:test_generate_from_merged_default_output_path
   : args:
@@ -3430,32 +3430,32 @@ functions:
     - monkeypatch
     docstring: When output_path not set, default path is config/database_client_config.json.
     file: /home/vasilyvz/projects/ollama/tests/unit/test_database_client_config_generator.py
-    line: 95
+    line: 98
     name: test_generate_from_merged_default_output_path
   /home/vasilyvz/projects/ollama/tests/unit/test_database_client_config_generator.py:test_generate_from_merged_writes_config:
     args:
     - tmp_path
     docstring: generate_from_merged produces valid config with args overlay.
     file: /home/vasilyvz/projects/ollama/tests/unit/test_database_client_config_generator.py
-    line: 78
+    line: 79
     name: test_generate_from_merged_writes_config
   ? /home/vasilyvz/projects/ollama/tests/unit/test_database_client_config_generator.py:test_merge_settings_args_override_env_override_template
   : args: []
     docstring: 'Later overlay wins: template < env < args.'
     file: /home/vasilyvz/projects/ollama/tests/unit/test_database_client_config_generator.py
-    line: 42
+    line: 43
     name: test_merge_settings_args_override_env_override_template
   ? /home/vasilyvz/projects/ollama/tests/unit/test_database_client_config_generator.py:test_merge_settings_skips_empty_overlay_values
   : args: []
     docstring: Empty string and None in overlay do not overwrite template.
     file: /home/vasilyvz/projects/ollama/tests/unit/test_database_client_config_generator.py
-    line: 52
+    line: 53
     name: test_merge_settings_skips_empty_overlay_values
   /home/vasilyvz/projects/ollama/tests/unit/test_database_client_config_generator.py:test_merge_settings_template_only:
     args: []
     docstring: merge_settings returns template when no overlays.
     file: /home/vasilyvz/projects/ollama/tests/unit/test_database_client_config_generator.py
-    line: 35
+    line: 36
     name: test_merge_settings_template_only
   /home/vasilyvz/projects/ollama/tests/unit/test_database_client_config_validator.py:_make_certs_dir:
     args:
@@ -3476,13 +3476,13 @@ functions:
     args: []
     docstring: DatabaseClientConfigError.messages() returns list of strings.
     file: /home/vasilyvz/projects/ollama/tests/unit/test_database_client_config_validator.py
-    line: 203
+    line: 202
     name: test_error_messages
   ? /home/vasilyvz/projects/ollama/tests/unit/test_database_client_config_validator.py:test_validate_config_dict_client_mtls_missing_ssl
   : args: []
     docstring: client enabled mtls without ssl section yields errors.
     file: /home/vasilyvz/projects/ollama/tests/unit/test_database_client_config_validator.py
-    line: 148
+    line: 147
     name: test_validate_config_dict_client_mtls_missing_ssl
   ? /home/vasilyvz/projects/ollama/tests/unit/test_database_client_config_validator.py:test_validate_config_dict_empty_base_url
   : args: []
@@ -3538,28 +3538,29 @@ functions:
     args: []
     docstring: validate_config raises on missing file.
     file: /home/vasilyvz/projects/ollama/tests/unit/test_database_client_config_validator.py
-    line: 158
+    line: 157
     name: test_validate_config_file_not_found
   /home/vasilyvz/projects/ollama/tests/unit/test_database_client_config_validator.py:test_validate_config_invalid_json:
     args:
     - tmp_path
     docstring: validate_config raises on invalid JSON.
     file: /home/vasilyvz/projects/ollama/tests/unit/test_database_client_config_validator.py
-    line: 166
+    line: 165
     name: test_validate_config_invalid_json
   ? /home/vasilyvz/projects/ollama/tests/unit/test_database_client_config_validator.py:test_validate_config_missing_section_raises
   : args:
     - tmp_path
     docstring: validate_config raises when database_client missing.
     file: /home/vasilyvz/projects/ollama/tests/unit/test_database_client_config_validator.py
-    line: 191
+    line: 192
     name: test_validate_config_missing_section_raises
   /home/vasilyvz/projects/ollama/tests/unit/test_database_client_config_validator.py:test_validate_config_valid_file:
     args:
     - tmp_path
-    docstring: validate_config does not raise on valid client config file (generated).
+    docstring: Generated client config passes validate_config_dict (client-specific
+      rules).
     file: /home/vasilyvz/projects/ollama/tests/unit/test_database_client_config_validator.py
-    line: 175
+    line: 174
     name: test_validate_config_valid_file
   /home/vasilyvz/projects/ollama/tests/unit/test_database_server_config_generator.py:_make_certs_dir:
     args:
@@ -4311,7 +4312,7 @@ functions:
   : args: []
     docstring: Empty dict returns errors for all required sections.
     file: /home/vasilyvz/projects/ollama/tests/unit/test_model_workspace_server_config_validator.py
-    line: 202
+    line: 204
     name: test_validate_config_dict_empty_root
   ? /home/vasilyvz/projects/ollama/tests/unit/test_model_workspace_server_config_validator.py:test_validate_config_dict_fallback_policy_invalid
   : args: []
@@ -4389,7 +4390,7 @@ functions:
   : args: []
     docstring: transport.verify_client must be boolean.
     file: /home/vasilyvz/projects/ollama/tests/unit/test_model_workspace_server_config_validator.py
-    line: 210
+    line: 212
     name: test_validate_config_dict_verify_client_non_bool
   ? /home/vasilyvz/projects/ollama/tests/unit/test_model_workspace_server_config_validator.py:test_validate_config_file_invalid_json
   : args:
@@ -5778,6 +5779,24 @@ imports:
     line: 14
     name: sys
     type: import
+  /home/vasilyvz/projects/ollama/src/model_workspace_client/__init__.py:ModelWorkspaceClientConfigError:
+    file: /home/vasilyvz/projects/ollama/src/model_workspace_client/__init__.py
+    line: 10
+    module: model_workspace_client.config_validator
+    name: ModelWorkspaceClientConfigError
+    type: import_from
+  /home/vasilyvz/projects/ollama/src/model_workspace_client/__init__.py:validate_config:
+    file: /home/vasilyvz/projects/ollama/src/model_workspace_client/__init__.py
+    line: 10
+    module: model_workspace_client.config_validator
+    name: validate_config
+    type: import_from
+  /home/vasilyvz/projects/ollama/src/model_workspace_client/__init__.py:validate_config_dict:
+    file: /home/vasilyvz/projects/ollama/src/model_workspace_client/__init__.py
+    line: 10
+    module: model_workspace_client.config_validator
+    name: validate_config_dict
+    type: import_from
   /home/vasilyvz/projects/ollama/src/model_workspace_client/config_generator.py:Any:
     file: /home/vasilyvz/projects/ollama/src/model_workspace_client/config_generator.py
     line: 17
@@ -5899,7 +5918,7 @@ imports:
     type: import_from
   /home/vasilyvz/projects/ollama/src/model_workspace_server/config_validator.py:SimpleConfig:
     file: /home/vasilyvz/projects/ollama/src/model_workspace_server/config_validator.py
-    line: 313
+    line: 322
     module: mcp_proxy_adapter.core.config.simple_config
     name: SimpleConfig
     type: import_from
@@ -9351,6 +9370,12 @@ imports:
     line: 8
     name: sys
     type: import
+  /home/vasilyvz/projects/ollama/tests/unit/test_database_client_config_generator.py:Any:
+    file: /home/vasilyvz/projects/ollama/tests/unit/test_database_client_config_generator.py
+    line: 10
+    module: typing
+    name: Any
+    type: import_from
   /home/vasilyvz/projects/ollama/tests/unit/test_database_client_config_generator.py:Path:
     file: /home/vasilyvz/projects/ollama/tests/unit/test_database_client_config_generator.py
     line: 9
@@ -9359,19 +9384,19 @@ imports:
     type: import_from
   /home/vasilyvz/projects/ollama/tests/unit/test_database_client_config_generator.py:_default_client_template:
     file: /home/vasilyvz/projects/ollama/tests/unit/test_database_client_config_generator.py
-    line: 13
+    line: 14
     module: database_client.config_generator
     name: _default_client_template
     type: import_from
   /home/vasilyvz/projects/ollama/tests/unit/test_database_client_config_generator.py:generate_client_config:
     file: /home/vasilyvz/projects/ollama/tests/unit/test_database_client_config_generator.py
-    line: 13
+    line: 14
     module: database_client.config_generator
     name: generate_client_config
     type: import_from
   /home/vasilyvz/projects/ollama/tests/unit/test_database_client_config_generator.py:generate_from_merged:
     file: /home/vasilyvz/projects/ollama/tests/unit/test_database_client_config_generator.py
-    line: 13
+    line: 14
     module: database_client.config_generator
     name: generate_from_merged
     type: import_from
@@ -9382,13 +9407,13 @@ imports:
     type: import
   /home/vasilyvz/projects/ollama/tests/unit/test_database_client_config_generator.py:merge_settings:
     file: /home/vasilyvz/projects/ollama/tests/unit/test_database_client_config_generator.py
-    line: 13
+    line: 14
     module: database_client.config_generator
     name: merge_settings
     type: import_from
   /home/vasilyvz/projects/ollama/tests/unit/test_database_client_config_generator.py:pytest:
     file: /home/vasilyvz/projects/ollama/tests/unit/test_database_client_config_generator.py
-    line: 11
+    line: 12
     name: pytest
     type: import
   /home/vasilyvz/projects/ollama/tests/unit/test_database_client_config_validator.py:DatabaseClientConfigError:
@@ -9405,7 +9430,7 @@ imports:
     type: import_from
   /home/vasilyvz/projects/ollama/tests/unit/test_database_client_config_validator.py:generate_client_config:
     file: /home/vasilyvz/projects/ollama/tests/unit/test_database_client_config_validator.py
-    line: 177
+    line: 176
     module: database_client.config_generator
     name: generate_client_config
     type: import_from
