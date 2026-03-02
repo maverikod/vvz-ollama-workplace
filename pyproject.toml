@@ -9,10 +9,12 @@ description = "OLLAMA workstation: chat with OLLAMA using MCP Proxy tools"
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
-    "mcp-proxy-adapter",
+    "embed-client>=3.1.7.24",
     "httpx",
+    "mcp-proxy-adapter",
     "PyYAML",
     "redis",
+    "svo-client>=2.2.15",
 ]
 
 [project.optional-dependencies]
@@ -23,6 +25,10 @@ dev = [
     "flake8",
     "mypy",
 ]
+
+[project.scripts]
+config-cli = "ollama_workstation.config_cli:main"
+database-client-config-cli = "database_client.config_cli:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]
@@ -40,8 +46,10 @@ ignore_missing_imports = true
 
 [tool.flake8]
 max-line-length = 88
+extend-ignore = ["E203"]
 # Align with black (line-length = 88). Run: flake8 src tests
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
 testpaths = ["tests"]
+markers = ["integration: run against real proxy/servers (deselect with -m 'not integration')"]
