@@ -3,6 +3,7 @@ AddCommandToSessionCommand:
 - get_result_schema
 - get_error_schema
 - get_metadata
+Args: []
 CallStack:
 - __init__
 - push
