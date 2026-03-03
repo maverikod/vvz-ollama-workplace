@@ -3722,7 +3722,7 @@ functions:
 
       Returns the appropriate error; caller may re-raise.'
     file: src/ollama_workstation/ollama_provider_client.py
-    line: 247
+    line: 245
     name: map_error
   src/ollama_workstation/ollama_provider_client.py:normalize_response:
     args:
@@ -6353,6 +6353,134 @@ functions:
     file: tests/unit/test_ollama_chat_command.py
     line: 18
     name: test_schema_has_messages_required
+  tests/unit/test_ollama_provider_client.py:_make_http_status_error:
+    args:
+    - status_code
+    docstring: Build HTTPStatusError with given status code.
+    file: tests/unit/test_ollama_provider_client.py
+    line: 117
+    name: _make_http_status_error
+  tests/unit/test_ollama_provider_client.py:_valid_config:
+    args:
+    - base_url
+    - timeout
+    docstring: Minimal valid Ollama provider section.
+    file: tests/unit/test_ollama_provider_client.py
+    line: 35
+    name: _valid_config
+  tests/unit/test_ollama_provider_client.py:test_embed_when_supports_embeddings_false_raises_no_http:
+    args: []
+    docstring: 'supports_embeddings=False: embed raises CapabilityNotSupportedError,
+      no HTTP.'
+    file: tests/unit/test_ollama_provider_client.py
+    line: 96
+    name: test_embed_when_supports_embeddings_false_raises_no_http
+  tests/unit/test_ollama_provider_client.py:test_map_error_401_returns_auth_error:
+    args: []
+    docstring: map_error(HTTPStatusError 401) returns AuthError.
+    file: tests/unit/test_ollama_provider_client.py
+    line: 125
+    name: test_map_error_401_returns_auth_error
+  tests/unit/test_ollama_provider_client.py:test_map_error_403_returns_auth_error:
+    args: []
+    docstring: map_error(HTTPStatusError 403) returns AuthError.
+    file: tests/unit/test_ollama_provider_client.py
+    line: 133
+    name: test_map_error_403_returns_auth_error
+  tests/unit/test_ollama_provider_client.py:test_map_error_429_returns_rate_limit_error:
+    args: []
+    docstring: map_error(HTTPStatusError 429) returns RateLimitError.
+    file: tests/unit/test_ollama_provider_client.py
+    line: 141
+    name: test_map_error_429_returns_rate_limit_error
+  tests/unit/test_ollama_provider_client.py:test_map_error_already_provider_error_returns_same:
+    args: []
+    docstring: map_error(ProviderError) returns the same instance.
+    file: tests/unit/test_ollama_provider_client.py
+    line: 173
+    name: test_map_error_already_provider_error_returns_same
+  tests/unit/test_ollama_provider_client.py:test_map_error_connect_error_returns_transport_error:
+    args: []
+    docstring: map_error(httpx.ConnectError) returns TransportError.
+    file: tests/unit/test_ollama_provider_client.py
+    line: 157
+    name: test_map_error_connect_error_returns_transport_error
+  tests/unit/test_ollama_provider_client.py:test_map_error_network_error_returns_transport_error:
+    args: []
+    docstring: map_error(httpx.NetworkError) returns TransportError.
+    file: tests/unit/test_ollama_provider_client.py
+    line: 165
+    name: test_map_error_network_error_returns_transport_error
+  tests/unit/test_ollama_provider_client.py:test_map_error_timeout_returns_timeout_error:
+    args: []
+    docstring: map_error(httpx.TimeoutException) returns TimeoutError (provider).
+    file: tests/unit/test_ollama_provider_client.py
+    line: 149
+    name: test_map_error_timeout_returns_timeout_error
+  tests/unit/test_ollama_provider_client.py:test_normalize_response_missing_message_raises:
+    args: []
+    docstring: normalize_response() raises ProviderProtocolError when 'message' is
+      missing.
+    file: tests/unit/test_ollama_provider_client.py
+    line: 198
+    name: test_normalize_response_missing_message_raises
+  tests/unit/test_ollama_provider_client.py:test_normalize_response_not_dict_raises:
+    args: []
+    docstring: normalize_response() raises ProviderProtocolError when raw is not a
+      dict.
+    file: tests/unit/test_ollama_provider_client.py
+    line: 207
+    name: test_normalize_response_not_dict_raises
+  tests/unit/test_ollama_provider_client.py:test_normalize_response_valid_chat:
+    args: []
+    docstring: normalize_response() returns message and token counts for valid chat.
+    file: tests/unit/test_ollama_provider_client.py
+    line: 184
+    name: test_normalize_response_valid_chat
+  tests/unit/test_ollama_provider_client.py:test_supports_embeddings_default_true:
+    args: []
+    docstring: supports_embeddings is True when not set in features.
+    file: tests/unit/test_ollama_provider_client.py
+    line: 229
+    name: test_supports_embeddings_default_true
+  tests/unit/test_ollama_provider_client.py:test_supports_stream_default_true:
+    args: []
+    docstring: supports_stream is True by default.
+    file: tests/unit/test_ollama_provider_client.py
+    line: 223
+    name: test_supports_stream_default_true
+  tests/unit/test_ollama_provider_client.py:test_supports_tools_true:
+    args: []
+    docstring: OllamaProviderClient.supports_tools() returns True.
+    file: tests/unit/test_ollama_provider_client.py
+    line: 217
+    name: test_supports_tools_true
+  tests/unit/test_ollama_provider_client.py:test_validate_config_empty_base_url_raises:
+    args: []
+    docstring: validate_config() raises ValidationError when transport.base_url is
+      empty.
+    file: tests/unit/test_ollama_provider_client.py
+    line: 50
+    name: test_validate_config_empty_base_url_raises
+  tests/unit/test_ollama_provider_client.py:test_validate_config_missing_base_url_raises:
+    args: []
+    docstring: validate_config() raises ValidationError when transport has no base_url.
+    file: tests/unit/test_ollama_provider_client.py
+    line: 62
+    name: test_validate_config_missing_base_url_raises
+  tests/unit/test_ollama_provider_client.py:test_validate_config_negative_timeout_raises:
+    args: []
+    docstring: validate_config() raises ValidationError when request_timeout_seconds
+      <= 0.
+    file: tests/unit/test_ollama_provider_client.py
+    line: 70
+    name: test_validate_config_negative_timeout_raises
+  tests/unit/test_ollama_provider_client.py:test_validate_config_valid_passes:
+    args: []
+    docstring: validate_config() does not raise when base_url and timeout are valid.
+    file: tests/unit/test_ollama_provider_client.py
+    line: 87
+    name: test_validate_config_valid_passes
   tests/unit/test_ollama_representation.py:test_format_tool_result:
     args: []
     docstring: 'format_tool_result: dict -> JSON string, other -> str.'
@@ -13365,6 +13493,93 @@ imports:
   tests/unit/test_ollama_chat_command.py:sys:
     file: tests/unit/test_ollama_chat_command.py
     line: 9
+    name: sys
+    type: import
+  tests/unit/test_ollama_provider_client.py:Any:
+    file: tests/unit/test_ollama_provider_client.py
+    line: 13
+    module: typing
+    name: Any
+    type: import_from
+  tests/unit/test_ollama_provider_client.py:AuthError:
+    file: tests/unit/test_ollama_provider_client.py
+    line: 24
+    module: ollama_workstation.provider_errors
+    name: AuthError
+    type: import_from
+  tests/unit/test_ollama_provider_client.py:CapabilityNotSupportedError:
+    file: tests/unit/test_ollama_provider_client.py
+    line: 24
+    module: ollama_workstation.provider_errors
+    name: CapabilityNotSupportedError
+    type: import_from
+  tests/unit/test_ollama_provider_client.py:Dict:
+    file: tests/unit/test_ollama_provider_client.py
+    line: 13
+    module: typing
+    name: Dict
+    type: import_from
+  tests/unit/test_ollama_provider_client.py:MagicMock:
+    file: tests/unit/test_ollama_provider_client.py
+    line: 14
+    module: unittest.mock
+    name: MagicMock
+    type: import_from
+  tests/unit/test_ollama_provider_client.py:OllamaProviderClient:
+    file: tests/unit/test_ollama_provider_client.py
+    line: 21
+    module: ollama_workstation.ollama_provider_client
+    name: OllamaProviderClient
+    type: import_from
+  tests/unit/test_ollama_provider_client.py:Path:
+    file: tests/unit/test_ollama_provider_client.py
+    line: 12
+    module: pathlib
+    name: Path
+    type: import_from
+  tests/unit/test_ollama_provider_client.py:ProviderProtocolError:
+    file: tests/unit/test_ollama_provider_client.py
+    line: 24
+    module: ollama_workstation.provider_errors
+    name: ProviderProtocolError
+    type: import_from
+  tests/unit/test_ollama_provider_client.py:RateLimitError:
+    file: tests/unit/test_ollama_provider_client.py
+    line: 24
+    module: ollama_workstation.provider_errors
+    name: RateLimitError
+    type: import_from
+  tests/unit/test_ollama_provider_client.py:TimeoutError:
+    file: tests/unit/test_ollama_provider_client.py
+    line: 24
+    module: ollama_workstation.provider_errors
+    name: TimeoutError
+    type: import_from
+  tests/unit/test_ollama_provider_client.py:TransportError:
+    file: tests/unit/test_ollama_provider_client.py
+    line: 24
+    module: ollama_workstation.provider_errors
+    name: TransportError
+    type: import_from
+  tests/unit/test_ollama_provider_client.py:ValidationError:
+    file: tests/unit/test_ollama_provider_client.py
+    line: 24
+    module: ollama_workstation.provider_errors
+    name: ValidationError
+    type: import_from
+  tests/unit/test_ollama_provider_client.py:httpx:
+    file: tests/unit/test_ollama_provider_client.py
+    line: 16
+    name: httpx
+    type: import
+  tests/unit/test_ollama_provider_client.py:pytest:
+    file: tests/unit/test_ollama_provider_client.py
+    line: 17
+    name: pytest
+    type: import
+  tests/unit/test_ollama_provider_client.py:sys:
+    file: tests/unit/test_ollama_provider_client.py
+    line: 11
     name: sys
     type: import
   tests/unit/test_ollama_representation.py:CommandSchema:

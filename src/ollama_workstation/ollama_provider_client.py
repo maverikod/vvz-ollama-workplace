@@ -235,9 +235,7 @@ class OllamaProviderClient(BaseProviderClient):
             )
         embeddings = raw.get("embeddings")
         if embeddings is None:
-            raise ProviderProtocolError(
-                "Ollama embed response missing 'embeddings'."
-            )
+            raise ProviderProtocolError("Ollama embed response missing 'embeddings'.")
         return {
             "embeddings": embeddings,
             "model": raw.get("model"),
