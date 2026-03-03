@@ -466,6 +466,28 @@ classes:
     - serialize_messages
     - format_tool_result
     name: OllamaRepresentation
+  src/ollama_workstation/provider_client_base.py:BaseProviderClient:
+    bases:
+    - ABC
+    docstring: 'Abstract base for all provider clients.
+
+
+      Workstation communicates with model providers only through this interface.
+
+      Transport, protocol, and auth details are internal to concrete clients.'
+    file: src/ollama_workstation/provider_client_base.py
+    line: 19
+    methods:
+    - supports_stream
+    - supports_tools
+    - supports_embeddings
+    - validate_config
+    - healthcheck
+    - chat
+    - embed
+    - normalize_response
+    - map_error
+    name: BaseProviderClient
   src/ollama_workstation/provider_errors.py:AuthError:
     bases:
     - ProviderError
@@ -757,6 +779,23 @@ classes:
     - serialize_messages
     - format_tool_result
     name: StubRepresentation
+  tests/unit/test_provider_client_base.py:StubProviderClient:
+    bases:
+    - BaseProviderClient
+    docstring: Minimal implementation for testing the base contract.
+    file: tests/unit/test_provider_client_base.py
+    line: 37
+    methods:
+    - supports_stream
+    - supports_tools
+    - supports_embeddings
+    - validate_config
+    - healthcheck
+    - chat
+    - embed
+    - normalize_response
+    - map_error
+    name: StubProviderClient
   tests/unit/test_registration.py:_DummyRegistry:
     bases: []
     docstring: Tiny registry stub for capturing command registration calls.
@@ -2342,7 +2381,7 @@ functions:
     docstring: Add a file handler for ollama_workstation so logs go to a separate
       file.
     file: src/ollama_workstation/__init__.py
-    line: 24
+    line: 25
     name: _setup_file_logging
   src/ollama_workstation/call_stack.py:__init__:
     args:
@@ -3624,26 +3663,192 @@ functions:
     file: src/ollama_workstation/ollama_representation.py
     line: 28
     name: serialize_tools
+  src/ollama_workstation/provider_client_base.py:chat:
+    args:
+    - self
+    - request
+    docstring: 'Send a chat (completion) request to the provider.
+
+
+      Accepts workstation-standard chat request.
+
+      Returns normalized response (use normalize_response internally).
+
+      Must respect timeout/retry rules and use map_error for exceptions.'
+    file: src/ollama_workstation/provider_client_base.py
+    line: 77
+    name: chat
+  src/ollama_workstation/provider_client_base.py:embed:
+    args:
+    - self
+    - request
+    docstring: 'Request embeddings for the given input.
+
+
+      Mandatory for all clients. If supports_embeddings is False,
+
+      must raise CapabilityNotSupportedError without network call.'
+    file: src/ollama_workstation/provider_client_base.py
+    line: 88
+    name: embed
+  src/ollama_workstation/provider_client_base.py:healthcheck:
+    args:
+    - self
+    docstring: 'Check that the provider endpoint is reachable and acceptable.
+
+
+      May perform a lightweight network call.
+
+      Must map provider/transport failures via map_error.
+
+      Returns True if healthy, False otherwise.'
+    file: src/ollama_workstation/provider_client_base.py
+    line: 64
+    name: healthcheck
+  src/ollama_workstation/provider_client_base.py:map_error:
+    args:
+    - self
+    - exception
+    docstring: 'Map a provider or transport exception to a standard error category.
+
+
+      Accepts exception from HTTP client, SDK, or provider API.
+
+      Returns or raises one of: TransportError, AuthError, TimeoutError,
+
+      RateLimitError, ProviderProtocolError, ValidationError,
+
+      CapabilityNotSupportedError. Caller may re-raise the returned error.'
+    file: src/ollama_workstation/provider_client_base.py
+    line: 109
+    name: map_error
+  src/ollama_workstation/provider_client_base.py:normalize_response:
+    args:
+    - self
+    - raw_response
+    docstring: 'Convert provider-specific raw response to workstation-standard shape.
+
+
+      Invalid or unexpected shapes may raise ProviderProtocolError or ValidationError.'
+    file: src/ollama_workstation/provider_client_base.py
+    line: 100
+    name: normalize_response
+  src/ollama_workstation/provider_client_base.py:supports_embeddings:
+    args:
+    - self
+    docstring: 'Whether the client supports embedding requests.
+
+
+      If False, embed() raises CapabilityNotSupportedError.'
+    file: src/ollama_workstation/provider_client_base.py
+    line: 42
+    name: supports_embeddings
+  src/ollama_workstation/provider_client_base.py:supports_stream:
+    args:
+    - self
+    docstring: Whether the client can return streaming chat responses.
+    file: src/ollama_workstation/provider_client_base.py
+    line: 31
+    name: supports_stream
+  src/ollama_workstation/provider_client_base.py:supports_tools:
+    args:
+    - self
+    docstring: Report whether the client supports tool/function calling.
+    file: src/ollama_workstation/provider_client_base.py
+    line: 36
+    name: supports_tools
+  src/ollama_workstation/provider_client_base.py:validate_config:
+    args:
+    - self
+    docstring: 'Validate client configuration before use.
+
+
+      Raises nothing if config is valid.
+
+      Raises ValidationError (or subtype from provider_errors) if invalid.
+
+      MUST NOT perform network I/O.'
+    file: src/ollama_workstation/provider_client_base.py
+    line: 53
+    name: validate_config
+  src/ollama_workstation/provider_client_config_generator.py:generate_full_config_with_provider_clients:
+    args:
+    - provider_clients_section
+    - top_level_keys
+    docstring: 'Build a full config dict that includes the given provider_clients
+      section.
+
+
+      Other top-level keys can be passed in top_level_keys; provider_clients
+
+      will override any key named "provider_clients" there.'
+    file: src/ollama_workstation/provider_client_config_generator.py
+    line: 103
+    name: generate_full_config_with_provider_clients
+  src/ollama_workstation/provider_client_config_generator.py:generate_provider_clients_section:
+    args:
+    - default_provider
+    - providers
+    docstring: 'Generate a valid provider_clients section.
+
+
+      If providers is None, uses a single default ollama provider so that
+
+      default_provider exists in providers. If providers is given, it must
+
+      contain default_provider. When validate is True, runs structure
+
+      validation and raises ValueError if invalid.'
+    file: src/ollama_workstation/provider_client_config_generator.py
+    line: 68
+    name: generate_provider_clients_section
+  src/ollama_workstation/provider_client_config_generator.py:generate_sample:
+    args:
+    - default_provider
+    docstring: 'Generate a sample provider_clients section (or full config) with one
+      provider.
+
+
+      Uses default ollama template. When full_config is True, returns a dict
+
+      with a single key "provider_clients" containing the section (suitable
+
+      for merging into a larger config). When full_config is False, returns
+
+      only the provider_clients section dict.'
+    file: src/ollama_workstation/provider_client_config_generator.py
+    line: 118
+    name: generate_sample
+  src/ollama_workstation/provider_client_config_generator.py:get_default_ollama_provider_section:
+    args: []
+    docstring: 'Return a valid provider section for the ollama provider.
+
+
+      Fills transport (required), optional auth, tls, features, limits per
+
+      config standard. TLS/auth left empty for typical local HTTP ollama.'
+    file: src/ollama_workstation/provider_client_config_generator.py
+    line: 26
+    name: get_default_ollama_provider_section
   src/ollama_workstation/provider_client_config_schema.py:_check_object:
     args:
     - value
     - allowed_keys
     - path
     - errors
-    docstring: Append errors if value is not a dict or has disallowed keys. Return
-      True if ok.
+    docstring: Append errors if not a dict or has disallowed keys. Return True if
+      ok.
     file: src/ollama_workstation/provider_client_config_schema.py
-    line: 102
+    line: 114
     name: _check_object
   src/ollama_workstation/provider_client_config_schema.py:_validate_provider_section:
     args:
     - section
     - path
     - errors
-    docstring: 'Validate one provider section: transport (required), auth, tls, features,
-      limits.'
+    docstring: 'Validate one provider section: transport, auth, tls, features, limits.'
     file: src/ollama_workstation/provider_client_config_schema.py
-    line: 183
+    line: 207
     name: _validate_provider_section
   src/ollama_workstation/provider_client_config_schema.py:get_empty_provider_clients_section:
     args: []
@@ -3652,7 +3857,7 @@ functions:
 
       Generator can set default_provider and add providers to this.'
     file: src/ollama_workstation/provider_client_config_schema.py
-    line: 294
+    line: 297
     name: get_empty_provider_clients_section
   src/ollama_workstation/provider_client_config_schema.py:get_empty_provider_section:
     args: []
@@ -3662,7 +3867,7 @@ functions:
 
       Generator (step_07) can use this as template and fill required fields.'
     file: src/ollama_workstation/provider_client_config_schema.py
-    line: 279
+    line: 282
     name: get_empty_provider_section
   src/ollama_workstation/provider_client_config_schema.py:is_valid_provider_name:
     args:
@@ -3675,7 +3880,7 @@ functions:
 
       hyphen-free (alphanumeric + underscore).'
     file: src/ollama_workstation/provider_client_config_schema.py
-    line: 87
+    line: 99
     name: is_valid_provider_name
   src/ollama_workstation/provider_client_config_schema.py:validate_provider_clients_structure:
     args:
@@ -3692,8 +3897,79 @@ functions:
 
       Returns list of (field_path, message). Empty list means structure is valid.'
     file: src/ollama_workstation/provider_client_config_schema.py
-    line: 122
+    line: 135
     name: validate_provider_clients_structure
+  src/ollama_workstation/provider_client_config_validator.py:_active_provider_requires_auth:
+    args:
+    - provider_name
+    docstring: True if this provider name typically requires auth (API key/bearer).
+    file: src/ollama_workstation/provider_client_config_validator.py
+    line: 46
+    name: _active_provider_requires_auth
+  src/ollama_workstation/provider_client_config_validator.py:_auth_has_credentials:
+    args:
+    - auth
+    docstring: True if auth section has at least one credential (api_key or bearer_token).
+    file: src/ollama_workstation/provider_client_config_validator.py
+    line: 51
+    name: _auth_has_credentials
+  src/ollama_workstation/provider_client_config_validator.py:_base_url_scheme:
+    args:
+    - transport
+    docstring: Return URL scheme (e.g. 'https', 'http') from transport.base_url or
+      None.
+    file: src/ollama_workstation/provider_client_config_validator.py
+    line: 29
+    name: _base_url_scheme
+  src/ollama_workstation/provider_client_config_validator.py:_validate_active_provider_auth_tls:
+    args:
+    - provider_name
+    - section
+    - path_prefix
+    - errors
+    docstring: 'Enforce V6–V11 for the active provider: auth and TLS vs protocol/endpoint.
+
+      Appends to errors; does not raise.'
+    file: src/ollama_workstation/provider_client_config_validator.py
+    line: 63
+    name: _validate_active_provider_auth_tls
+  src/ollama_workstation/provider_client_config_validator.py:validate_config_provider_clients:
+    args:
+    - app_config
+    docstring: 'Extract provider_clients from full app config and validate.
+
+
+      If provider_clients key is missing, returns single error (so caller can
+
+      fail fast or report). Use for workstation startup: pass loaded config dict.'
+    file: src/ollama_workstation/provider_client_config_validator.py
+    line: 170
+    name: validate_config_provider_clients
+  src/ollama_workstation/provider_client_config_validator.py:validate_provider_clients:
+    args:
+    - provider_clients_data
+    docstring: 'Validate provider_clients section (structure + auth/TLS vs protocol).
+
+
+      Implements config standard V1–V11. Returns list of (field_path, message).
+
+      Empty list means valid. Use validate_provider_clients_or_raise to fail fast.'
+    file: src/ollama_workstation/provider_client_config_validator.py
+    line: 115
+    name: validate_provider_clients
+  src/ollama_workstation/provider_client_config_validator.py:validate_provider_clients_or_raise:
+    args:
+    - provider_clients_data
+    docstring: 'Validate provider_clients section; raise ValidationError on first
+      failure.
+
+
+      For startup integration: call before using config. Message includes all
+
+      (path, message) pairs for diagnostics.'
+    file: src/ollama_workstation/provider_client_config_validator.py
+    line: 156
+    name: validate_provider_clients_or_raise
   src/ollama_workstation/provider_errors.py:__init__:
     args:
     - self
@@ -5894,6 +6170,318 @@ functions:
     file: tests/unit/test_ollama_representation.py
     line: 22
     name: test_serialize_tools_ollama_format
+  tests/unit/test_provider_client_base.py:chat:
+    args:
+    - self
+    - request
+    docstring: null
+    file: tests/unit/test_provider_client_base.py
+    line: 57
+    name: chat
+  tests/unit/test_provider_client_base.py:embed:
+    args:
+    - self
+    - request
+    docstring: null
+    file: tests/unit/test_provider_client_base.py
+    line: 60
+    name: embed
+  tests/unit/test_provider_client_base.py:healthcheck:
+    args:
+    - self
+    docstring: null
+    file: tests/unit/test_provider_client_base.py
+    line: 54
+    name: healthcheck
+  tests/unit/test_provider_client_base.py:map_error:
+    args:
+    - self
+    - exception
+    docstring: null
+    file: tests/unit/test_provider_client_base.py
+    line: 66
+    name: map_error
+  tests/unit/test_provider_client_base.py:normalize_response:
+    args:
+    - self
+    - raw_response
+    docstring: null
+    file: tests/unit/test_provider_client_base.py
+    line: 63
+    name: normalize_response
+  tests/unit/test_provider_client_base.py:supports_embeddings:
+    args:
+    - self
+    docstring: null
+    file: tests/unit/test_provider_client_base.py
+    line: 48
+    name: supports_embeddings
+  tests/unit/test_provider_client_base.py:supports_stream:
+    args:
+    - self
+    docstring: null
+    file: tests/unit/test_provider_client_base.py
+    line: 41
+    name: supports_stream
+  tests/unit/test_provider_client_base.py:supports_tools:
+    args:
+    - self
+    docstring: null
+    file: tests/unit/test_provider_client_base.py
+    line: 44
+    name: supports_tools
+  tests/unit/test_provider_client_base.py:test_base_provider_client_importable:
+    args: []
+    docstring: BaseProviderClient is importable from ollama_workstation.
+    file: tests/unit/test_provider_client_base.py
+    line: 20
+    name: test_base_provider_client_importable
+  tests/unit/test_provider_client_base.py:test_concrete_subclass_implements_contract:
+    args: []
+    docstring: A minimal concrete subclass can implement the contract without redefining
+      the interface.
+    file: tests/unit/test_provider_client_base.py
+    line: 34
+    name: test_concrete_subclass_implements_contract
+  tests/unit/test_provider_client_base.py:validate_config:
+    args:
+    - self
+    docstring: null
+    file: tests/unit/test_provider_client_base.py
+    line: 51
+    name: validate_config
+  tests/unit/test_provider_client_config_generator.py:test_generate_full_config_with_provider_clients:
+    args: []
+    docstring: Full config dict contains provider_clients key.
+    file: tests/unit/test_provider_client_config_generator.py
+    line: 99
+    name: test_generate_full_config_with_provider_clients
+  tests/unit/test_provider_client_config_generator.py:test_generate_provider_clients_section_custom_providers:
+    args: []
+    docstring: Generator accepts custom providers dict and default_provider must be
+      in it.
+    file: tests/unit/test_provider_client_config_generator.py
+    line: 70
+    name: test_generate_provider_clients_section_custom_providers
+  tests/unit/test_provider_client_config_generator.py:test_generate_provider_clients_section_default_provider_missing_raises:
+    args: []
+    docstring: Generator raises if default_provider is not in providers.
+    file: tests/unit/test_provider_client_config_generator.py
+    line: 89
+    name: test_generate_provider_clients_section_default_provider_missing_raises
+  tests/unit/test_provider_client_config_generator.py:test_generate_provider_clients_section_passes_validator:
+    args: []
+    docstring: Generator produces output that passes the provider client config validator.
+    file: tests/unit/test_provider_client_config_generator.py
+    line: 28
+    name: test_generate_provider_clients_section_passes_validator
+  tests/unit/test_provider_client_config_generator.py:test_generate_provider_clients_section_validate_or_raise:
+    args: []
+    docstring: Generated section passes validate_provider_clients_or_raise.
+    file: tests/unit/test_provider_client_config_generator.py
+    line: 35
+    name: test_generate_provider_clients_section_validate_or_raise
+  tests/unit/test_provider_client_config_generator.py:test_generate_sample_full_config:
+    args: []
+    docstring: generate_sample(full_config=True) returns dict with provider_clients
+      key.
+    file: tests/unit/test_provider_client_config_generator.py
+    line: 106
+    name: test_generate_sample_full_config
+  tests/unit/test_provider_client_config_generator.py:test_generate_sample_includes_ollama_with_all_subsections:
+    args: []
+    docstring: Sample includes ollama with transport/auth/tls/features/limits per
+      standard.
+    file: tests/unit/test_provider_client_config_generator.py
+    line: 41
+    name: test_generate_sample_includes_ollama_with_all_subsections
+  tests/unit/test_provider_client_config_generator.py:test_get_default_ollama_provider_section_structure:
+    args: []
+    docstring: Default ollama section has all required and optional keys per standard.
+    file: tests/unit/test_provider_client_config_generator.py
+    line: 57
+    name: test_get_default_ollama_provider_section_structure
+  tests/unit/test_provider_client_config_schema.py:test_disallowed_provider_section_key_fails:
+    args: []
+    docstring: Unknown key in provider section is rejected.
+    file: tests/unit/test_provider_client_config_schema.py
+    line: 78
+    name: test_disallowed_provider_section_key_fails
+  tests/unit/test_provider_client_config_schema.py:test_disallowed_top_level_key_fails:
+    args: []
+    docstring: Unknown top-level key under provider_clients is rejected.
+    file: tests/unit/test_provider_client_config_schema.py
+    line: 67
+    name: test_disallowed_top_level_key_fails
+  tests/unit/test_provider_client_config_schema.py:test_disallowed_transport_key_fails:
+    args: []
+    docstring: Unknown key inside transport is rejected.
+    file: tests/unit/test_provider_client_config_schema.py
+    line: 93
+    name: test_disallowed_transport_key_fails
+  tests/unit/test_provider_client_config_schema.py:test_empty_providers_fails:
+    args: []
+    docstring: Empty providers dict is rejected.
+    file: tests/unit/test_provider_client_config_schema.py
+    line: 60
+    name: test_empty_providers_fails
+  tests/unit/test_provider_client_config_schema.py:test_get_empty_provider_clients_section_structure:
+    args: []
+    docstring: Template provider_clients has default_provider and providers.
+    file: tests/unit/test_provider_client_config_schema.py
+    line: 144
+    name: test_get_empty_provider_clients_section_structure
+  tests/unit/test_provider_client_config_schema.py:test_get_empty_provider_section_has_required_keys:
+    args: []
+    docstring: Template provider section contains all five subsection keys.
+    file: tests/unit/test_provider_client_config_schema.py
+    line: 137
+    name: test_get_empty_provider_section_has_required_keys
+  tests/unit/test_provider_client_config_schema.py:test_is_valid_provider_name_canonical:
+    args: []
+    docstring: Canonical provider names are valid.
+    file: tests/unit/test_provider_client_config_schema.py
+    line: 117
+    name: test_is_valid_provider_name_canonical
+  tests/unit/test_provider_client_config_schema.py:test_is_valid_provider_name_custom_lowercase:
+    args: []
+    docstring: Lowercase alphanumeric + underscore custom names are valid.
+    file: tests/unit/test_provider_client_config_schema.py
+    line: 123
+    name: test_is_valid_provider_name_custom_lowercase
+  tests/unit/test_provider_client_config_schema.py:test_is_valid_provider_name_invalid:
+    args: []
+    docstring: Invalid names are rejected.
+    file: tests/unit/test_provider_client_config_schema.py
+    line: 129
+    name: test_is_valid_provider_name_invalid
+  tests/unit/test_provider_client_config_schema.py:test_missing_default_provider_fails:
+    args: []
+    docstring: Missing default_provider is rejected.
+    file: tests/unit/test_provider_client_config_schema.py
+    line: 44
+    name: test_missing_default_provider_fails
+  tests/unit/test_provider_client_config_schema.py:test_missing_providers_fails:
+    args: []
+    docstring: Missing providers is rejected.
+    file: tests/unit/test_provider_client_config_schema.py
+    line: 52
+    name: test_missing_providers_fails
+  tests/unit/test_provider_client_config_schema.py:test_missing_transport_fails:
+    args: []
+    docstring: Provider section without transport is rejected.
+    file: tests/unit/test_provider_client_config_schema.py
+    line: 107
+    name: test_missing_transport_fails
+  tests/unit/test_provider_client_config_schema.py:test_schema_constants_usable_by_validator_and_generator:
+    args: []
+    docstring: Allowed key sets are non-empty and cover standard.
+    file: tests/unit/test_provider_client_config_schema.py
+    line: 152
+    name: test_schema_constants_usable_by_validator_and_generator
+  tests/unit/test_provider_client_config_schema.py:test_valid_minimal_structure_passes:
+    args: []
+    docstring: Minimal valid provider_clients with one provider and transport passes.
+    file: tests/unit/test_provider_client_config_schema.py
+    line: 30
+    name: test_valid_minimal_structure_passes
+  tests/unit/test_provider_client_config_validator.py:_minimal_ollama:
+    args: []
+    docstring: Minimal valid provider_clients with ollama (no auth, http).
+    file: tests/unit/test_provider_client_config_validator.py
+    line: 24
+    name: _minimal_ollama
+  tests/unit/test_provider_client_config_validator.py:test_structure_errors_from_schema_still_reported:
+    args: []
+    docstring: Structure errors (missing transport, etc.) still come from schema.
+    file: tests/unit/test_provider_client_config_validator.py
+    line: 185
+    name: test_structure_errors_from_schema_still_reported
+  tests/unit/test_provider_client_config_validator.py:test_validate_config_provider_clients_missing_section:
+    args: []
+    docstring: validate_config_provider_clients returns error when provider_clients
+      missing.
+    file: tests/unit/test_provider_client_config_validator.py
+    line: 164
+    name: test_validate_config_provider_clients_missing_section
+  tests/unit/test_provider_client_config_validator.py:test_validate_config_provider_clients_not_dict:
+    args: []
+    docstring: validate_config_provider_clients rejects non-dict config.
+    file: tests/unit/test_provider_client_config_validator.py
+    line: 178
+    name: test_validate_config_provider_clients_not_dict
+  tests/unit/test_provider_client_config_validator.py:test_validate_config_provider_clients_valid:
+    args: []
+    docstring: validate_config_provider_clients passes when section valid.
+    file: tests/unit/test_provider_client_config_validator.py
+    line: 171
+    name: test_validate_config_provider_clients_valid
+  tests/unit/test_provider_client_config_validator.py:test_validate_provider_clients_commercial_provider_empty_auth_fails:
+    args: []
+    docstring: Commercial provider with empty auth section fails.
+    file: tests/unit/test_provider_client_config_validator.py
+    line: 113
+    name: test_validate_provider_clients_commercial_provider_empty_auth_fails
+  tests/unit/test_provider_client_config_validator.py:test_validate_provider_clients_commercial_provider_requires_auth:
+    args: []
+    docstring: Commercial provider (e.g. openai) without auth fails (V6).
+    file: tests/unit/test_provider_client_config_validator.py
+    line: 97
+    name: test_validate_provider_clients_commercial_provider_requires_auth
+  tests/unit/test_provider_client_config_validator.py:test_validate_provider_clients_commercial_provider_with_api_key_ok:
+    args: []
+    docstring: Commercial provider with api_key passes.
+    file: tests/unit/test_provider_client_config_validator.py
+    line: 129
+    name: test_validate_provider_clients_commercial_provider_with_api_key_ok
+  tests/unit/test_provider_client_config_validator.py:test_validate_provider_clients_default_provider_not_in_providers:
+    args: []
+    docstring: default_provider must reference an existing provider (V4).
+    file: tests/unit/test_provider_client_config_validator.py
+    line: 42
+    name: test_validate_provider_clients_default_provider_not_in_providers
+  tests/unit/test_provider_client_config_validator.py:test_validate_provider_clients_https_requires_tls:
+    args: []
+    docstring: Endpoint https:// requires tls section (V8/V10).
+    file: tests/unit/test_provider_client_config_validator.py
+    line: 53
+    name: test_validate_provider_clients_https_requires_tls
+  tests/unit/test_provider_client_config_validator.py:test_validate_provider_clients_https_with_tls_ok:
+    args: []
+    docstring: Secure endpoint with tls section and verify true passes.
+    file: tests/unit/test_provider_client_config_validator.py
+    line: 82
+    name: test_validate_provider_clients_https_with_tls_ok
+  tests/unit/test_provider_client_config_validator.py:test_validate_provider_clients_https_with_tls_verify_false_conflict:
+    args: []
+    docstring: Secure endpoint with tls.verify false is rejected (V11).
+    file: tests/unit/test_provider_client_config_validator.py
+    line: 67
+    name: test_validate_provider_clients_https_with_tls_verify_false_conflict
+  tests/unit/test_provider_client_config_validator.py:test_validate_provider_clients_or_raise_invalid_raises:
+    args: []
+    docstring: validate_provider_clients_or_raise raises ValidationError when invalid.
+    file: tests/unit/test_provider_client_config_validator.py
+    line: 150
+    name: test_validate_provider_clients_or_raise_invalid_raises
+  tests/unit/test_provider_client_config_validator.py:test_validate_provider_clients_or_raise_valid:
+    args: []
+    docstring: validate_provider_clients_or_raise does not raise when valid.
+    file: tests/unit/test_provider_client_config_validator.py
+    line: 145
+    name: test_validate_provider_clients_or_raise_valid
+  tests/unit/test_provider_client_config_validator.py:test_validate_provider_clients_valid_minimal_ollama:
+    args: []
+    docstring: Valid minimal ollama config passes.
+    file: tests/unit/test_provider_client_config_validator.py
+    line: 36
+    name: test_validate_provider_clients_valid_minimal_ollama
+  tests/unit/test_provider_client_config_validator.py:test_wss_requires_tls:
+    args: []
+    docstring: wss:// endpoint requires tls section.
+    file: tests/unit/test_provider_client_config_validator.py
+    line: 195
+    name: test_wss_requires_tls
   tests/unit/test_provider_models.py:test_cheapest_model_by_provider_has_all_providers:
     args: []
     docstring: Google, Anthropic, OpenAI, xAI, DeepSeek have a cheapest model id.
@@ -8032,15 +8620,21 @@ imports:
     line: 13
     name: json
     type: import
-  src/ollama_workstation/__init__.py:CHEAPEST_MODEL_BY_PROVIDER:
+  src/ollama_workstation/__init__.py:BaseProviderClient:
     file: src/ollama_workstation/__init__.py
     line: 13
+    module: provider_client_base
+    name: BaseProviderClient
+    type: import_from
+  src/ollama_workstation/__init__.py:CHEAPEST_MODEL_BY_PROVIDER:
+    file: src/ollama_workstation/__init__.py
+    line: 14
     module: provider_models
     name: CHEAPEST_MODEL_BY_PROVIDER
     type: import_from
   src/ollama_workstation/__init__.py:OllamaChatCommand:
     file: src/ollama_workstation/__init__.py
-    line: 17
+    line: 18
     module: commands
     name: OllamaChatCommand
     type: import_from
@@ -8052,13 +8646,13 @@ imports:
     type: import_from
   src/ollama_workstation/__init__.py:ProxyClient:
     file: src/ollama_workstation/__init__.py
-    line: 15
+    line: 16
     module: proxy_client
     name: ProxyClient
     type: import_from
   src/ollama_workstation/__init__.py:ProxyClientError:
     file: src/ollama_workstation/__init__.py
-    line: 15
+    line: 16
     module: proxy_client
     name: ProxyClientError
     type: import_from
@@ -8070,13 +8664,13 @@ imports:
     type: import_from
   src/ollama_workstation/__init__.py:get_cheapest_model:
     file: src/ollama_workstation/__init__.py
-    line: 13
+    line: 14
     module: provider_models
     name: get_cheapest_model
     type: import_from
   src/ollama_workstation/__init__.py:get_ollama_tools:
     file: src/ollama_workstation/__init__.py
-    line: 14
+    line: 15
     module: tools
     name: get_ollama_tools
     type: import_from
@@ -8098,13 +8692,13 @@ imports:
     type: import
   src/ollama_workstation/__init__.py:register_ollama_workstation:
     file: src/ollama_workstation/__init__.py
-    line: 18
+    line: 19
     module: registration
     name: register_ollama_workstation
     type: import_from
   src/ollama_workstation/__init__.py:run_chat_flow:
     file: src/ollama_workstation/__init__.py
-    line: 16
+    line: 17
     module: chat_flow
     name: run_chat_flow
     type: import_from
@@ -10405,6 +10999,60 @@ imports:
     line: 11
     name: json
     type: import
+  src/ollama_workstation/provider_client_base.py:ABC:
+    file: src/ollama_workstation/provider_client_base.py
+    line: 13
+    module: abc
+    name: ABC
+    type: import_from
+  src/ollama_workstation/provider_client_base.py:Any:
+    file: src/ollama_workstation/provider_client_base.py
+    line: 14
+    module: typing
+    name: Any
+    type: import_from
+  src/ollama_workstation/provider_client_base.py:ProviderError:
+    file: src/ollama_workstation/provider_client_base.py
+    line: 16
+    module: provider_errors
+    name: ProviderError
+    type: import_from
+  src/ollama_workstation/provider_client_base.py:abstractmethod:
+    file: src/ollama_workstation/provider_client_base.py
+    line: 13
+    module: abc
+    name: abstractmethod
+    type: import_from
+  src/ollama_workstation/provider_client_config_generator.py:Any:
+    file: src/ollama_workstation/provider_client_config_generator.py
+    line: 15
+    module: typing
+    name: Any
+    type: import_from
+  src/ollama_workstation/provider_client_config_generator.py:annotations:
+    file: src/ollama_workstation/provider_client_config_generator.py
+    line: 13
+    module: __future__
+    name: annotations
+    type: import_from
+  src/ollama_workstation/provider_client_config_generator.py:get_empty_provider_clients_section:
+    file: src/ollama_workstation/provider_client_config_generator.py
+    line: 17
+    module: ollama_workstation.provider_client_config_schema
+    name: get_empty_provider_clients_section
+    type: import_from
+  src/ollama_workstation/provider_client_config_generator.py:get_empty_provider_section:
+    file: src/ollama_workstation/provider_client_config_generator.py
+    line: 17
+    module: ollama_workstation.provider_client_config_schema
+    name: get_empty_provider_section
+    type: import_from
+  src/ollama_workstation/provider_client_config_generator.py:validate_provider_clients:
+    file: src/ollama_workstation/provider_client_config_generator.py
+    line: 21
+    module: ollama_workstation.provider_client_config_validator
+    name: validate_provider_clients
+    type: import_from
   src/ollama_workstation/provider_client_config_schema.py:Any:
     file: src/ollama_workstation/provider_client_config_schema.py
     line: 16
@@ -10422,6 +11070,30 @@ imports:
     line: 15
     name: re
     type: import
+  src/ollama_workstation/provider_client_config_validator.py:Any:
+    file: src/ollama_workstation/provider_client_config_validator.py
+    line: 15
+    module: typing
+    name: Any
+    type: import_from
+  src/ollama_workstation/provider_client_config_validator.py:ValidationError:
+    file: src/ollama_workstation/provider_client_config_validator.py
+    line: 20
+    module: ollama_workstation.provider_errors
+    name: ValidationError
+    type: import_from
+  src/ollama_workstation/provider_client_config_validator.py:annotations:
+    file: src/ollama_workstation/provider_client_config_validator.py
+    line: 13
+    module: __future__
+    name: annotations
+    type: import_from
+  src/ollama_workstation/provider_client_config_validator.py:validate_provider_clients_structure:
+    file: src/ollama_workstation/provider_client_config_validator.py
+    line: 17
+    module: ollama_workstation.provider_client_config_schema
+    name: validate_provider_clients_structure
+    type: import_from
   src/ollama_workstation/provider_errors.py:Optional:
     file: src/ollama_workstation/provider_errors.py
     line: 12
@@ -12327,6 +12999,239 @@ imports:
     line: 8
     name: sys
     type: import
+  tests/unit/test_provider_client_base.py:Any:
+    file: tests/unit/test_provider_client_base.py
+    line: 10
+    module: typing
+    name: Any
+    type: import_from
+  tests/unit/test_provider_client_base.py:BaseProviderClient:
+    file: tests/unit/test_provider_client_base.py
+    line: 16
+    module: ollama_workstation.provider_client_base
+    name: BaseProviderClient
+    type: import_from
+  tests/unit/test_provider_client_base.py:CapabilityNotSupportedError:
+    file: tests/unit/test_provider_client_base.py
+    line: 17
+    module: ollama_workstation.provider_errors
+    name: CapabilityNotSupportedError
+    type: import_from
+  tests/unit/test_provider_client_base.py:Path:
+    file: tests/unit/test_provider_client_base.py
+    line: 9
+    module: pathlib
+    name: Path
+    type: import_from
+  tests/unit/test_provider_client_base.py:TransportError:
+    file: tests/unit/test_provider_client_base.py
+    line: 67
+    module: ollama_workstation.provider_errors
+    name: TransportError
+    type: import_from
+  tests/unit/test_provider_client_base.py:pytest:
+    file: tests/unit/test_provider_client_base.py
+    line: 12
+    name: pytest
+    type: import
+  tests/unit/test_provider_client_base.py:sys:
+    file: tests/unit/test_provider_client_base.py
+    line: 8
+    name: sys
+    type: import
+  tests/unit/test_provider_client_config_generator.py:Any:
+    file: tests/unit/test_provider_client_config_generator.py
+    line: 10
+    module: typing
+    name: Any
+    type: import_from
+  tests/unit/test_provider_client_config_generator.py:Path:
+    file: tests/unit/test_provider_client_config_generator.py
+    line: 9
+    module: pathlib
+    name: Path
+    type: import_from
+  tests/unit/test_provider_client_config_generator.py:generate_full_config_with_provider_clients:
+    file: tests/unit/test_provider_client_config_generator.py
+    line: 16
+    module: ollama_workstation.provider_client_config_generator
+    name: generate_full_config_with_provider_clients
+    type: import_from
+  tests/unit/test_provider_client_config_generator.py:generate_provider_clients_section:
+    file: tests/unit/test_provider_client_config_generator.py
+    line: 16
+    module: ollama_workstation.provider_client_config_generator
+    name: generate_provider_clients_section
+    type: import_from
+  tests/unit/test_provider_client_config_generator.py:generate_sample:
+    file: tests/unit/test_provider_client_config_generator.py
+    line: 16
+    module: ollama_workstation.provider_client_config_generator
+    name: generate_sample
+    type: import_from
+  tests/unit/test_provider_client_config_generator.py:get_default_ollama_provider_section:
+    file: tests/unit/test_provider_client_config_generator.py
+    line: 16
+    module: ollama_workstation.provider_client_config_generator
+    name: get_default_ollama_provider_section
+    type: import_from
+  tests/unit/test_provider_client_config_generator.py:pytest:
+    file: tests/unit/test_provider_client_config_generator.py
+    line: 12
+    name: pytest
+    type: import
+  tests/unit/test_provider_client_config_generator.py:sys:
+    file: tests/unit/test_provider_client_config_generator.py
+    line: 8
+    name: sys
+    type: import
+  tests/unit/test_provider_client_config_generator.py:validate_provider_clients:
+    file: tests/unit/test_provider_client_config_generator.py
+    line: 22
+    module: ollama_workstation.provider_client_config_validator
+    name: validate_provider_clients
+    type: import_from
+  tests/unit/test_provider_client_config_generator.py:validate_provider_clients_or_raise:
+    file: tests/unit/test_provider_client_config_generator.py
+    line: 22
+    module: ollama_workstation.provider_client_config_validator
+    name: validate_provider_clients_or_raise
+    type: import_from
+  tests/unit/test_provider_client_config_schema.py:ALLOWED_AUTH_KEYS:
+    file: tests/unit/test_provider_client_config_schema.py
+    line: 14
+    module: ollama_workstation.provider_client_config_schema
+    name: ALLOWED_AUTH_KEYS
+    type: import_from
+  tests/unit/test_provider_client_config_schema.py:ALLOWED_FEATURES_KEYS:
+    file: tests/unit/test_provider_client_config_schema.py
+    line: 14
+    module: ollama_workstation.provider_client_config_schema
+    name: ALLOWED_FEATURES_KEYS
+    type: import_from
+  tests/unit/test_provider_client_config_schema.py:ALLOWED_LIMITS_KEYS:
+    file: tests/unit/test_provider_client_config_schema.py
+    line: 14
+    module: ollama_workstation.provider_client_config_schema
+    name: ALLOWED_LIMITS_KEYS
+    type: import_from
+  tests/unit/test_provider_client_config_schema.py:ALLOWED_TLS_KEYS:
+    file: tests/unit/test_provider_client_config_schema.py
+    line: 14
+    module: ollama_workstation.provider_client_config_schema
+    name: ALLOWED_TLS_KEYS
+    type: import_from
+  tests/unit/test_provider_client_config_schema.py:ALLOWED_TRANSPORT_KEYS:
+    file: tests/unit/test_provider_client_config_schema.py
+    line: 14
+    module: ollama_workstation.provider_client_config_schema
+    name: ALLOWED_TRANSPORT_KEYS
+    type: import_from
+  tests/unit/test_provider_client_config_schema.py:Any:
+    file: tests/unit/test_provider_client_config_schema.py
+    line: 10
+    module: typing
+    name: Any
+    type: import_from
+  tests/unit/test_provider_client_config_schema.py:CANONICAL_PROVIDER_NAMES:
+    file: tests/unit/test_provider_client_config_schema.py
+    line: 14
+    module: ollama_workstation.provider_client_config_schema
+    name: CANONICAL_PROVIDER_NAMES
+    type: import_from
+  tests/unit/test_provider_client_config_schema.py:PROVIDER_CLIENTS_TOP_LEVEL_KEYS:
+    file: tests/unit/test_provider_client_config_schema.py
+    line: 14
+    module: ollama_workstation.provider_client_config_schema
+    name: PROVIDER_CLIENTS_TOP_LEVEL_KEYS
+    type: import_from
+  tests/unit/test_provider_client_config_schema.py:PROVIDER_SECTION_KEYS:
+    file: tests/unit/test_provider_client_config_schema.py
+    line: 14
+    module: ollama_workstation.provider_client_config_schema
+    name: PROVIDER_SECTION_KEYS
+    type: import_from
+  tests/unit/test_provider_client_config_schema.py:Path:
+    file: tests/unit/test_provider_client_config_schema.py
+    line: 9
+    module: pathlib
+    name: Path
+    type: import_from
+  tests/unit/test_provider_client_config_schema.py:get_empty_provider_clients_section:
+    file: tests/unit/test_provider_client_config_schema.py
+    line: 14
+    module: ollama_workstation.provider_client_config_schema
+    name: get_empty_provider_clients_section
+    type: import_from
+  tests/unit/test_provider_client_config_schema.py:get_empty_provider_section:
+    file: tests/unit/test_provider_client_config_schema.py
+    line: 14
+    module: ollama_workstation.provider_client_config_schema
+    name: get_empty_provider_section
+    type: import_from
+  tests/unit/test_provider_client_config_schema.py:is_valid_provider_name:
+    file: tests/unit/test_provider_client_config_schema.py
+    line: 14
+    module: ollama_workstation.provider_client_config_schema
+    name: is_valid_provider_name
+    type: import_from
+  tests/unit/test_provider_client_config_schema.py:sys:
+    file: tests/unit/test_provider_client_config_schema.py
+    line: 8
+    name: sys
+    type: import
+  tests/unit/test_provider_client_config_schema.py:validate_provider_clients_structure:
+    file: tests/unit/test_provider_client_config_schema.py
+    line: 14
+    module: ollama_workstation.provider_client_config_schema
+    name: validate_provider_clients_structure
+    type: import_from
+  tests/unit/test_provider_client_config_validator.py:Any:
+    file: tests/unit/test_provider_client_config_validator.py
+    line: 10
+    module: typing
+    name: Any
+    type: import_from
+  tests/unit/test_provider_client_config_validator.py:Path:
+    file: tests/unit/test_provider_client_config_validator.py
+    line: 9
+    module: pathlib
+    name: Path
+    type: import_from
+  tests/unit/test_provider_client_config_validator.py:ValidationError:
+    file: tests/unit/test_provider_client_config_validator.py
+    line: 21
+    module: ollama_workstation.provider_errors
+    name: ValidationError
+    type: import_from
+  tests/unit/test_provider_client_config_validator.py:pytest:
+    file: tests/unit/test_provider_client_config_validator.py
+    line: 12
+    name: pytest
+    type: import
+  tests/unit/test_provider_client_config_validator.py:sys:
+    file: tests/unit/test_provider_client_config_validator.py
+    line: 8
+    name: sys
+    type: import
+  tests/unit/test_provider_client_config_validator.py:validate_config_provider_clients:
+    file: tests/unit/test_provider_client_config_validator.py
+    line: 16
+    module: ollama_workstation.provider_client_config_validator
+    name: validate_config_provider_clients
+    type: import_from
+  tests/unit/test_provider_client_config_validator.py:validate_provider_clients:
+    file: tests/unit/test_provider_client_config_validator.py
+    line: 16
+    module: ollama_workstation.provider_client_config_validator
+    name: validate_provider_clients
+    type: import_from
+  tests/unit/test_provider_client_config_validator.py:validate_provider_clients_or_raise:
+    file: tests/unit/test_provider_client_config_validator.py
+    line: 16
+    module: ollama_workstation.provider_client_config_validator
+    name: validate_provider_clients_or_raise
+    type: import_from
   tests/unit/test_provider_models.py:CHEAPEST_MODEL_BY_PROVIDER:
     file: tests/unit/test_provider_models.py
     line: 12

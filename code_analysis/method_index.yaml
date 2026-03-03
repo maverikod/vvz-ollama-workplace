@@ -4,6 +4,16 @@ AddCommandToSessionCommand:
 - get_error_schema
 - get_metadata
 AuthError: []
+BaseProviderClient:
+- supports_stream
+- supports_tools
+- supports_embeddings
+- validate_config
+- healthcheck
+- chat
+- embed
+- normalize_response
+- map_error
 CallStack:
 - __init__
 - push
@@ -174,6 +184,16 @@ StubMessageStore:
 - get_messages
 - __init__
 - get_messages
+StubProviderClient:
+- supports_stream
+- supports_tools
+- supports_embeddings
+- validate_config
+- healthcheck
+- chat
+- embed
+- normalize_response
+- map_error
 StubRep:
 - serialize_tools
 - serialize_messages

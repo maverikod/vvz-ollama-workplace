@@ -444,52 +444,58 @@ issues:
     line: 12
     module: .config
     type: import_from_relative
+  - description: Relative import '.provider_client_base' cannot be resolved
+    file: src/ollama_workstation/__init__.py
+    imported: BaseProviderClient
+    line: 13
+    module: .provider_client_base
+    type: import_from_relative
   - description: Relative import '.provider_models' cannot be resolved
     file: src/ollama_workstation/__init__.py
     imported: CHEAPEST_MODEL_BY_PROVIDER
-    line: 13
+    line: 14
     module: .provider_models
     type: import_from_relative
   - description: Relative import '.provider_models' cannot be resolved
     file: src/ollama_workstation/__init__.py
     imported: get_cheapest_model
-    line: 13
+    line: 14
     module: .provider_models
     type: import_from_relative
   - description: Relative import '.tools' cannot be resolved
     file: src/ollama_workstation/__init__.py
     imported: get_ollama_tools
-    line: 14
+    line: 15
     module: .tools
     type: import_from_relative
   - description: Relative import '.proxy_client' cannot be resolved
     file: src/ollama_workstation/__init__.py
     imported: ProxyClient
-    line: 15
+    line: 16
     module: .proxy_client
     type: import_from_relative
   - description: Relative import '.proxy_client' cannot be resolved
     file: src/ollama_workstation/__init__.py
     imported: ProxyClientError
-    line: 15
+    line: 16
     module: .proxy_client
     type: import_from_relative
   - description: Relative import '.chat_flow' cannot be resolved
     file: src/ollama_workstation/__init__.py
     imported: run_chat_flow
-    line: 16
+    line: 17
     module: .chat_flow
     type: import_from_relative
   - description: Relative import '.commands' cannot be resolved
     file: src/ollama_workstation/__init__.py
     imported: OllamaChatCommand
-    line: 17
+    line: 18
     module: .commands
     type: import_from_relative
   - description: Relative import '.registration' cannot be resolved
     file: src/ollama_workstation/__init__.py
     imported: register_ollama_workstation
-    line: 18
+    line: 19
     module: .registration
     type: import_from_relative
   - description: Relative import '.context_representation' cannot be resolved
@@ -539,6 +545,12 @@ issues:
     imported: RepresentationRegistry
     line: 18
     module: .representation_registry
+    type: import_from_relative
+  - description: Relative import '.provider_errors' cannot be resolved
+    file: src/ollama_workstation/provider_client_base.py
+    imported: ProviderError
+    line: 16
+    module: .provider_errors
     type: import_from_relative
   - description: Relative import '.message_source' cannot be resolved
     file: src/ollama_workstation/redis_message_record.py
@@ -1054,7 +1066,11 @@ issues:
     line: 214
     module: generate_config
     type: import
-  methods_with_pass: []
+  methods_with_pass:
+  - class: StubProviderClient
+    file: tests/unit/test_provider_client_base.py
+    line: 51
+    method: validate_config
   methods_without_docstrings:
   - class: null
     file: scripts/verify_ollama.py
@@ -1452,6 +1468,78 @@ issues:
     file: tests/unit/test_proxy_client.py
     line: 30
     method: config
+  - class: StubProviderClient
+    file: tests/unit/test_provider_client_base.py
+    line: 41
+    method: supports_stream
+  - class: StubProviderClient
+    file: tests/unit/test_provider_client_base.py
+    line: 44
+    method: supports_tools
+  - class: StubProviderClient
+    file: tests/unit/test_provider_client_base.py
+    line: 48
+    method: supports_embeddings
+  - class: StubProviderClient
+    file: tests/unit/test_provider_client_base.py
+    line: 51
+    method: validate_config
+  - class: StubProviderClient
+    file: tests/unit/test_provider_client_base.py
+    line: 54
+    method: healthcheck
+  - class: StubProviderClient
+    file: tests/unit/test_provider_client_base.py
+    line: 57
+    method: chat
+  - class: StubProviderClient
+    file: tests/unit/test_provider_client_base.py
+    line: 60
+    method: embed
+  - class: StubProviderClient
+    file: tests/unit/test_provider_client_base.py
+    line: 63
+    method: normalize_response
+  - class: StubProviderClient
+    file: tests/unit/test_provider_client_base.py
+    line: 66
+    method: map_error
+  - class: null
+    file: tests/unit/test_provider_client_base.py
+    line: 41
+    method: supports_stream
+  - class: null
+    file: tests/unit/test_provider_client_base.py
+    line: 44
+    method: supports_tools
+  - class: null
+    file: tests/unit/test_provider_client_base.py
+    line: 48
+    method: supports_embeddings
+  - class: null
+    file: tests/unit/test_provider_client_base.py
+    line: 51
+    method: validate_config
+  - class: null
+    file: tests/unit/test_provider_client_base.py
+    line: 54
+    method: healthcheck
+  - class: null
+    file: tests/unit/test_provider_client_base.py
+    line: 57
+    method: chat
+  - class: null
+    file: tests/unit/test_provider_client_base.py
+    line: 60
+    method: embed
+  - class: null
+    file: tests/unit/test_provider_client_base.py
+    line: 63
+    method: normalize_response
+  - class: null
+    file: tests/unit/test_provider_client_base.py
+    line: 66
+    method: map_error
   - class: null
     file: tests/unit/test_config_cli.py
     line: 16
@@ -1480,9 +1568,9 @@ summary:
   files_without_docstrings: 3
   generic_exception_usage: 0
   imports_in_middle: 0
-  invalid_imports: 171
+  invalid_imports: 173
   max_lines_limit: 400
-  methods_with_pass: 0
-  methods_without_docstrings: 104
+  methods_with_pass: 1
+  methods_without_docstrings: 122
   not_implemented_in_non_abstract: 0
-  total_issues: 285
+  total_issues: 306
