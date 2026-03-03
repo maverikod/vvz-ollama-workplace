@@ -53,14 +53,59 @@ docker stop "${CONTAINER_NAME}" 2>/dev/null || true
 docker rm "${CONTAINER_NAME}" 2>/dev/null || true
 
 # Redis port on host (free port for tests); omit REDIS_HOST_PORT to not publish
-REDIS_HOST_PORT="${REDIS_HOST_PORT:-63790}"
+REDIS_HOST_PORT_DEFAULT=63790
+
+is_host_port_busy() {
+  target_port="$1"
+  ss -ltn | awk -v pattern=":${target_port}$" 'NR > 1 && $4 ~ pattern {found=1} END {exit found ? 0 : 1}'
+}
+
+if [ -z "${REDIS_HOST_PORT:-}" ]; then
+  REDIS_HOST_PORT="${REDIS_HOST_PORT_DEFAULT}"
+  if command -v ss >/dev/null 2>&1; then
+    while is_host_port_busy "${REDIS_HOST_PORT}"; do
+      REDIS_HOST_PORT=$((REDIS_HOST_PORT + 1))
+      if [ "${REDIS_HOST_PORT}" -gt 63890 ]; then
+        echo "ERROR: unable to find free host Redis port in range 63790-63890."
+        exit 1
+      fi
+    done
+    if [ "${REDIS_HOST_PORT}" != "${REDIS_HOST_PORT_DEFAULT}" ]; then
+      echo "Host port ${REDIS_HOST_PORT_DEFAULT} is busy, using free Redis port ${REDIS_HOST_PORT}."
+    fi
+  fi
+elif command -v ss >/dev/null 2>&1 && is_host_port_busy "${REDIS_HOST_PORT}"; then
+  echo "ERROR: requested REDIS_HOST_PORT=${REDIS_HOST_PORT} is already in use on host."
+  exit 1
+fi
+
+ADAPTER_HOST_PORT_DEFAULT=8015
+if [ -z "${ADAPTER_HOST_PORT:-}" ]; then
+  ADAPTER_HOST_PORT="${ADAPTER_HOST_PORT_DEFAULT}"
+  if command -v ss >/dev/null 2>&1; then
+    while is_host_port_busy "${ADAPTER_HOST_PORT}"; do
+      ADAPTER_HOST_PORT=$((ADAPTER_HOST_PORT + 1))
+      if [ "${ADAPTER_HOST_PORT}" -gt 8099 ]; then
+        echo "ERROR: unable to find free host adapter port in range 8015-8099."
+        exit 1
+      fi
+    done
+    if [ "${ADAPTER_HOST_PORT}" != "${ADAPTER_HOST_PORT_DEFAULT}" ]; then
+      echo "Host port ${ADAPTER_HOST_PORT_DEFAULT} is busy, using free adapter port ${ADAPTER_HOST_PORT}."
+    fi
+  fi
+elif command -v ss >/dev/null 2>&1 && is_host_port_busy "${ADAPTER_HOST_PORT}"; then
+  echo "ERROR: requested ADAPTER_HOST_PORT=${ADAPTER_HOST_PORT} is already in use on host."
+  exit 1
+fi
+
 echo "Starting container ${CONTAINER_NAME} on network ${NETWORK_NAME} (restart=always, user 1000:1000)..."
 # Restart policy: always. Bases, configs, logs, models mounted from host. Redis published for tests.
 docker run -d \
   --name "${CONTAINER_NAME}" \
   --restart=always \
   --network "${NETWORK_NAME}" \
-  -p 8015:8015 \
+  -p "${ADAPTER_HOST_PORT}:8015" \
   -p "${REDIS_HOST_PORT}:6379" \
   -u 1000:1000 \
   -v "${CERTS_DIR}:/app/certs:ro" \
@@ -80,30 +125,44 @@ docker run -d \
   -e OLLAMA_LLM_LIBRARY="${OLLAMA_LLM_LIBRARY:-cpu}" \
   "${IMAGE_NAME}"
 
-echo "Done. Container ${CONTAINER_NAME} is running (adapter 8015, Redis ${REDIS_HOST_PORT}:6379, user 1000:1000, restart=always, network=${NETWORK_NAME})."
+echo "Done. Container ${CONTAINER_NAME} is running (adapter ${ADAPTER_HOST_PORT}:8015, Redis ${REDIS_HOST_PORT}:6379, user 1000:1000, restart=always, network=${NETWORK_NAME})."
 echo "Ollama: OLLAMA_LLM_LIBRARY=${OLLAMA_LLM_LIBRARY:-cpu} (CPU-only). Set OLLAMA_LLM_LIBRARY= to use GPU."
 echo "Mounts: certs, config, logs, cache, data (models), redis_data (bases)."
 
-echo "Validating runtime contract for ${CONTAINER_NAME}..."
-CONTAINER_USER="$(docker inspect -f '{{.Config.User}}' "${CONTAINER_NAME}")"
-if [ "${CONTAINER_USER}" != "1000:1000" ]; then
-  echo "ERROR: runtime contract violation: user mapping is '${CONTAINER_USER}', expected '1000:1000'."
-  exit 1
-fi
+validate_container_runtime_contract() {
+  target_container="$1"
 
-if ! docker inspect -f '{{if index .NetworkSettings.Networks "smart-assistant"}}ok{{end}}' "${CONTAINER_NAME}" | grep -qx "ok"; then
-  echo "ERROR: runtime contract violation: container is not attached to network smart-assistant."
-  exit 1
-fi
-
-MOUNTS_VIEW="$(docker inspect -f '{{range .Mounts}}{{printf "%s:%s\n" .Source .Destination}}{{end}}' "${CONTAINER_NAME}")"
-for required_mount in "/app/config" "/app/logs" "/app/cache" "/app/data"; do
-  if ! printf '%s\n' "${MOUNTS_VIEW}" | grep -q ":${required_mount}$"; then
-    echo "ERROR: runtime contract violation: required mount ${required_mount} is missing."
+  if ! docker ps --filter "name=^/${target_container}$" --filter "status=running" --format '{{.Names}}' | grep -qx "${target_container}"; then
+    echo "ERROR: runtime contract violation: required container '${target_container}' is not running (checked via docker ps)."
     exit 1
   fi
+
+  container_user="$(docker inspect -f '{{.Config.User}}' "${target_container}")"
+  if [ "${container_user}" != "1000:1000" ]; then
+    echo "ERROR: runtime contract violation: user mapping is '${container_user}', expected '1000:1000' for ${target_container}."
+    exit 1
+  fi
+
+  if ! docker inspect -f '{{if index .NetworkSettings.Networks "smart-assistant"}}ok{{end}}' "${target_container}" | grep -qx "ok"; then
+    echo "ERROR: runtime contract violation: ${target_container} is not attached to network smart-assistant."
+    exit 1
+  fi
+
+  mounts_view="$(docker inspect -f '{{range .Mounts}}{{printf "%s:%s\n" .Source .Destination}}{{end}}' "${target_container}")"
+  for required_mount in "/app/config" "/app/logs" "/app/cache" "/app/data"; do
+    if ! printf '%s\n' "${mounts_view}" | grep -q ":${required_mount}$"; then
+      echo "ERROR: runtime contract violation: required mount ${required_mount} is missing for ${target_container}."
+      exit 1
+    fi
+  done
+
+  echo "Runtime contract validated for ${target_container}: mounts, user=1000:1000, network=smart-assistant."
+}
+
+echo "Validating runtime contract (docker ps + docker inspect) for required containers..."
+for required_container in "${CONTAINER_NAME}"; do
+  validate_container_runtime_contract "${required_container}"
 done
-echo "Runtime contract validated: mounts, user=1000:1000, network=smart-assistant."
 
 if [ -n "${RUN_SERVER_TESTS}" ]; then
   echo "Running server test pipeline..."
