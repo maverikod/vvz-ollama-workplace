@@ -9,6 +9,7 @@ email: vasilyvz@gmail.com
 
 from __future__ import annotations
 
+import asyncio
 import logging
 import os
 import time
@@ -20,9 +21,9 @@ from mcp_proxy_adapter.commands.result import SuccessResult, ErrorResult
 
 from ..config import load_config
 from ..model_loading_state import get_active_model
-from ..ollama_client import get_ollama_client
 from ..model_provider_resolver import resolve_model_endpoint
 from ..commercial_chat_client import chat_completion as commercial_chat_completion
+from ..provider_registry import get_default_client
 
 logger = logging.getLogger(__name__)
 
@@ -144,28 +145,19 @@ class DirectChatCommand(Command):
         t0 = time.perf_counter()
         try:
             if endpoint.is_ollama:
-                client = get_ollama_client(endpoint.base_url, timeout)
-                url = endpoint.base_url.rstrip("/") + "/api/chat"
+                if not getattr(config, "provider_clients_data", None):
+                    return ErrorResult(
+                        message="provider_clients_data missing; cannot use Ollama.",
+                        code=-32603,
+                    )
+                provider_client = get_default_client(config.provider_clients_data)
                 body = {
                     "model": model,
                     "messages": [{"role": "user", "content": content}],
                     "stream": False,
                 }
-                resp = await client.post(url, json=body)
+                data = await asyncio.to_thread(provider_client.chat, body)
                 duration = time.perf_counter() - t0
-                if resp.status_code != 200:
-                    return ErrorResult(
-                        message="OLLAMA returned %s: %s"
-                        % (resp.status_code, (resp.text or "")[:500]),
-                        code=-32603,
-                    )
-                try:
-                    data = resp.json()
-                except Exception as e:
-                    return ErrorResult(
-                        message="OLLAMA response not JSON: %s" % e,
-                        code=-32603,
-                    )
             else:
                 data = await commercial_chat_completion(
                     endpoint,

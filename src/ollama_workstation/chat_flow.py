@@ -7,6 +7,7 @@ email: vasilyvz@gmail.com
 
 from __future__ import annotations
 
+import asyncio
 import json
 import logging
 import time
@@ -17,16 +18,14 @@ import httpx
 from .command_alias_registry import CommandAliasRegistry
 from .command_discovery import CommandDiscovery
 from .config import WorkstationConfig
-from .direct_server_client import call_command as direct_call_command
-from .direct_server_client import get_help as direct_get_help
 from .tools import HELP_REFERENCE_TEXT
 from .effective_tool_list_builder import EffectiveToolListBuilder
 from .ollama_representation import OllamaRepresentation, register_ollama_models
 from .model_loading_state import get_active_model, is_model_ready
-from .ollama_client import get_ollama_client
 from .model_provider_resolver import resolve_model_endpoint
 from .commercial_chat_client import chat_completion as commercial_chat_completion
 from .proxy_client import ProxyClient, ProxyClientError
+from .provider_registry import get_default_client
 from .representation_registry import RepresentationRegistry
 from .safe_name_translator import SafeNameTranslator
 from .context_representation import ContextRepresentation
@@ -47,35 +46,16 @@ def _tool_message(tool_name: str, content: str) -> Dict[str, Any]:
     }
 
 
-def _server_url_cache_from_list_servers(raw: Dict[str, Any]) -> Dict[str, str]:
-    """Build server_id -> server_url from list_servers response (proxy = DNS)."""
-    out: Dict[str, str] = {}
-    servers = raw.get("servers") or raw.get("items") or []
-    if not isinstance(servers, list):
-        return out
-    for srv in servers:
-        if not isinstance(srv, dict):
-            continue
-        sid = (srv.get("server_id") or srv.get("id") or "").strip()
-        url = (srv.get("server_url") or srv.get("url") or "").strip()
-        if sid and url:
-            out[sid] = url
-    return out
-
-
 async def _run_tool(
     proxy: ProxyClient,
     tool_name: str,
     arguments: Dict[str, Any],
-    server_url_cache: Optional[Dict[str, str]] = None,
     representation: Optional[ContextRepresentation] = None,
 ) -> str:
     """
-    Execute one tool (canonical). Proxy only for list_servers; call_server/help
-    go directly to the server. If representation is set, result is translated
-    via format_tool_result.
+    Execute one tool via proxy only (list_servers, call_server, help).
+    If representation is set, result is translated via format_tool_result.
     """
-    cache = server_url_cache if server_url_cache is not None else {}
     try:
         if tool_name == "list_servers":
             out = await proxy.list_servers(
@@ -83,7 +63,6 @@ async def _run_tool(
                 page_size=arguments.get("page_size"),
                 filter_enabled=arguments.get("filter_enabled"),
             )
-            cache.update(_server_url_cache_from_list_servers(out))
         elif tool_name == "call_server":
             server_id = (arguments.get("server_id") or "").strip()
             command = (arguments.get("command") or "").strip()
@@ -93,16 +72,8 @@ async def _run_tool(
                 )
             if not command:
                 return json.dumps({"error": "call_server requires command name."})
-            if server_id not in cache:
-                raw = await proxy.list_servers()
-                cache.update(_server_url_cache_from_list_servers(raw))
-            server_url = cache.get(server_id)
-            if not server_url:
-                return json.dumps(
-                    {"error": "server_id %s not found in server list." % server_id}
-                )
-            out = await direct_call_command(
-                server_url,
+            out = await proxy.call_server(
+                server_id,
                 command,
                 params=arguments.get("params"),
             )
@@ -115,16 +86,8 @@ async def _run_tool(
                         "Call list_servers first to get server_id values.",
                     }
                 )
-            if server_id not in cache:
-                raw = await proxy.list_servers()
-                cache.update(_server_url_cache_from_list_servers(raw))
-            server_url = cache.get(server_id)
-            if not server_url:
-                return json.dumps(
-                    {"error": "server_id %s not found in server list." % server_id}
-                )
-            out = await direct_get_help(
-                server_url,
+            out = await proxy.help(
+                server_id,
                 command=arguments.get("command"),
             )
         else:
@@ -151,13 +114,12 @@ async def run_tool(
     arguments: Dict[str, Any],
 ) -> str:
     """
-    Execute one tool. list_servers via proxy only; call_server and help
-    go directly to the server. Returns content string as the model would see.
+    Execute one tool via proxy only (list_servers, call_server, help).
+    Returns content string as the model would see.
     """
     proxy = ProxyClient(config)
-    cache: Dict[str, str] = {}
     try:
-        return await _run_tool(proxy, tool_name, arguments, server_url_cache=cache)
+        return await _run_tool(proxy, tool_name, arguments)
     finally:
         await proxy.close()
 
@@ -169,8 +131,8 @@ async def run_tool_like_model(
 ) -> str:
     """
     Invoke a tool the same way the model does (canonical then representation).
-    Builds discovery + registry, resolves, calls server directly; raw result
-    is translated via representation.format_tool_result to standard form.
+    Builds discovery + registry, resolves, calls proxy; raw result is
+    translated via representation.format_tool_result to standard form.
     """
     proxy = ProxyClient(config)
     registry = RepresentationRegistry(default=OllamaRepresentation())
@@ -178,10 +140,7 @@ async def run_tool_like_model(
     representation = registry.get_representation(
         get_active_model() or config.ollama_model or ""
     )
-    server_url_cache: Dict[str, str] = {}
     try:
-        raw = await proxy.list_servers()
-        server_url_cache.update(_server_url_cache_from_list_servers(raw))
         discovery = CommandDiscovery(
             proxy,
             discovery_interval_sec=getattr(config, "command_discovery_interval_sec", 0),
@@ -209,7 +168,6 @@ async def run_tool_like_model(
                     proxy,
                     tool_registry,
                     arguments,
-                    server_url_cache,
                     representation,
                 )
             if tool_name in ("list_servers", "call_server", "help"):
@@ -217,7 +175,6 @@ async def run_tool_like_model(
                     proxy,
                     tool_name,
                     arguments,
-                    server_url_cache=server_url_cache,
                     representation=representation,
                 )
             return representation.format_tool_result(
@@ -228,7 +185,6 @@ async def run_tool_like_model(
             tool_registry,
             tool_name,
             arguments,
-            server_url_cache,
             representation,
         )
     finally:
@@ -239,13 +195,11 @@ async def _run_help_for_model(
     proxy: ProxyClient,
     tool_registry: "ToolCallRegistry",
     arguments: Dict[str, Any],
-    server_url_cache: Dict[str, str],
     representation: ContextRepresentation,
 ) -> str:
     """
-    Run help by command name: resolve command_name to server, get full
-    description from that server. Short and full descriptions come from the
-    server that provides the command.
+    Run help by command name: resolve command_name to server_id, get full
+    description via proxy.help(server_id, command=cmd).
     """
     command_name = (
         (arguments.get("command_name") or arguments.get("cmdname")) or ""
@@ -258,16 +212,8 @@ async def _run_help_for_model(
         return representation.format_tool_result(
             {"error": "Unknown command: %s" % command_name}
         )
-    if server_id not in server_url_cache:
-        raw = await proxy.list_servers()
-        server_url_cache.update(_server_url_cache_from_list_servers(raw))
-    server_url = server_url_cache.get(server_id)
-    if not server_url:
-        return representation.format_tool_result(
-            {"error": "server_id %s not found." % server_id}
-        )
     try:
-        out = await direct_get_help(server_url, command=cmd)
+        out = await proxy.help(server_id, command=cmd)
         return representation.format_tool_result(out)
     except Exception as e:  # noqa: BLE001
         logger.warning("help(%s) failed: %s", command_name, e)
@@ -279,25 +225,21 @@ async def _run_session_tool(
     tool_registry: "ToolCallRegistry",
     tool_name: str,
     arguments: Dict[str, Any],
-    server_url_cache: Dict[str, str],
     representation: ContextRepresentation,
 ) -> str:
     """
-    Execute one session-scoped tool (canonical: resolve, direct call);
-    then translate raw result via representation.format_tool_result.
+    Execute one session-scoped tool: resolve to server_id and command,
+    call proxy.call_server(server_id, command, params); translate result
+    via representation.format_tool_result.
     """
     try:
         command_name, server_id = tool_registry.resolve(tool_name)
-        if server_id not in server_url_cache:
-            raw = await proxy.list_servers()
-            server_url_cache.update(_server_url_cache_from_list_servers(raw))
-        server_url = server_url_cache.get(server_id)
-        if not server_url:
-            return representation.format_tool_result(
-                {"error": "server_id %s not found in server list." % server_id}
-            )
         params = {k: v for k, v in arguments.items() if k not in ("copy_number",)}
-        raw_out = await direct_call_command(server_url, command_name, params=params)
+        raw_out = await proxy.call_server(
+            server_id,
+            command_name,
+            params=params,
+        )
         return representation.format_tool_result(raw_out)
     except KeyError as e:
         logger.warning("Session tool %s not in registry: %s", tool_name, e)
@@ -360,15 +302,13 @@ async def run_chat_flow(
 
     history: List[Dict[str, Any]] = list(messages)
     proxy = ProxyClient(config)
-    server_url_cache: Dict[str, str] = {}
     use_registry = tool_registry is not None
     t_flow_start = time.perf_counter()
     total_prompt_tokens = 0
     total_eval_tokens = 0
-    ollama_client = get_ollama_client(
-        config.model_server_url or config.ollama_base_url,
-        config.ollama_timeout,
-    )
+    provider_client = None
+    if endpoint.is_ollama and config.provider_clients_data:
+        provider_client = get_default_client(config.provider_clients_data)
 
     logger.info(
         "chat_flow start model=%s max_rounds=%s session_tools=%s message_count=%s",
@@ -443,20 +383,20 @@ async def run_chat_flow(
         try:
             t_ollama_start = time.perf_counter()
             if endpoint.is_ollama:
-                model_server = endpoint.base_url
                 logger.debug(
-                    "chat_flow OLLAMA request round=%s url=%s/api/chat model=%s",
+                    "chat_flow OLLAMA request round=%s model=%s (provider client)",
                     round_num + 1,
-                    model_server,
                     use_model,
                 )
-                resp = await ollama_client.post(
-                    f"{model_server}/api/chat",
-                    json=body,
-                )
-                resp.raise_for_status()
-                data = resp.json()
+                if provider_client is None:
+                    raise ValueError(
+                        "Ollama provider client not available; "
+                        "provider_clients_data missing or invalid."
+                    )
+                data = await asyncio.to_thread(provider_client.chat, body)
             else:
+                # Same full context (standards, rules, last_n, relevance slot, tools)
+                # as for Ollama; history is built once in ollama_chat and passed here.
                 logger.debug(
                     "chat_flow commercial request round=%s provider=%s model=%s",
                     round_num + 1,
@@ -613,7 +553,6 @@ async def run_chat_flow(
                             proxy,
                             tool_registry,
                             args_dict,
-                            server_url_cache,
                             representation,
                         )
                     else:
@@ -626,7 +565,6 @@ async def run_chat_flow(
                             tool_registry,
                             tname,
                             args_dict,
-                            server_url_cache,
                             representation,
                         )
                 else:
@@ -634,7 +572,6 @@ async def run_chat_flow(
                         proxy,
                         tname,
                         args_dict,
-                        server_url_cache,
                         representation=representation,
                     )
                 logger.info(

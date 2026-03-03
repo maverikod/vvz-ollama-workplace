@@ -89,8 +89,8 @@ class ProxyClient:
     Client for MCP Proxy: list_servers only (proxy acts as DNS).
 
     Uses mcp_proxy_adapter JsonRpcClient with params from config (same pattern
-    as embed-client AdapterTransport). call_server and help are kept for
-    backward compatibility but chat_flow uses direct_server_client.
+    as embed-client AdapterTransport). list_servers, call_server, and help
+    are used by chat_flow for all tool execution (no direct server access).
     """
 
     def __init__(self, config: WorkstationConfig) -> None:

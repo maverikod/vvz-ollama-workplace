@@ -19,6 +19,13 @@ from ollama_workstation.commands_policy_config import (
     COMMANDS_POLICY_VALUES,
     CommandsPolicyConfig,
 )
+from ollama_workstation.provider_client_config_generator import (
+    generate_provider_clients_section,
+    get_default_ollama_provider_section,
+)
+from ollama_workstation.provider_client_config_validator import (
+    validate_provider_clients_or_raise,
+)
 
 # Default max tool-call rounds per chat (per tech spec)
 DEFAULT_MAX_TOOL_ROUNDS = 10
@@ -52,6 +59,8 @@ class WorkstationConfig:
     model_server_container_name: str = ""
     model_server_image: str = ""
     ollama_timeout: float = DEFAULT_OLLAMA_TIMEOUT
+    # Optional list of model ids (e.g. for representation registry).
+    ollama_models: Tuple[str, ...] = ()
     max_tool_rounds: int = DEFAULT_MAX_TOOL_ROUNDS
     # Optional: for proxy or OLLAMA auth/TLS (e.g. token, cert paths)
     proxy_token: Optional[str] = None
@@ -61,13 +70,14 @@ class WorkstationConfig:
     proxy_client_key: Optional[str] = None
     proxy_ca_cert: Optional[str] = None
     ollama_api_key: Optional[str] = None
-    # API keys for commercial model providers (used when representation uses them).
+    # API keys: canonical source is model_providers[provider].api_key. Flat keys
+    # below are legacy/override only (env or file); resolver uses model_providers first.
     google_api_key: Optional[str] = None
     anthropic_api_key: Optional[str] = None
     openai_api_key: Optional[str] = None
     xai_api_key: Optional[str] = None  # xAI Grok
     deepseek_api_key: Optional[str] = None
-    openrouter_api_key: Optional[str] = None  # OpenRouter (routes to all commercial)
+    openrouter_api_key: Optional[str] = None  # OpenRouter
     # model_providers: provider -> {url, api_key}. URL and key bound to model type.
     # When model selected, both url and api_key for its provider are mandatory.
     model_providers: Dict[str, Dict[str, str]] = field(default_factory=dict)
@@ -116,6 +126,9 @@ class WorkstationConfig:
     # Adapter command execution timeout (sec). When chat exceeds it we return
     # ErrorResult with message instead of raising so the client gets a clear error.
     command_execution_timeout_seconds: int = 120
+    # Normalized provider_clients section (validated at load). Used by chat_flow
+    # to obtain provider client via registry; invalid config blocks startup.
+    provider_clients_data: Optional[Dict[str, Any]] = None
 
     def __post_init__(self) -> None:
         """Normalize URLs (strip trailing slash) and validate."""
@@ -254,17 +267,32 @@ def load_config(config_path: Optional[str] = None) -> WorkstationConfig:
             proxy_client_key = str(proxy_client_key).strip() or None
         if proxy_ca_cert is not None:
             proxy_ca_cert = str(proxy_ca_cert).strip() or None
-    ollama_base_url = os.environ.get(ENV_OLLAMA_BASE_URL) or _get("ollama_base_url", "")
+    ollama_section = ow.get("ollama")
+    if not isinstance(ollama_section, dict):
+        raise ValueError("ollama_workstation.ollama is required and must be an object")
+    o = ollama_section
+
+    ollama_base_url = (
+        os.environ.get(ENV_OLLAMA_BASE_URL) or (o.get("base_url") or "").strip()
+    )
     model_server_url = (
-        os.environ.get(ENV_MODEL_SERVER_URL) or _get("model_server_url") or ""
-    ).strip()
+        os.environ.get(ENV_MODEL_SERVER_URL)
+        or (o.get("model_server_url") or o.get("base_url") or "").strip()
+    )
     if not model_server_url:
         model_server_url = ollama_base_url
-    ollama_model = os.environ.get(ENV_OLLAMA_MODEL) or _get("ollama_model", "")
+    ollama_model = os.environ.get(ENV_OLLAMA_MODEL) or (o.get("model") or "").strip()
     ollama_timeout = _parse_number(
-        os.environ.get(ENV_OLLAMA_TIMEOUT) or _get("ollama_timeout"),
+        os.environ.get(ENV_OLLAMA_TIMEOUT) or o.get("timeout"),
         DEFAULT_OLLAMA_TIMEOUT,
     )
+    _ollama_models_raw = o.get("models")
+    if isinstance(_ollama_models_raw, list):
+        ollama_models = tuple(
+            str(m).strip() for m in _ollama_models_raw if str(m).strip()
+        )
+    else:
+        ollama_models = ()
     max_tool_rounds = _parse_int(
         os.environ.get(ENV_MAX_TOOL_ROUNDS) or _get("max_tool_rounds"),
         DEFAULT_MAX_TOOL_ROUNDS,
@@ -376,13 +404,33 @@ def load_config(config_path: Optional[str] = None) -> WorkstationConfig:
         _parse_int(_get("command_execution_timeout_seconds"), 120),
     )
 
-    model_server_container_name = str(_get("model_server_container_name") or "").strip()
-    model_server_image = str(_get("model_server_image") or "").strip()
+    model_server_container_name = str(o.get("container_name") or "").strip()
+    model_server_image = str(o.get("container_image") or "").strip()
+
+    # Provider clients: from file or generated from ollama section; validated at load.
+    provider_clients_raw = data.get("provider_clients") or ow.get("provider_clients")
+    if isinstance(provider_clients_raw, dict):
+        provider_clients_data = dict(provider_clients_raw)
+    else:
+        base_url = (model_server_url or ollama_base_url or "").strip().rstrip("/")
+        if not base_url:
+            base_url = "http://127.0.0.1:11434"
+        ollama_section = get_default_ollama_provider_section(
+            base_url=base_url,
+            request_timeout_seconds=max(30, int(ollama_timeout)),
+        )
+        provider_clients_data = generate_provider_clients_section(
+            default_provider="ollama",
+            providers={"ollama": ollama_section},
+            validate=False,
+        )
+    validate_provider_clients_or_raise(provider_clients_data)
 
     return WorkstationConfig(
         mcp_proxy_url=mcp_proxy_url,
         ollama_base_url=ollama_base_url,
         ollama_model=ollama_model,
+        ollama_models=ollama_models,
         model_server_url=model_server_url,
         model_server_container_name=model_server_container_name,
         model_server_image=model_server_image,
@@ -424,6 +472,7 @@ def load_config(config_path: Optional[str] = None) -> WorkstationConfig:
         embedding_server_id=embedding_server_id,
         embedding_command=embedding_command,
         command_execution_timeout_seconds=command_execution_timeout_seconds,
+        provider_clients_data=provider_clients_data,
     )
 
 
