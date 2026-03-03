@@ -38,3 +38,4 @@
 - **Status:** Done
 - Naming document `NAMING_FREEZE.md` contains all required output: final package names, PyPI mapping table, WS contract identifier, explicit out-of-scope list; approved as single source of truth.
 - All following steps (01–18) reference `NAMING_FREEZE.md`; no placeholder naming remains in step files.
+- **Verification (2025-03-03):** NAMING_FREEZE.md checked; steps 01–18 reference it and use canonical names (`model_workspace_server` / `model_workspace_client`, `database_server` / `database_client`); PyPI names in step 16 match NAMING_FREEZE.
