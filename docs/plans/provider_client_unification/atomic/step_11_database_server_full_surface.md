@@ -28,6 +28,13 @@ email: vasilyvz@gmail.com
 - Command set covers agreed Redis backend API surface; parameters use strict JSON Schema.
 - Integration test or manual check: call_server(database-server, command, params) succeeds for key commands with real backend.
 
+## Implemented artifacts
+
+- **Command catalog:** [DATABASE_SERVER_COMMAND_CATALOG.md](DATABASE_SERVER_COMMAND_CATALOG.md) — agreed Redis API surface (message_write, messages_get_by_session, session_get, session_create, session_update) with strict JSON Schema.
+- **Config:** `database_server.storage.backend` may be `redis`; when redis: `redis_host`, `redis_port` (optional `redis_password`, `message_key_prefix`, `session_key_prefix`) in `src/database_server/config_validator.py` and `config_generator.py`.
+- **Commands:** `src/database_server/commands/` — adapter Command classes; `register_database_commands(registry)` in `src/database_server/commands/__init__.py`.
+- **Runner:** `docker/run_adapter.py` — when `registration.server_id == "database-server"` loads config, validates with `validate_database_server_config`, creates app with Database Server title/description, registers only database commands, starts server (no model loading).
+
 ## Blocking protocol (mandatory)
 
 - If any requirement is unclear, contradictory, or underspecified: **STOP** implementation.

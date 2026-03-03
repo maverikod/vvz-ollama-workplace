@@ -15,7 +15,7 @@ import sys
 from pathlib import Path
 from typing import Any
 
-VALID_STORAGE_BACKENDS: frozenset[str] = frozenset({"local"})
+VALID_STORAGE_BACKENDS: frozenset[str] = frozenset({"local", "redis"})
 
 
 def validate_database_server_config(app_config: dict[str, Any]) -> list[str]:
@@ -109,6 +109,29 @@ def validate_database_server_config(app_config: dict[str, Any]) -> list[str]:
                     "database_server.storage.backend must be one of %s"
                     % sorted(VALID_STORAGE_BACKENDS)
                 )
+            elif backend == "redis":
+                redis_host = storage.get("redis_host")
+                redis_port = storage.get("redis_port")
+                if (
+                    not redis_host
+                    or not isinstance(redis_host, str)
+                    or not str(redis_host).strip()
+                ):
+                    errors.append(
+                        "database_server.storage.redis_host is required when "
+                        "backend is redis and must be non-empty string"
+                    )
+                if redis_port is not None:
+                    try:
+                        p = int(redis_port)
+                        if p <= 0 or p > 65535:
+                            errors.append(
+                                "database_server.storage.redis_port must be 1-65535"
+                            )
+                    except (TypeError, ValueError):
+                        errors.append(
+                            "database_server.storage.redis_port must be an integer"
+                        )
         data_dir = storage.get("data_dir")
         if data_dir is not None and (
             not isinstance(data_dir, str) or not data_dir.strip()

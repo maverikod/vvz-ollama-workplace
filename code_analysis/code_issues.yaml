@@ -6,7 +6,7 @@ issues:
     line: 22
   - class: MockRegistry
     file: tests/unit/test_database_server_commands.py
-    line: 47
+    line: 49
   files_too_large:
   - exceeds_limit: 1
     file: src/model_workspace_client/build/lib/model_workspace_client/config_cli.py
@@ -1583,19 +1583,19 @@ issues:
     method: config
   - class: MockRegistry
     file: tests/unit/test_database_server_commands.py
-    line: 48
+    line: 50
     method: __init__
   - class: MockRegistry
     file: tests/unit/test_database_server_commands.py
-    line: 51
+    line: 53
     method: register
   - class: null
     file: tests/unit/test_database_server_commands.py
-    line: 48
+    line: 50
     method: __init__
   - class: null
     file: tests/unit/test_database_server_commands.py
-    line: 51
+    line: 53
     method: register
   - class: StubProviderClient
     file: tests/unit/test_provider_client_base.py

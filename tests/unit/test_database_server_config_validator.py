@@ -142,6 +142,28 @@ def test_validate_database_server_config_server_port_invalid() -> None:
     assert any("server.port" in e for e in errors)
 
 
+def test_validate_database_server_config_redis_backend_valid() -> None:
+    """When backend is redis, redis_host and optional redis_port are valid."""
+    config = _valid_db_server_config()
+    config["database_server"]["storage"] = {
+        "backend": "redis",
+        "redis_host": "localhost",
+        "redis_port": 6379,
+    }
+    assert validate_database_server_config(config) == []
+
+
+def test_validate_database_server_config_redis_backend_missing_host() -> None:
+    """When backend is redis, redis_host is required."""
+    config = _valid_db_server_config()
+    config["database_server"]["storage"] = {
+        "backend": "redis",
+        "redis_port": 6379,
+    }
+    errors = validate_database_server_config(config)
+    assert any("redis_host" in e for e in errors)
+
+
 def test_validate_config_file_not_found(tmp_path: Path) -> None:
     """validate_config returns error when file does not exist."""
     errors = validate_config(tmp_path / "nonexistent.json", skip_adapter=True)

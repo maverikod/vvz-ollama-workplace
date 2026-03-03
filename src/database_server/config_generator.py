@@ -222,14 +222,29 @@ def generate_server_config(settings: dict[str, Any]) -> None:
     data["transport"] = {
         "verify_client": bool(settings.get("verify_client", True)),
     }
+    storage_backend = str(settings.get("storage_backend", "local"))
+    storage_block: dict[str, Any] = {
+        "backend": storage_backend,
+        "data_dir": data_dir,
+    }
+    if storage_backend == "redis":
+        storage_block["redis_host"] = str(settings.get("redis_host", "localhost"))
+        storage_block["redis_port"] = int(settings.get("redis_port", 6379))
+        if settings.get("redis_password") is not None:
+            storage_block["redis_password"] = str(settings["redis_password"])
+        storage_block.setdefault(
+            "message_key_prefix",
+            str(settings.get("message_key_prefix", "message")),
+        )
+        storage_block.setdefault(
+            "session_key_prefix",
+            str(settings.get("session_key_prefix", "session")),
+        )
     data["database_server"] = {
         "auth": {
             "require_mtls": True,
         },
-        "storage": {
-            "backend": str(settings.get("storage_backend", "local")),
-            "data_dir": data_dir,
-        },
+        "storage": storage_block,
         "mount_paths": {
             "data_dir": data_dir,
             "log_dir": log_dir,

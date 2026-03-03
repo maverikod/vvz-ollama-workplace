@@ -913,7 +913,7 @@ classes:
     bases: []
     docstring: null
     file: tests/unit/test_database_server_commands.py
-    line: 47
+    line: 49
     methods:
     - __init__
     - register
@@ -1720,7 +1720,7 @@ functions:
     - cls
     docstring: Strict JSON Schema.
     file: src/database_server/commands/session_create_command.py
-    line: 60
+    line: 61
     name: get_schema
   src/database_server/commands/session_get_command.py:_decode_val:
     args:
@@ -5692,7 +5692,7 @@ functions:
     - self
     docstring: null
     file: tests/unit/test_database_server_commands.py
-    line: 48
+    line: 50
     name: __init__
   tests/unit/test_database_server_commands.py:register:
     args:
@@ -5701,27 +5701,25 @@ functions:
     - category
     docstring: null
     file: tests/unit/test_database_server_commands.py
-    line: 51
+    line: 53
     name: register
   tests/unit/test_database_server_commands.py:test_message_write_command_schema_strict:
     args: []
-    docstring: MessageWriteCommand.get_schema has required fields and additionalProperties
-      false.
+    docstring: message_write schema has required fields and additionalProperties false.
     file: tests/unit/test_database_server_commands.py
-    line: 17
+    line: 19
     name: test_message_write_command_schema_strict
   tests/unit/test_database_server_commands.py:test_register_database_commands_registers_all:
     args: []
     docstring: register_database_commands registers all command classes.
     file: tests/unit/test_database_server_commands.py
-    line: 44
+    line: 46
     name: test_register_database_commands_registers_all
   tests/unit/test_database_server_commands.py:test_session_get_command_schema_strict:
     args: []
-    docstring: SessionGetCommand schema has session_id required and additionalProperties
-      false.
+    docstring: 'session_get schema: session_id required, no extra props.'
     file: tests/unit/test_database_server_commands.py
-    line: 36
+    line: 38
     name: test_session_get_command_schema_strict
   tests/unit/test_database_server_config_cli.py:_valid_db_server_config:
     args: []
@@ -14149,19 +14147,25 @@ imports:
     type: import_from
   tests/unit/test_database_server_commands.py:COMMAND_CLASSES:
     file: tests/unit/test_database_server_commands.py
-    line: 12
+    line: 14
     module: database_server.commands
     name: COMMAND_CLASSES
     type: import_from
+  tests/unit/test_database_server_commands.py:ErrorResult:
+    file: tests/unit/test_database_server_commands.py
+    line: 12
+    module: mcp_proxy_adapter.commands.result
+    name: ErrorResult
+    type: import_from
   tests/unit/test_database_server_commands.py:MessageWriteCommand:
     file: tests/unit/test_database_server_commands.py
-    line: 13
+    line: 15
     module: database_server.commands.message_write_command
     name: MessageWriteCommand
     type: import_from
   tests/unit/test_database_server_commands.py:SessionGetCommand:
     file: tests/unit/test_database_server_commands.py
-    line: 14
+    line: 16
     module: database_server.commands.session_get_command
     name: SessionGetCommand
     type: import_from
@@ -14178,7 +14182,7 @@ imports:
     type: import
   tests/unit/test_database_server_commands.py:register_database_commands:
     file: tests/unit/test_database_server_commands.py
-    line: 12
+    line: 14
     module: database_server.commands
     name: register_database_commands
     type: import_from
