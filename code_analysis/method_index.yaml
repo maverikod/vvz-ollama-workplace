@@ -3,11 +3,13 @@ AddCommandToSessionCommand:
 - get_result_schema
 - get_error_schema
 - get_metadata
+AuthError: []
 CallStack:
 - __init__
 - push
 - pop
 - current_depth
+CapabilityNotSupportedError: []
 CommandAliasRegistry:
 - __init__
 - get_display_name
@@ -105,11 +107,15 @@ OllamaRepresentation:
 - serialize_tools
 - serialize_messages
 - format_tool_result
+ProviderError:
+- __init__
+ProviderProtocolError: []
 ProxyClient:
 - __init__
 - _use_ws_first
 ProxyClientError:
 - __init__
+RateLimitError: []
 RedisMessageRecord:
 - __post_init__
 RedisMessageStore:
@@ -176,12 +182,15 @@ StubRepresentation:
 - serialize_tools
 - serialize_messages
 - format_tool_result
+TimeoutError: []
 ToolCallRegistry:
 - __init__
 - register
 - resolve
 - __contains__
+TransportError: []
 TrimmedContext: []
+ValidationError: []
 VectorizationClient: []
 VectorizationError:
 - __init__
