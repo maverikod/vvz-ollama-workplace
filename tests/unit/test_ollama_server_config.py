@@ -8,8 +8,6 @@ email: vasilyvz@gmail.com
 import sys
 from pathlib import Path
 
-import pytest
-
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "src"))  # noqa: E402
 from ollama_workstation.ollama_server_config import (  # noqa: E402
     get_ollama_server_settings,
