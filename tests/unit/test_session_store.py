@@ -70,7 +70,7 @@ class _MockRedis:
 
 
 def test_redis_store_create_and_get_with_standards_rules() -> None:
-    """RedisSessionStore persists and returns session with standards and session_rules."""
+    """RedisSessionStore persists/returns session with standards and session_rules."""
     mock = _MockRedis()
     store = RedisSessionStore(mock, key_prefix="session")
     s = store.create(

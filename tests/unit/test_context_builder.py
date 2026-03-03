@@ -32,14 +32,15 @@ class StubMessageStore(MessageStore):
         return list(self._messages)
 
 
-def test_build_session_not_found_raises() -> None:
+@pytest.mark.asyncio
+async def test_build_session_not_found_raises() -> None:
     """build() with unknown session_id raises ContextBuilderError."""
     session_store = InMemorySessionStore()
     reg = RepresentationRegistry()
     msg_store = StubMessageStore([])
     builder = ContextBuilder(session_store, reg, msg_store)
     with pytest.raises(ContextBuilderError, match="Session not found"):
-        builder.build(
+        await builder.build(
             "no-such-id",
             {},
             4096,
@@ -48,7 +49,8 @@ def test_build_session_not_found_raises() -> None:
         )
 
 
-def test_build_model_not_set_raises() -> None:
+@pytest.mark.asyncio
+async def test_build_model_not_set_raises() -> None:
     """build() when session.model is None raises ContextBuilderError."""
     session_store = InMemorySessionStore()
     session_store.create({"id": "s1", "model": None})
@@ -56,10 +58,11 @@ def test_build_model_not_set_raises() -> None:
     msg_store = StubMessageStore([])
     builder = ContextBuilder(session_store, reg, msg_store)
     with pytest.raises(ContextBuilderError, match="model not set"):
-        builder.build("s1", {}, 4096, last_n_messages=10, min_semantic_tokens=256)
+        await builder.build("s1", {}, 4096, last_n_messages=10, min_semantic_tokens=256)
 
 
-def test_build_returns_trimmed_and_serialized() -> None:
+@pytest.mark.asyncio
+async def test_build_returns_trimmed_and_serialized() -> None:
     """build() with valid session returns TrimmedContext and serialized messages."""
     session_store = InMemorySessionStore()
     session_store.create({"id": "s1", "model": "llama3.2"})
@@ -73,15 +76,16 @@ def test_build_returns_trimmed_and_serialized() -> None:
         ]
     )
     builder = ContextBuilder(session_store, reg, msg_store)
-    trimmed, serialized = builder.build(
+    trimmed, serialized = await builder.build(
         "s1", {}, 4096, last_n_messages=10, min_semantic_tokens=256
     )
     assert trimmed.last_n_messages == [{"role": "user", "content": "Hi"}]
     assert len(serialized) >= 1
 
 
-def test_build_includes_standards_and_session_rules() -> None:
-    """build() includes session.standards and session.session_rules in TrimmedContext."""
+@pytest.mark.asyncio
+async def test_build_includes_standards_and_session_rules() -> None:
+    """build() includes session.standards and session_rules in TrimmedContext."""
     session_store = InMemorySessionStore()
     session_store.create(
         {
@@ -97,7 +101,7 @@ def test_build_includes_standards_and_session_rules() -> None:
     reg.register("llama3.2", OllamaRepresentation())
     msg_store = StubMessageStore([])
     builder = ContextBuilder(session_store, reg, msg_store)
-    trimmed, serialized = builder.build(
+    trimmed, serialized = await builder.build(
         "s1", {}, 4096, last_n_messages=10, min_semantic_tokens=256
     )
     assert trimmed.standards == [
@@ -115,8 +119,9 @@ def test_build_includes_standards_and_session_rules() -> None:
     assert serialized[3]["content"] == "Rule two"
 
 
-def test_build_prepends_file_standards_and_rules(tmp_path: Path) -> None:
-    """build() prepends content from standards_file_path and rules_file_path when set."""
+@pytest.mark.asyncio
+async def test_build_prepends_file_standards_and_rules(tmp_path: Path) -> None:
+    """build() prepends standards_file_path and rules_file_path content when set."""
     standards_file = tmp_path / "standards.md"
     standards_file.write_text("File standards block.", encoding="utf-8")
     rules_file = tmp_path / "rules.md"
@@ -142,7 +147,7 @@ def test_build_prepends_file_standards_and_rules(tmp_path: Path) -> None:
         standards_file_path=str(standards_file),
         rules_file_path=str(rules_file),
     )
-    trimmed, serialized = builder.build(
+    trimmed, serialized = await builder.build(
         "s1", {}, 4096, last_n_messages=10, min_semantic_tokens=256
     )
     # File content first, then session content

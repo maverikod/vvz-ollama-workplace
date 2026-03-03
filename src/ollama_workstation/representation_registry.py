@@ -1,6 +1,6 @@
 """
 Registry: model_id -> ContextRepresentation for provider-specific serialization.
-Step 07.
+Step 07. New model = new ContextRepresentation subclass + register(model_id, instance).
 
 Author: Vasiliy Zdanovskiy
 email: vasilyvz@gmail.com
@@ -15,8 +15,8 @@ from .context_representation import ContextRepresentation
 
 class RepresentationRegistry:
     """
-    Maps model_id to ContextRepresentation instance or type.
-    get_representation(model_id); unknown model => default or raise.
+    Maps model_id to ContextRepresentation. Used to select the representation
+    for the session's model; new model = register(model_id, subclass_instance).
     """
 
     def __init__(

@@ -9,8 +9,6 @@ import json
 import sys
 from pathlib import Path
 
-import pytest
-
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "src"))
 from ollama_workstation.context_file_loader import (  # noqa: E402
     load_text_file,

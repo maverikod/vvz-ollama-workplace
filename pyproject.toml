@@ -37,11 +37,16 @@ where = ["src"]
 root_publishable = false
 model_workspace_client_project = "src/model_workspace_client/pyproject.toml"
 database_client_project = "src/database_client/pyproject.toml"
+model_workspace_client_distribution = "model-workspace-client"
+database_client_distribution = "ollama-model-database-client"
+model_workspace_client_wheel = "src/model_workspace_client/dist/model_workspace_client-*.whl"
+database_client_wheel = "src/database_client/dist/ollama_model_database_client-*.whl"
 
 [tool.black]
 line-length = 88
 # Align with flake8 (max-line-length = 88). Run: black src tests
 target-version = ["py310", "py311", "py312"]
+exclude = "\\.venv|\\.git|__pycache__|build|dist"
 
 [tool.mypy]
 python_version = "3.12"

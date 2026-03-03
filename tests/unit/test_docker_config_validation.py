@@ -17,30 +17,36 @@ from ollama_workstation.docker_config_validation import (  # noqa: E402
 
 
 def _ow_base() -> dict:
-    """Minimal ollama_workstation with required ollama_base_url or model_server_url."""
-    return {"ollama_base_url": "http://localhost:11434"}
+    """Minimal ollama_workstation with required ollama section."""
+    return {"ollama": {"base_url": "http://localhost:11434", "model": "m"}}
 
 
 def test_ollama_models_valid_list() -> None:
-    """Valid ollama_models (list of non-empty strings) adds no errors."""
+    """Valid ollama.models (list of non-empty strings) adds no errors."""
     app_config = {
         "server": {"protocol": "http"},
-        "ollama_workstation": {**_ow_base(), "ollama_models": ["llama3.2", "qwen3"]},
+        "ollama_workstation": {
+            **_ow_base(),
+            "ollama": {**_ow_base()["ollama"], "models": ["llama3.2", "qwen3"]},
+        },
     }
     assert validate_project_config(app_config) == []
 
 
 def test_ollama_models_empty_list() -> None:
-    """Empty list is valid."""
+    """Empty models list is valid."""
     app_config = {
         "server": {"protocol": "http"},
-        "ollama_workstation": {**_ow_base(), "ollama_models": []},
+        "ollama_workstation": {
+            **_ow_base(),
+            "ollama": {**_ow_base()["ollama"], "models": []},
+        },
     }
     assert validate_project_config(app_config) == []
 
 
 def test_ollama_models_missing_key() -> None:
-    """Missing ollama_models key is valid (optional)."""
+    """Missing ollama.models is valid (optional)."""
     app_config = {
         "server": {"protocol": "http"},
         "ollama_workstation": _ow_base(),
@@ -48,19 +54,30 @@ def test_ollama_models_missing_key() -> None:
     assert validate_project_config(app_config) == []
 
 
-def test_model_server_url_or_ollama_base_required() -> None:
-    """ollama_workstation must have ollama_base_url or model_server_url."""
+def test_ollama_section_required() -> None:
+    """ollama_workstation.ollama is required."""
     app_config = {
         "server": {"protocol": "http"},
-        "ollama_workstation": {"ollama_models": []},
+        "ollama_workstation": {},
     }
     errors = validate_project_config(app_config)
     assert len(errors) >= 1
-    assert "ollama_base_url" in errors[0] or "model_server_url" in errors[0]
+    assert "ollama" in errors[0]
+
+
+def test_ollama_base_url_or_model_server_url_required() -> None:
+    """ollama_workstation.ollama must set base_url or model_server_url."""
+    app_config = {
+        "server": {"protocol": "http"},
+        "ollama_workstation": {"ollama": {"model": "m"}},
+    }
+    errors = validate_project_config(app_config)
+    assert len(errors) >= 1
+    assert "base_url" in errors[0] or "model_server_url" in errors[0]
 
 
 def test_commercial_api_keys_must_be_non_empty_when_set() -> None:
-    """When set, google_api_key / anthropic_api_key / openai_api_key must be non-empty."""
+    """When set, google/anthropic/openai/xai/deepseek API keys must be non-empty."""
     app_config = {
         "server": {"protocol": "http"},
         "ollama_workstation": {
@@ -110,12 +127,12 @@ def test_validate_commercial_model_keys_ollama_no_key_ok() -> None:
 
 
 def test_validate_project_config_commercial_model_requires_key() -> None:
-    """Full validation: config with gemini as ollama_model and no google_api_key fails."""
+    """Full validation: gemini as ollama.model without google_api_key fails."""
     app_config = {
         "server": {"protocol": "http"},
         "ollama_workstation": {
             **_ow_base(),
-            "ollama_model": "gemini-1.5-flash",
+            "ollama": {**_ow_base()["ollama"], "model": "gemini-1.5-flash"},
         },
     }
     errors = validate_project_config(app_config)
@@ -128,7 +145,7 @@ def test_validate_project_config_commercial_model_with_key_ok() -> None:
         "server": {"protocol": "http"},
         "ollama_workstation": {
             **_ow_base(),
-            "ollama_model": "gemini-1.5-flash",
+            "ollama": {**_ow_base()["ollama"], "model": "gemini-1.5-flash"},
             "google_api_key": "sk-fake",
         },
     }
@@ -146,7 +163,10 @@ def test_available_providers_google_requires_key() -> None:
         },
     }
     errors = validate_project_config(app_config)
-    assert any("google_api_key" in e or ("model_providers" in e and "google" in e) for e in errors)
+    assert any(
+        "google_api_key" in e or ("model_providers" in e and "google" in e)
+        for e in errors
+    )
 
 
 def test_available_providers_google_with_key_ok() -> None:
@@ -177,10 +197,13 @@ def test_available_providers_invalid_value() -> None:
 
 
 def test_ollama_models_not_list() -> None:
-    """ollama_models must be a list."""
+    """ollama.models must be a list."""
     app_config = {
         "server": {"protocol": "http"},
-        "ollama_workstation": {**_ow_base(), "ollama_models": "llama3.2"},
+        "ollama_workstation": {
+            **_ow_base(),
+            "ollama": {**_ow_base()["ollama"], "models": "llama3.2"},
+        },
     }
     errors = validate_project_config(app_config)
     assert len(errors) == 1
@@ -191,11 +214,14 @@ def test_ollama_models_element_not_string() -> None:
     """Each element must be a string."""
     app_config = {
         "server": {"protocol": "http"},
-        "ollama_workstation": {**_ow_base(), "ollama_models": ["llama3.2", 123]},
+        "ollama_workstation": {
+            **_ow_base(),
+            "ollama": {**_ow_base()["ollama"], "models": ["llama3.2", 123]},
+        },
     }
     errors = validate_project_config(app_config)
     assert len(errors) == 1
-    assert "ollama_models[1]" in errors[0]
+    assert "ollama.models[1]" in errors[0]
     assert "non-empty string" in errors[0]
 
 
@@ -203,22 +229,28 @@ def test_ollama_models_empty_string_element() -> None:
     """Empty string element is invalid."""
     app_config = {
         "server": {"protocol": "http"},
-        "ollama_workstation": {**_ow_base(), "ollama_models": ["llama3.2", ""]},
+        "ollama_workstation": {
+            **_ow_base(),
+            "ollama": {**_ow_base()["ollama"], "models": ["llama3.2", ""]},
+        },
     }
     errors = validate_project_config(app_config)
     assert len(errors) == 1
-    assert "ollama_models[1]" in errors[0]
+    assert "ollama.models[1]" in errors[0]
 
 
 def test_ollama_models_whitespace_only_invalid() -> None:
     """Whitespace-only element is invalid."""
     app_config = {
         "server": {"protocol": "http"},
-        "ollama_workstation": {**_ow_base(), "ollama_models": ["  "]},
+        "ollama_workstation": {
+            **_ow_base(),
+            "ollama": {**_ow_base()["ollama"], "models": ["  "]},
+        },
     }
     errors = validate_project_config(app_config)
     assert len(errors) == 1
-    assert "ollama_models[0]" in errors[0]
+    assert "ollama.models[0]" in errors[0]
 
 
 def test_commands_policy_valid() -> None:
