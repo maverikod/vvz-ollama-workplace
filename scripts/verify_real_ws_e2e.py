@@ -123,7 +123,9 @@ def _get_proxy_base_url() -> str:
     path = os.environ.get("ADAPTER_CONFIG_PATH", "")
     if path and Path(path).exists():
         try:
-            sys.path.insert(0, str(PROJECT_ROOT / "src"))
+            src_dir = str(PROJECT_ROOT / "src")
+            if src_dir not in sys.path:
+                sys.path.insert(0, src_dir)
             from ollama_workstation.config import load_config  # noqa: E402
 
             cfg = load_config(path)
