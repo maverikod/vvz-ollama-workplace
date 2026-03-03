@@ -48,6 +48,51 @@ VALID_PROVIDER_NAMES: frozenset[str] = frozenset(
     {"ollama", "google", "anthropic", "openai", "xai", "grok", "deepseek", "openrouter"}
 )
 
+# Commercial providers that require URL and API key at startup when runtime-allowed.
+COMMERCIAL_PROVIDER_NAMES: frozenset[str] = frozenset(
+    {"google", "anthropic", "openai", "xai", "grok", "deepseek"}
+)
+
+
+def get_runtime_allowed_providers(app_config: dict) -> set[str]:
+    """
+    Return the set of provider names that can be used at runtime (model override).
+
+    Authoritative sources: ollama_workstation.available_providers, providers
+    implied by ollama_workstation.ollama.model/models, and
+    provider_clients.providers keys when present. Used so startup validation
+    requires url+api_key for every commercial provider in this set.
+    """
+    ow = app_config.get("ollama_workstation") or {}
+    pc = app_config.get("provider_clients") or {}
+    providers: set[str] = set()
+    # From available_providers
+    avail = ow.get("available_providers")
+    if isinstance(avail, list):
+        for p in avail:
+            if isinstance(p, str) and p.strip():
+                prov = p.strip().lower()
+                if prov in VALID_PROVIDER_NAMES:
+                    providers.add(prov)
+    # From ollama model(s)
+    oo = _get_ollama_from_ow(ow)
+    if oo:
+        om = (oo.get("ollama_model") or "").strip()
+        if om:
+            providers.add(get_provider_for_model(om))
+        for m in oo.get("ollama_models") or []:
+            if isinstance(m, str) and m.strip():
+                providers.add(get_provider_for_model(m.strip()))
+    # From provider_clients.providers (runtime can use any listed provider)
+    prov_dict = pc.get("providers") if isinstance(pc, dict) else None
+    if isinstance(prov_dict, dict):
+        for name in prov_dict:
+            if isinstance(name, str) and name.strip():
+                pn = name.strip().lower()
+                if pn in VALID_PROVIDER_NAMES:
+                    providers.add(pn)
+    return providers
+
 
 def _get_ollama_from_ow(ow: dict) -> dict | None:
     """
@@ -97,11 +142,15 @@ def get_required_api_key_for_model(model_id: str) -> str | None:
 
 
 def _collect_providers_in_use(
-    ow: dict, ollama_model: str | None, ollama_models: list | None
+    ow: dict,
+    ollama_model: str | None,
+    ollama_models: list | None,
+    app_config: dict | None = None,
 ) -> set[str]:
     """
-    Collect provider names that appear in selected models or available_providers.
-    When a model is selected, its provider's url and api_key are mandatory.
+    Collect provider names that are runtime-allowed: selected models,
+    available_providers, and (when app_config given) provider_clients.providers.
+    When a provider is in this set, url and api_key are mandatory for commercial.
     """
     providers: set[str] = set()
     model_ids: list[str] = []
@@ -120,6 +169,15 @@ def _collect_providers_in_use(
                 prov = p.strip().lower()
                 if prov in VALID_PROVIDER_NAMES:
                     providers.add(prov)
+    if app_config:
+        pc = app_config.get("provider_clients") or {}
+        prov_dict = pc.get("providers") if isinstance(pc, dict) else None
+        if isinstance(prov_dict, dict):
+            for name in prov_dict:
+                if isinstance(name, str) and name.strip():
+                    pn = name.strip().lower()
+                    if pn in VALID_PROVIDER_NAMES:
+                        providers.add(pn)
     return providers
 
 
@@ -154,15 +212,22 @@ def _collect_required_api_keys(
 
 
 def validate_model_providers(
-    ow: dict, ollama_model: str | None, ollama_models: list | None
+    ow: dict,
+    ollama_model: str | None,
+    ollama_models: list | None,
+    app_config: dict | None = None,
 ) -> list[str]:
     """
-    When a model is selected, url and api_key for its provider are mandatory.
-    Uses model_providers (provider -> {url, api_key}).
+    When a provider is runtime-allowed, url and api_key for it are mandatory.
+    Runtime-allowed set = available_providers + model ids + provider_clients.providers.
+    Uses model_providers (provider -> {url, api_key}). Error messages include
+    exact config path (ollama_workstation.*).
     Returns list of error messages.
     """
     errors: list[str] = []
-    providers = _collect_providers_in_use(ow, ollama_model, ollama_models)
+    providers = _collect_providers_in_use(
+        ow, ollama_model, ollama_models, app_config=app_config
+    )
     model_providers = ow.get("model_providers")
     if not isinstance(model_providers, dict):
         model_providers = {}
@@ -182,28 +247,30 @@ def validate_model_providers(
                 url = ollama_url
             if not url:
                 errors.append(
-                    "Model ollama selected: model_providers.ollama.url or "
-                    "ollama_base_url required"
+                    "ollama_workstation.model_providers.ollama.url or "
+                    "ollama_workstation.ollama.base_url required when ollama is "
+                    "runtime-allowed"
                 )
             continue
-        # Commercial: url AND api_key both mandatory when model selected.
+        # Commercial: url AND api_key both mandatory when provider runtime-allowed.
         mp = model_providers.get(prov)
         mp = mp if isinstance(mp, dict) else {}
         url = (mp.get("url") or provider_urls.get(prov) or "").strip()
         api_key = (mp.get("api_key") or "").strip()
-        if not api_key:
-            leg_key = PROVIDER_TO_CONFIG_KEY.get(prov)
-            api_key = (ow.get(leg_key) or "").strip() if leg_key else ""
+        leg_key = PROVIDER_TO_CONFIG_KEY.get(prov)
+        if not api_key and leg_key:
+            api_key = (ow.get(leg_key) or "").strip()
         if not url:
             errors.append(
-                "Model %s selected: model_providers.%s.url or provider_urls.%s "
-                "required (url bound to model type)" % (prov, prov, prov)
+                "ollama_workstation.model_providers.%s.url or "
+                "ollama_workstation.provider_urls.%s required when %s is "
+                "runtime-allowed (commercial provider)" % (prov, prov, prov)
             )
         if not api_key:
+            key_path = "ollama_workstation.%s" % (leg_key or "api_key")
             errors.append(
-                "Model %s selected: model_providers.%s.api_key or %s "
-                "required (key bound to model type)"
-                % (prov, prov, PROVIDER_TO_CONFIG_KEY.get(prov, "api_key"))
+                "%s required when %s is runtime-allowed (commercial provider)"
+                % (key_path, prov)
             )
 
     return errors
@@ -285,7 +352,10 @@ def validate_project_config(app_config: dict) -> list[str]:
             )
         errors.extend(
             validate_model_providers(
-                ow, oo["ollama_model"] or None, oo["ollama_models"] or None
+                ow,
+                oo["ollama_model"] or None,
+                oo["ollama_models"] or None,
+                app_config=app_config,
             )
         )
         raw_om = (ow.get("ollama") or {}).get("models")

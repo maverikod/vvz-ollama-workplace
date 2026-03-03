@@ -11,7 +11,9 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "src"))
 from ollama_workstation.docker_config_validation import (  # noqa: E402
     get_required_api_key_for_model,
+    get_runtime_allowed_providers,
     validate_commercial_model_keys,
+    validate_model_providers,
     validate_project_config,
 )
 
@@ -366,3 +368,128 @@ def test_redis_key_prefix_must_be_string() -> None:
     errors = validate_project_config(app_config)
     assert len(errors) == 1
     assert "redis_key_prefix" in errors[0]
+
+
+# --- Runtime-allowed providers and fail-fast commercial validation ---
+
+
+def test_ollama_only_config_passes() -> None:
+    """Ollama-only config (no commercial in model or available_providers) passes."""
+    app_config = {
+        "server": {"protocol": "http"},
+        "ollama_workstation": {
+            **_ow_base(),
+            "ollama": {**_ow_base()["ollama"], "model": "llama3.2", "models": []},
+        },
+    }
+    assert validate_project_config(app_config) == []
+
+
+def test_ollama_only_with_available_providers_ollama_only_passes() -> None:
+    """available_providers only ollama still passes without commercial keys."""
+    app_config = {
+        "server": {"protocol": "http"},
+        "ollama_workstation": {
+            **_ow_base(),
+            "available_providers": ["ollama"],
+        },
+    }
+    assert validate_project_config(app_config) == []
+
+
+def test_runtime_allowed_commercial_url_but_no_key_fails() -> None:
+    """Commercial provider in available_providers with url but no api_key fails."""
+    app_config = {
+        "server": {"protocol": "http"},
+        "ollama_workstation": {
+            **_ow_base(),
+            "available_providers": ["ollama", "google"],
+            "model_providers": {
+                "ollama": {"url": "http://localhost:11434"},
+                "google": {"url": "https://generativelanguage.googleapis.com/v1beta/"},
+            },
+        },
+    }
+    errors = validate_project_config(app_config)
+    assert any(
+        "google_api_key" in e or ("model_providers.google" in e and "api_key" in e)
+        for e in errors
+    ), (
+        "expected error about missing google api_key when google is runtime-allowed: %s"
+        % errors
+    )
+
+
+def test_config_path_in_commercial_validation_errors() -> None:
+    """Validation errors for commercial providers include exact config path."""
+    app_config = {
+        "server": {"protocol": "http"},
+        "ollama_workstation": {
+            **_ow_base(),
+            "available_providers": ["google"],
+        },
+    }
+    errors = validate_project_config(app_config)
+    assert errors
+    assert any("ollama_workstation" in e for e in errors)
+
+
+def test_provider_clients_providers_expand_runtime_allowed() -> None:
+    """provider_clients.providers keys are runtime-allowed; commercial requires key."""
+    app_config = {
+        "server": {"protocol": "http"},
+        "ollama_workstation": _ow_base(),
+        "provider_clients": {
+            "default_provider": "ollama",
+            "providers": {
+                "ollama": {"transport": {"base_url": "http://localhost:11434"}},
+                "google": {"transport": {"base_url": "https://google.com/v1"}},
+            },
+        },
+    }
+    errors = validate_project_config(app_config)
+    assert any("google" in e and ("api_key" in e or "url" in e) for e in errors), (
+        "expected error for google when in provider_clients.providers: %s" % errors
+    )
+
+
+def test_get_runtime_allowed_providers_from_available_and_models() -> None:
+    """get_runtime_allowed_providers merges available_providers and model ids."""
+    app_config = {
+        "ollama_workstation": {
+            "ollama": {
+                "base_url": "http://localhost:11434",
+                "model": "gemini-2.0-flash",
+                "models": ["llama3.2"],
+            },
+            "available_providers": ["anthropic"],
+        },
+    }
+    providers = get_runtime_allowed_providers(app_config)
+    assert "google" in providers
+    assert "ollama" in providers
+    assert "anthropic" in providers
+
+
+def test_get_runtime_allowed_providers_includes_provider_clients_keys() -> None:
+    """get_runtime_allowed_providers includes provider_clients.providers keys."""
+    app_config = {
+        "ollama_workstation": _ow_base(),
+        "provider_clients": {
+            "default_provider": "ollama",
+            "providers": {"ollama": {}, "openai": {}},
+        },
+    }
+    providers = get_runtime_allowed_providers(app_config)
+    assert "openai" in providers
+    assert "ollama" in providers
+
+
+def test_validate_model_providers_without_app_config_backward_compat() -> None:
+    """validate_model_providers without app_config still runs (backward compat)."""
+    ow = {
+        **_ow_base(),
+        "available_providers": ["ollama"],
+    }
+    errors = validate_model_providers(ow, "llama3.2", [])
+    assert errors == []
