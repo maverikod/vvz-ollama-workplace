@@ -113,6 +113,19 @@ OllamaChatCommand:
 - get_result_schema
 - get_error_schema
 - get_metadata
+OllamaProviderClient:
+- __init__
+- _get_client
+- supports_stream
+- supports_tools
+- supports_embeddings
+- validate_config
+- healthcheck
+- chat
+- embed
+- normalize_response
+- _normalize_embed_response
+- map_error
 OllamaRepresentation:
 - serialize_tools
 - serialize_messages

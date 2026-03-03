@@ -451,6 +451,31 @@ classes:
     line: 44
     methods: []
     name: ModelEndpoint
+  src/ollama_workstation/ollama_provider_client.py:OllamaProviderClient:
+    bases:
+    - BaseProviderClient
+    docstring: 'Ollama provider client: chat and embed via Ollama HTTP API.
+
+
+      Config is the provider section (e.g. provider_clients.providers.ollama)
+
+      with required transport.base_url and optional transport.request_timeout_seconds.'
+    file: src/ollama_workstation/ollama_provider_client.py
+    line: 37
+    methods:
+    - __init__
+    - _get_client
+    - supports_stream
+    - supports_tools
+    - supports_embeddings
+    - validate_config
+    - healthcheck
+    - chat
+    - embed
+    - normalize_response
+    - _normalize_embed_response
+    - map_error
+    name: OllamaProviderClient
   src/ollama_workstation/ollama_representation.py:OllamaRepresentation:
     bases:
     - ContextRepresentation
@@ -784,7 +809,7 @@ classes:
     - BaseProviderClient
     docstring: Minimal implementation for testing the base contract.
     file: tests/unit/test_provider_client_base.py
-    line: 37
+    line: 40
     methods:
     - supports_stream
     - supports_tools
@@ -3628,6 +3653,123 @@ functions:
     file: src/ollama_workstation/ollama_client.py
     line: 87
     name: start_readiness_ping_thread
+  src/ollama_workstation/ollama_provider_client.py:__init__:
+    args:
+    - self
+    - config
+    docstring: "Store provider section config. Call validate_config() before use.\n\
+      \nArgs:\n    config: Provider section dict with at least transport.base_url."
+    file: src/ollama_workstation/ollama_provider_client.py
+    line: 45
+    name: __init__
+  src/ollama_workstation/ollama_provider_client.py:_get_client:
+    args:
+    - self
+    docstring: Return a sync HTTP client; create and cache on first use.
+    file: src/ollama_workstation/ollama_provider_client.py
+    line: 66
+    name: _get_client
+  src/ollama_workstation/ollama_provider_client.py:_normalize_embed_response:
+    args:
+    - self
+    - raw
+    docstring: Convert Ollama /api/embed response to workstation-standard shape.
+    file: src/ollama_workstation/ollama_provider_client.py
+    line: 229
+    name: _normalize_embed_response
+  src/ollama_workstation/ollama_provider_client.py:chat:
+    args:
+    - self
+    - request
+    docstring: 'Send a chat request to Ollama (POST /api/chat).
+
+
+      Request must contain model, messages; optional tools, stream.
+
+      Returns normalized response (message, prompt_eval_count, eval_count).'
+    file: src/ollama_workstation/ollama_provider_client.py
+    line: 135
+    name: chat
+  src/ollama_workstation/ollama_provider_client.py:embed:
+    args:
+    - self
+    - request
+    docstring: 'Request embeddings from Ollama (POST /api/embed).
+
+
+      If supports_embeddings is False, raises CapabilityNotSupportedError
+
+      without network call. Request: model and input (string or list of strings).'
+    file: src/ollama_workstation/ollama_provider_client.py
+    line: 171
+    name: embed
+  src/ollama_workstation/ollama_provider_client.py:healthcheck:
+    args:
+    - self
+    docstring: 'Check that the Ollama endpoint is reachable (GET /api/tags).
+
+
+      Returns True if 200, False otherwise. Maps exceptions via map_error.'
+    file: src/ollama_workstation/ollama_provider_client.py
+    line: 102
+    name: healthcheck
+  src/ollama_workstation/ollama_provider_client.py:map_error:
+    args:
+    - self
+    - exception
+    docstring: 'Map httpx or provider exception to a standard ProviderError.
+
+
+      Returns the appropriate error; caller may re-raise.'
+    file: src/ollama_workstation/ollama_provider_client.py
+    line: 247
+    name: map_error
+  src/ollama_workstation/ollama_provider_client.py:normalize_response:
+    args:
+    - self
+    - raw_response
+    docstring: 'Convert Ollama /api/chat response to workstation-standard shape.
+
+
+      Expects dict: message (role, content, tool_calls), prompt_eval_count,
+
+      eval_count.'
+    file: src/ollama_workstation/ollama_provider_client.py
+    line: 206
+    name: normalize_response
+  src/ollama_workstation/ollama_provider_client.py:supports_embeddings:
+    args:
+    - self
+    docstring: Whether the client supports embedding requests.
+    file: src/ollama_workstation/ollama_provider_client.py
+    line: 82
+    name: supports_embeddings
+  src/ollama_workstation/ollama_provider_client.py:supports_stream:
+    args:
+    - self
+    docstring: Whether the client can return streaming chat responses.
+    file: src/ollama_workstation/ollama_provider_client.py
+    line: 73
+    name: supports_stream
+  src/ollama_workstation/ollama_provider_client.py:supports_tools:
+    args:
+    - self
+    docstring: Report whether the client supports tool/function calling.
+    file: src/ollama_workstation/ollama_provider_client.py
+    line: 77
+    name: supports_tools
+  src/ollama_workstation/ollama_provider_client.py:validate_config:
+    args:
+    - self
+    docstring: 'Validate client configuration before use.
+
+
+      Raises ValidationError if base_url is missing or invalid.
+
+      MUST NOT perform network I/O.'
+    file: src/ollama_workstation/ollama_provider_client.py
+    line: 86
+    name: validate_config
   src/ollama_workstation/ollama_representation.py:format_tool_result:
     args:
     - self
@@ -3986,6 +4128,71 @@ functions:
     file: src/ollama_workstation/provider_models.py
     line: 23
     name: get_cheapest_model
+  src/ollama_workstation/provider_registry.py:_build_ollama:
+    args:
+    - provider_section
+    docstring: 'Build Ollama provider client from provider section dict.
+
+
+      Lazy import so step_08 can be merged after step_09. If ollama_provider_client
+
+      is missing, raises ValidationError with clear message.'
+    file: src/ollama_workstation/provider_registry.py
+    line: 27
+    name: _build_ollama
+  src/ollama_workstation/provider_registry.py:get_client:
+    args:
+    - provider_name
+    - provider_clients_data
+    docstring: "Return a provider client instance for the given provider name.\n\n\
+      Uses provider_clients_data[\"providers\"][provider_name] as the provider\nsection.\
+      \ If validate is True (default), runs step_06 validation first;\ninvalid config\
+      \ raises ValidationError and no client is created.\n\nArgs:\n    provider_name:\
+      \ Config key of the provider (e.g. \"ollama\").\n    provider_clients_data:\
+      \ Full provider_clients section (dict with\n        default_provider and providers).\n\
+      \    validate: If True, call validate_provider_clients_or_raise before\n   \
+      \     building.\n\nReturns:\n    A provider client implementing BaseProviderClient.\n\
+      \nRaises:\n    ValidationError: If validate is True and config is invalid; or\
+      \ if\n        provider_name is missing from providers; or if no builder is\n\
+      \        registered for provider_name (not implemented)."
+    file: src/ollama_workstation/provider_registry.py
+    line: 57
+    name: get_client
+  src/ollama_workstation/provider_registry.py:get_client_from_app_config:
+    args:
+    - app_config
+    - provider_name
+    docstring: "Extract provider_clients from full app config and return a client.\n\
+      \nIf provider_name is None, returns the default provider client.\nOtherwise\
+      \ returns the client for the given provider name.\n\nArgs:\n    app_config:\
+      \ Full application config dict (must contain\n        provider_clients section).\n\
+      \    provider_name: Optional explicit provider; if None, use\n        default_provider.\n\
+      \    validate: If True, validate provider_clients before building.\n\nReturns:\n\
+      \    A provider client for the requested or default provider.\n\nRaises:\n \
+      \   ValidationError: If provider_clients section is missing, invalid,\n    \
+      \    or provider not available."
+    file: src/ollama_workstation/provider_registry.py
+    line: 146
+    name: get_client_from_app_config
+  src/ollama_workstation/provider_registry.py:get_default_client:
+    args:
+    - provider_clients_data
+    docstring: "Return the provider client for the default provider.\n\nReads default_provider\
+      \ from provider_clients_data and returns\nget_client(default_provider, provider_clients_data,\
+      \ validate=validate).\n\nRaises:\n    ValidationError: If config is invalid\
+      \ or default_provider is missing\n        or has no registered builder."
+    file: src/ollama_workstation/provider_registry.py
+    line: 116
+    name: get_default_client
+  src/ollama_workstation/provider_registry.py:list_supported_providers:
+    args: []
+    docstring: 'Return provider names for which a client builder is registered.
+
+
+      Used by callers to know which provider names are valid for get_client.'
+    file: src/ollama_workstation/provider_registry.py
+    line: 184
+    name: list_supported_providers
   src/ollama_workstation/proxy_client.py:__init__:
     args:
     - self
@@ -6176,7 +6383,7 @@ functions:
     - request
     docstring: null
     file: tests/unit/test_provider_client_base.py
-    line: 57
+    line: 60
     name: chat
   tests/unit/test_provider_client_base.py:embed:
     args:
@@ -6184,14 +6391,14 @@ functions:
     - request
     docstring: null
     file: tests/unit/test_provider_client_base.py
-    line: 60
+    line: 63
     name: embed
   tests/unit/test_provider_client_base.py:healthcheck:
     args:
     - self
     docstring: null
     file: tests/unit/test_provider_client_base.py
-    line: 54
+    line: 57
     name: healthcheck
   tests/unit/test_provider_client_base.py:map_error:
     args:
@@ -6199,7 +6406,7 @@ functions:
     - exception
     docstring: null
     file: tests/unit/test_provider_client_base.py
-    line: 66
+    line: 69
     name: map_error
   tests/unit/test_provider_client_base.py:normalize_response:
     args:
@@ -6207,48 +6414,47 @@ functions:
     - raw_response
     docstring: null
     file: tests/unit/test_provider_client_base.py
-    line: 63
+    line: 66
     name: normalize_response
   tests/unit/test_provider_client_base.py:supports_embeddings:
     args:
     - self
     docstring: null
     file: tests/unit/test_provider_client_base.py
-    line: 48
+    line: 51
     name: supports_embeddings
   tests/unit/test_provider_client_base.py:supports_stream:
     args:
     - self
     docstring: null
     file: tests/unit/test_provider_client_base.py
-    line: 41
+    line: 44
     name: supports_stream
   tests/unit/test_provider_client_base.py:supports_tools:
     args:
     - self
     docstring: null
     file: tests/unit/test_provider_client_base.py
-    line: 44
+    line: 47
     name: supports_tools
   tests/unit/test_provider_client_base.py:test_base_provider_client_importable:
     args: []
     docstring: BaseProviderClient is importable from ollama_workstation.
     file: tests/unit/test_provider_client_base.py
-    line: 20
+    line: 23
     name: test_base_provider_client_importable
   tests/unit/test_provider_client_base.py:test_concrete_subclass_implements_contract:
     args: []
-    docstring: A minimal concrete subclass can implement the contract without redefining
-      the interface.
+    docstring: Minimal concrete subclass implements the base contract.
     file: tests/unit/test_provider_client_base.py
-    line: 34
+    line: 37
     name: test_concrete_subclass_implements_contract
   tests/unit/test_provider_client_base.py:validate_config:
     args:
     - self
     docstring: null
     file: tests/unit/test_provider_client_base.py
-    line: 51
+    line: 54
     name: validate_config
   tests/unit/test_provider_client_config_generator.py:test_generate_full_config_with_provider_clients:
     args: []
@@ -6494,6 +6700,73 @@ functions:
     file: tests/unit/test_provider_models.py
     line: 27
     name: test_get_cheapest_model
+  tests/unit/test_provider_registry.py:_minimal_ollama:
+    args: []
+    docstring: Minimal valid provider_clients with ollama (no auth, http).
+    file: tests/unit/test_provider_registry.py
+    line: 26
+    name: _minimal_ollama
+  tests/unit/test_provider_registry.py:test_get_client_empty_provider_name_raises:
+    args: []
+    docstring: get_client with empty provider_name raises ValidationError.
+    file: tests/unit/test_provider_registry.py
+    line: 123
+    name: test_get_client_empty_provider_name_raises
+  tests/unit/test_provider_registry.py:test_get_client_from_app_config_default_provider:
+    args: []
+    docstring: With provider_name=None returns default client or clear error.
+    file: tests/unit/test_provider_registry.py
+    line: 95
+    name: test_get_client_from_app_config_default_provider
+  tests/unit/test_provider_registry.py:test_get_client_from_app_config_missing_section_raises:
+    args: []
+    docstring: get_client_from_app_config without provider_clients raises ValidationError.
+    file: tests/unit/test_provider_registry.py
+    line: 88
+    name: test_get_client_from_app_config_missing_section_raises
+  tests/unit/test_provider_registry.py:test_get_client_invalid_config_raises:
+    args: []
+    docstring: Invalid config with validate=True leads to ValidationError; no client
+      created.
+    file: tests/unit/test_provider_registry.py
+    line: 38
+    name: test_get_client_invalid_config_raises
+  tests/unit/test_provider_registry.py:test_get_client_ollama_returns_client_or_raises_clear:
+    args: []
+    docstring: get_client('ollama', valid_config) returns client or clear ValidationError.
+    file: tests/unit/test_provider_registry.py
+    line: 113
+    name: test_get_client_ollama_returns_client_or_raises_clear
+  tests/unit/test_provider_registry.py:test_get_client_provider_not_in_providers_raises:
+    args: []
+    docstring: Provider name not in providers raises ValidationError.
+    file: tests/unit/test_provider_registry.py
+    line: 62
+    name: test_get_client_provider_not_in_providers_raises
+  tests/unit/test_provider_registry.py:test_get_client_unknown_provider_raises:
+    args: []
+    docstring: Valid config but unsupported provider name raises clear ValidationError.
+    file: tests/unit/test_provider_registry.py
+    line: 49
+    name: test_get_client_unknown_provider_raises
+  tests/unit/test_provider_registry.py:test_get_default_client_invalid_config_raises:
+    args: []
+    docstring: get_default_client with invalid config raises ValidationError.
+    file: tests/unit/test_provider_registry.py
+    line: 70
+    name: test_get_default_client_invalid_config_raises
+  tests/unit/test_provider_registry.py:test_get_default_client_missing_default_raises:
+    args: []
+    docstring: get_default_client with empty default_provider raises ValidationError.
+    file: tests/unit/test_provider_registry.py
+    line: 77
+    name: test_get_default_client_missing_default_raises
+  tests/unit/test_provider_registry.py:test_list_supported_providers_includes_ollama:
+    args: []
+    docstring: list_supported_providers returns at least ollama (phase 1).
+    file: tests/unit/test_provider_registry.py
+    line: 106
+    name: test_list_supported_providers_includes_ollama
   tests/unit/test_proxy_client.py:config:
     args: []
     docstring: null
@@ -10946,6 +11219,94 @@ imports:
     line: 19
     name: time
     type: import
+  src/ollama_workstation/ollama_provider_client.py:Any:
+    file: src/ollama_workstation/ollama_provider_client.py
+    line: 15
+    module: typing
+    name: Any
+    type: import_from
+  src/ollama_workstation/ollama_provider_client.py:AuthError:
+    file: src/ollama_workstation/ollama_provider_client.py
+    line: 20
+    module: provider_errors
+    name: AuthError
+    type: import_from
+  src/ollama_workstation/ollama_provider_client.py:BaseProviderClient:
+    file: src/ollama_workstation/ollama_provider_client.py
+    line: 19
+    module: provider_client_base
+    name: BaseProviderClient
+    type: import_from
+  src/ollama_workstation/ollama_provider_client.py:CapabilityNotSupportedError:
+    file: src/ollama_workstation/ollama_provider_client.py
+    line: 20
+    module: provider_errors
+    name: CapabilityNotSupportedError
+    type: import_from
+  src/ollama_workstation/ollama_provider_client.py:Dict:
+    file: src/ollama_workstation/ollama_provider_client.py
+    line: 15
+    module: typing
+    name: Dict
+    type: import_from
+  src/ollama_workstation/ollama_provider_client.py:Optional:
+    file: src/ollama_workstation/ollama_provider_client.py
+    line: 15
+    module: typing
+    name: Optional
+    type: import_from
+  src/ollama_workstation/ollama_provider_client.py:ProviderError:
+    file: src/ollama_workstation/ollama_provider_client.py
+    line: 20
+    module: provider_errors
+    name: ProviderError
+    type: import_from
+  src/ollama_workstation/ollama_provider_client.py:ProviderProtocolError:
+    file: src/ollama_workstation/ollama_provider_client.py
+    line: 20
+    module: provider_errors
+    name: ProviderProtocolError
+    type: import_from
+  src/ollama_workstation/ollama_provider_client.py:RateLimitError:
+    file: src/ollama_workstation/ollama_provider_client.py
+    line: 20
+    module: provider_errors
+    name: RateLimitError
+    type: import_from
+  src/ollama_workstation/ollama_provider_client.py:TimeoutError:
+    file: src/ollama_workstation/ollama_provider_client.py
+    line: 20
+    module: provider_errors
+    name: TimeoutError
+    type: import_from
+  src/ollama_workstation/ollama_provider_client.py:TransportError:
+    file: src/ollama_workstation/ollama_provider_client.py
+    line: 20
+    module: provider_errors
+    name: TransportError
+    type: import_from
+  src/ollama_workstation/ollama_provider_client.py:ValidationError:
+    file: src/ollama_workstation/ollama_provider_client.py
+    line: 20
+    module: provider_errors
+    name: ValidationError
+    type: import_from
+  src/ollama_workstation/ollama_provider_client.py:annotations:
+    file: src/ollama_workstation/ollama_provider_client.py
+    line: 12
+    module: __future__
+    name: annotations
+    type: import_from
+  src/ollama_workstation/ollama_provider_client.py:httpx:
+    file: src/ollama_workstation/ollama_provider_client.py
+    line: 17
+    name: httpx
+    type: import
+  src/ollama_workstation/ollama_provider_client.py:logging:
+    file: src/ollama_workstation/ollama_provider_client.py
+    line: 14
+    name: logging
+    type: import
   src/ollama_workstation/ollama_representation.py:Any:
     file: src/ollama_workstation/ollama_representation.py
     line: 12
@@ -11099,6 +11460,48 @@ imports:
     line: 12
     module: typing
     name: Optional
+    type: import_from
+  src/ollama_workstation/provider_registry.py:Any:
+    file: src/ollama_workstation/provider_registry.py
+    line: 18
+    module: typing
+    name: Any
+    type: import_from
+  src/ollama_workstation/provider_registry.py:BaseProviderClient:
+    file: src/ollama_workstation/provider_registry.py
+    line: 20
+    module: ollama_workstation.provider_client_base
+    name: BaseProviderClient
+    type: import_from
+  src/ollama_workstation/provider_registry.py:Callable:
+    file: src/ollama_workstation/provider_registry.py
+    line: 18
+    module: typing
+    name: Callable
+    type: import_from
+  src/ollama_workstation/provider_registry.py:OllamaProviderClient:
+    file: src/ollama_workstation/provider_registry.py
+    line: 35
+    module: ollama_workstation.ollama_provider_client
+    name: OllamaProviderClient
+    type: import_from
+  src/ollama_workstation/provider_registry.py:ValidationError:
+    file: src/ollama_workstation/provider_registry.py
+    line: 24
+    module: ollama_workstation.provider_errors
+    name: ValidationError
+    type: import_from
+  src/ollama_workstation/provider_registry.py:annotations:
+    file: src/ollama_workstation/provider_registry.py
+    line: 16
+    module: __future__
+    name: annotations
+    type: import_from
+  src/ollama_workstation/provider_registry.py:validate_provider_clients_or_raise:
+    file: src/ollama_workstation/provider_registry.py
+    line: 21
+    module: ollama_workstation.provider_client_config_validator
+    name: validate_provider_clients_or_raise
     type: import_from
   src/ollama_workstation/proxy_client.py:Any:
     file: src/ollama_workstation/proxy_client.py
@@ -13025,7 +13428,7 @@ imports:
     type: import_from
   tests/unit/test_provider_client_base.py:TransportError:
     file: tests/unit/test_provider_client_base.py
-    line: 67
+    line: 17
     module: ollama_workstation.provider_errors
     name: TransportError
     type: import_from
@@ -13252,6 +13655,64 @@ imports:
     type: import_from
   tests/unit/test_provider_models.py:sys:
     file: tests/unit/test_provider_models.py
+    line: 8
+    name: sys
+    type: import
+  tests/unit/test_provider_registry.py:Any:
+    file: tests/unit/test_provider_registry.py
+    line: 10
+    module: typing
+    name: Any
+    type: import_from
+  tests/unit/test_provider_registry.py:BaseProviderClient:
+    file: tests/unit/test_provider_registry.py
+    line: 16
+    module: ollama_workstation.provider_client_base
+    name: BaseProviderClient
+    type: import_from
+  tests/unit/test_provider_registry.py:Path:
+    file: tests/unit/test_provider_registry.py
+    line: 9
+    module: pathlib
+    name: Path
+    type: import_from
+  tests/unit/test_provider_registry.py:ValidationError:
+    file: tests/unit/test_provider_registry.py
+    line: 17
+    module: ollama_workstation.provider_errors
+    name: ValidationError
+    type: import_from
+  tests/unit/test_provider_registry.py:get_client:
+    file: tests/unit/test_provider_registry.py
+    line: 18
+    module: ollama_workstation.provider_registry
+    name: get_client
+    type: import_from
+  tests/unit/test_provider_registry.py:get_client_from_app_config:
+    file: tests/unit/test_provider_registry.py
+    line: 18
+    module: ollama_workstation.provider_registry
+    name: get_client_from_app_config
+    type: import_from
+  tests/unit/test_provider_registry.py:get_default_client:
+    file: tests/unit/test_provider_registry.py
+    line: 18
+    module: ollama_workstation.provider_registry
+    name: get_default_client
+    type: import_from
+  tests/unit/test_provider_registry.py:list_supported_providers:
+    file: tests/unit/test_provider_registry.py
+    line: 18
+    module: ollama_workstation.provider_registry
+    name: list_supported_providers
+    type: import_from
+  tests/unit/test_provider_registry.py:pytest:
+    file: tests/unit/test_provider_registry.py
+    line: 12
+    name: pytest
+    type: import
+  tests/unit/test_provider_registry.py:sys:
+    file: tests/unit/test_provider_registry.py
     line: 8
     name: sys
     type: import

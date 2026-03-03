@@ -432,6 +432,60 @@ issues:
     line: 20
     module: .server_resolver
     type: import_from_relative
+  - description: Relative import '.provider_client_base' cannot be resolved
+    file: src/ollama_workstation/ollama_provider_client.py
+    imported: BaseProviderClient
+    line: 19
+    module: .provider_client_base
+    type: import_from_relative
+  - description: Relative import '.provider_errors' cannot be resolved
+    file: src/ollama_workstation/ollama_provider_client.py
+    imported: AuthError
+    line: 20
+    module: .provider_errors
+    type: import_from_relative
+  - description: Relative import '.provider_errors' cannot be resolved
+    file: src/ollama_workstation/ollama_provider_client.py
+    imported: CapabilityNotSupportedError
+    line: 20
+    module: .provider_errors
+    type: import_from_relative
+  - description: Relative import '.provider_errors' cannot be resolved
+    file: src/ollama_workstation/ollama_provider_client.py
+    imported: ProviderError
+    line: 20
+    module: .provider_errors
+    type: import_from_relative
+  - description: Relative import '.provider_errors' cannot be resolved
+    file: src/ollama_workstation/ollama_provider_client.py
+    imported: ProviderProtocolError
+    line: 20
+    module: .provider_errors
+    type: import_from_relative
+  - description: Relative import '.provider_errors' cannot be resolved
+    file: src/ollama_workstation/ollama_provider_client.py
+    imported: RateLimitError
+    line: 20
+    module: .provider_errors
+    type: import_from_relative
+  - description: Relative import '.provider_errors' cannot be resolved
+    file: src/ollama_workstation/ollama_provider_client.py
+    imported: TimeoutError
+    line: 20
+    module: .provider_errors
+    type: import_from_relative
+  - description: Relative import '.provider_errors' cannot be resolved
+    file: src/ollama_workstation/ollama_provider_client.py
+    imported: TransportError
+    line: 20
+    module: .provider_errors
+    type: import_from_relative
+  - description: Relative import '.provider_errors' cannot be resolved
+    file: src/ollama_workstation/ollama_provider_client.py
+    imported: ValidationError
+    line: 20
+    module: .provider_errors
+    type: import_from_relative
   - description: Relative import '.config' cannot be resolved
     file: src/ollama_workstation/__init__.py
     imported: WorkstationConfig
@@ -1069,7 +1123,7 @@ issues:
   methods_with_pass:
   - class: StubProviderClient
     file: tests/unit/test_provider_client_base.py
-    line: 51
+    line: 54
     method: validate_config
   methods_without_docstrings:
   - class: null
@@ -1470,75 +1524,75 @@ issues:
     method: config
   - class: StubProviderClient
     file: tests/unit/test_provider_client_base.py
-    line: 41
+    line: 44
     method: supports_stream
   - class: StubProviderClient
     file: tests/unit/test_provider_client_base.py
-    line: 44
+    line: 47
     method: supports_tools
   - class: StubProviderClient
     file: tests/unit/test_provider_client_base.py
-    line: 48
+    line: 51
     method: supports_embeddings
   - class: StubProviderClient
     file: tests/unit/test_provider_client_base.py
-    line: 51
+    line: 54
     method: validate_config
   - class: StubProviderClient
     file: tests/unit/test_provider_client_base.py
-    line: 54
+    line: 57
     method: healthcheck
   - class: StubProviderClient
     file: tests/unit/test_provider_client_base.py
-    line: 57
+    line: 60
     method: chat
   - class: StubProviderClient
     file: tests/unit/test_provider_client_base.py
-    line: 60
+    line: 63
     method: embed
   - class: StubProviderClient
     file: tests/unit/test_provider_client_base.py
-    line: 63
+    line: 66
     method: normalize_response
   - class: StubProviderClient
     file: tests/unit/test_provider_client_base.py
-    line: 66
+    line: 69
     method: map_error
   - class: null
     file: tests/unit/test_provider_client_base.py
-    line: 41
+    line: 44
     method: supports_stream
   - class: null
     file: tests/unit/test_provider_client_base.py
-    line: 44
+    line: 47
     method: supports_tools
   - class: null
     file: tests/unit/test_provider_client_base.py
-    line: 48
+    line: 51
     method: supports_embeddings
   - class: null
     file: tests/unit/test_provider_client_base.py
-    line: 51
+    line: 54
     method: validate_config
   - class: null
     file: tests/unit/test_provider_client_base.py
-    line: 54
+    line: 57
     method: healthcheck
   - class: null
     file: tests/unit/test_provider_client_base.py
-    line: 57
+    line: 60
     method: chat
   - class: null
     file: tests/unit/test_provider_client_base.py
-    line: 60
+    line: 63
     method: embed
   - class: null
     file: tests/unit/test_provider_client_base.py
-    line: 63
+    line: 66
     method: normalize_response
   - class: null
     file: tests/unit/test_provider_client_base.py
-    line: 66
+    line: 69
     method: map_error
   - class: null
     file: tests/unit/test_config_cli.py
@@ -1568,9 +1622,9 @@ summary:
   files_without_docstrings: 3
   generic_exception_usage: 0
   imports_in_middle: 0
-  invalid_imports: 173
+  invalid_imports: 182
   max_lines_limit: 400
   methods_with_pass: 1
   methods_without_docstrings: 122
   not_implemented_in_non_abstract: 0
-  total_issues: 306
+  total_issues: 315
