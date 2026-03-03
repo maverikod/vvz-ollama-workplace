@@ -7,6 +7,7 @@ email: vasilyvz@gmail.com
 
 import sys
 from pathlib import Path
+from typing import Any
 
 import pytest
 
@@ -22,7 +23,7 @@ class _DummyRegistry:
     """Tiny registry stub for capturing command registration calls."""
 
     def __init__(self) -> None:
-        self.calls: list[tuple[type, str]] = []
+        self.calls: list[tuple[type[Any], str]] = []
 
     def register(self, command_cls: type, section: str) -> None:
         self.calls.append((command_cls, section))
@@ -36,7 +37,7 @@ def test_register_ollama_workstation_registers_catalog_with_man_metadata() -> No
     assert len(registry.calls) == 11
     assert {section for _, section in registry.calls} == {"custom"}
     for command_cls, _ in registry.calls:
-        meta = command_cls.get_metadata()  # type: ignore[attr-defined]
+        meta = command_cls.get_metadata()
         assert meta["detail_level"] == "man"
         assert meta["params_schema"] == meta["params"] == meta["parameters"]
         if meta["params_schema"].get("type") == "object":
@@ -49,10 +50,10 @@ def test_register_ollama_server_registers_four_commands() -> None:
     register_ollama_server(registry)
 
     assert len(registry.calls) == 4
-    names = {c.name for c, _ in registry.calls}
+    names = {str(getattr(c, "name", "")) for c, _ in registry.calls}
     assert names == {"chat", "embed", "list", "pull"}
     for command_cls, _ in registry.calls:
-        meta = command_cls.get_metadata()  # type: ignore[attr-defined]
+        meta = command_cls.get_metadata()
         params = meta.get("params_schema") or meta.get("params") or {}
         if params.get("type") == "object":
             assert params.get("additionalProperties") is False
