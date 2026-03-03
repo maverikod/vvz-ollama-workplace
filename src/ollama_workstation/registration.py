@@ -16,6 +16,10 @@ from .commands import (
     GetModelStateCommand,
     InvokeToolCommand,
     OllamaChatCommand,
+    OllamaServerChatCommand,
+    OllamaServerEmbedCommand,
+    OllamaServerListCommand,
+    OllamaServerPullCommand,
     RemoveCommandFromSessionCommand,
     ServerStatusCommand,
     SessionInitCommand,
@@ -173,6 +177,32 @@ def _command_classes() -> Iterable[Type[Any]]:
         InvokeToolCommand,
         SetDefaultModelCommand,
     )
+
+
+def _command_classes_ollama_server() -> Iterable[Type[Any]]:
+    """Return ollama-server command classes (chat, embed, list, pull)."""
+    return (
+        OllamaServerChatCommand,
+        OllamaServerEmbedCommand,
+        OllamaServerListCommand,
+        OllamaServerPullCommand,
+    )
+
+
+def register_ollama_server(registry: Any) -> None:
+    """
+    Register ollama-server commands with the given adapter registry.
+
+    Use when adapter runs with registration.server_id=ollama-server.
+    Registers: chat, embed, list, pull (full Ollama API surface).
+
+    Args:
+        registry: CommandRegistry instance
+        (e.g. from mcp_proxy_adapter.commands.command_registry).
+    """
+    for command_cls in _command_classes_ollama_server():
+        _wrap_metadata(command_cls)
+        registry.register(command_cls, "custom")
 
 
 def register_ollama_workstation(registry: Any) -> None:

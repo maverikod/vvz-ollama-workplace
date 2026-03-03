@@ -13,6 +13,7 @@ import pytest
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "src"))  # noqa: E402
 from ollama_workstation.registration import (  # noqa: E402
     _validate_registration_contract,
+    register_ollama_server,
     register_ollama_workstation,
 )
 
@@ -40,6 +41,21 @@ def test_register_ollama_workstation_registers_catalog_with_man_metadata() -> No
         assert meta["params_schema"] == meta["params"] == meta["parameters"]
         if meta["params_schema"].get("type") == "object":
             assert meta["params_schema"]["additionalProperties"] is False
+
+
+def test_register_ollama_server_registers_four_commands() -> None:
+    """ollama-server catalog: chat, embed, list, pull with strict JSON Schema."""
+    registry = _DummyRegistry()
+    register_ollama_server(registry)
+
+    assert len(registry.calls) == 4
+    names = {c.name for c, _ in registry.calls}
+    assert names == {"chat", "embed", "list", "pull"}
+    for command_cls, _ in registry.calls:
+        meta = command_cls.get_metadata()  # type: ignore[attr-defined]
+        params = meta.get("params_schema") or meta.get("params") or {}
+        if params.get("type") == "object":
+            assert params.get("additionalProperties") is False
 
 
 def test_validate_registration_contract_accepts_naming_freeze_shape() -> None:

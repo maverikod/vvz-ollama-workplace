@@ -31,6 +31,52 @@ classes:
     - __init__
     - messages
     name: DatabaseClientConfigError
+  src/database_server/commands/message_write_command.py:MessageWriteCommand:
+    bases:
+    - Command
+    docstring: 'Write one message record. Key: {message_key_prefix}:{uuid}; value:
+      hash.'
+    file: src/database_server/commands/message_write_command.py
+    line: 29
+    methods:
+    - get_schema
+    name: MessageWriteCommand
+  src/database_server/commands/messages_get_by_session_command.py:MessagesGetBySessionCommand:
+    bases:
+    - Command
+    docstring: Return all messages for session_id, ordered by created_at.
+    file: src/database_server/commands/messages_get_by_session_command.py
+    line: 29
+    methods:
+    - get_schema
+    name: MessagesGetBySessionCommand
+  src/database_server/commands/session_create_command.py:SessionCreateCommand:
+    bases:
+    - Command
+    docstring: Create a new session. Id generated if not provided.
+    file: src/database_server/commands/session_create_command.py
+    line: 48
+    methods:
+    - get_schema
+    name: SessionCreateCommand
+  src/database_server/commands/session_get_command.py:SessionGetCommand:
+    bases:
+    - Command
+    docstring: Return session by id or null if not found.
+    file: src/database_server/commands/session_get_command.py
+    line: 68
+    methods:
+    - get_schema
+    name: SessionGetCommand
+  src/database_server/commands/session_update_command.py:SessionUpdateCommand:
+    bases:
+    - Command
+    docstring: Update existing session by id. Error if not found.
+    file: src/database_server/commands/session_update_command.py
+    line: 67
+    methods:
+    - get_schema
+    name: SessionUpdateCommand
   src/model_workspace_client/build/lib/model_workspace_client/config_validator.py:ModelWorkspaceClientConfigError:
     bases:
     - Exception
@@ -124,7 +170,7 @@ classes:
 
       Returns assistant reply and duration_sec to see if the bottleneck is the model.'
     file: src/ollama_workstation/commands/direct_chat_command.py
-    line: 34
+    line: 35
     methods:
     - get_schema
     - get_result_schema
@@ -207,6 +253,65 @@ classes:
     - get_error_schema
     - get_metadata
     name: OllamaChatCommand
+  src/ollama_workstation/commands/ollama_server_chat_command.py:OllamaServerChatCommand:
+    bases:
+    - Command
+    docstring: 'Call Ollama POST /api/chat with model and messages. No tool loop.
+
+      Returns message, prompt_eval_count, eval_count.'
+    file: src/ollama_workstation/commands/ollama_server_chat_command.py
+    line: 35
+    methods:
+    - get_schema
+    - get_result_schema
+    - get_error_schema
+    - get_metadata
+    name: OllamaServerChatCommand
+  src/ollama_workstation/commands/ollama_server_embed_command.py:OllamaServerEmbedCommand:
+    bases:
+    - Command
+    docstring: 'Call Ollama POST /api/embed with model and input (string or list of
+      strings).
+
+      Returns embeddings array and optional model, prompt_eval_count.'
+    file: src/ollama_workstation/commands/ollama_server_embed_command.py
+    line: 33
+    methods:
+    - get_schema
+    - get_result_schema
+    - get_error_schema
+    - get_metadata
+    name: OllamaServerEmbedCommand
+  src/ollama_workstation/commands/ollama_server_list_command.py:OllamaServerListCommand:
+    bases:
+    - Command
+    docstring: 'Call Ollama GET /api/tags to list available models.
+
+      Returns models array (name, size, digest, etc.).'
+    file: src/ollama_workstation/commands/ollama_server_list_command.py
+    line: 35
+    methods:
+    - get_schema
+    - get_result_schema
+    - get_error_schema
+    - get_metadata
+    name: OllamaServerListCommand
+  src/ollama_workstation/commands/ollama_server_pull_command.py:OllamaServerPullCommand:
+    bases:
+    - Command
+    docstring: 'Call Ollama POST /api/pull to download a model by name.
+
+      Optional stream (default false), insecure (allow insecure registry).
+
+      Returns status (success or error message).'
+    file: src/ollama_workstation/commands/ollama_server_pull_command.py
+    line: 35
+    methods:
+    - get_schema
+    - get_result_schema
+    - get_error_schema
+    - get_metadata
+    name: OllamaServerPullCommand
   src/ollama_workstation/commands/remove_command_from_session_command.py:RemoveCommandFromSessionCommand:
     bases:
     - Command
@@ -293,7 +398,7 @@ classes:
 
       Optional: ollama_timeout, max_tool_rounds, and TLS/API key fields if needed.'
     file: src/ollama_workstation/config.py
-    line: 38
+    line: 45
     methods:
     - __post_init__
     name: WorkstationConfig
@@ -592,9 +697,9 @@ classes:
 
       Uses mcp_proxy_adapter JsonRpcClient with params from config (same pattern
 
-      as embed-client AdapterTransport). call_server and help are kept for
+      as embed-client AdapterTransport). list_servers, call_server, and help
 
-      backward compatibility but chat_flow uses direct_server_client.'
+      are used by chat_flow for all tool execution (no direct server access).'
     file: src/ollama_workstation/proxy_client.py
     line: 87
     methods:
@@ -804,6 +909,15 @@ classes:
     - serialize_messages
     - format_tool_result
     name: StubRepresentation
+  tests/unit/test_database_server_commands.py:MockRegistry:
+    bases: []
+    docstring: null
+    file: tests/unit/test_database_server_commands.py
+    line: 47
+    methods:
+    - __init__
+    - register
+    name: MockRegistry
   tests/unit/test_provider_client_base.py:StubProviderClient:
     bases:
     - BaseProviderClient
@@ -825,7 +939,7 @@ classes:
     bases: []
     docstring: Tiny registry stub for capturing command registration calls.
     file: tests/unit/test_registration.py
-    line: 20
+    line: 21
     methods:
     - __init__
     - register
@@ -903,7 +1017,7 @@ functions:
     docstring: 'Run in background: ensure container if configured, load and warm via
       API.'
     file: docker/run_adapter.py
-    line: 149
+    line: 181
     name: _model_loading_worker
   docker/run_adapter.py:_patched_wait_for:
     args:
@@ -911,19 +1025,19 @@ functions:
     - timeout
     docstring: null
     file: docker/run_adapter.py
-    line: 107
+    line: 132
     name: _patched_wait_for
   docker/run_adapter.py:main:
     args: []
     docstring: Load config, validate, create app, register commands, run hypercorn.
     file: docker/run_adapter.py
-    line: 59
+    line: 77
     name: main
   docker/run_adapter.py:register_commands:
     args: []
-    docstring: Register OLLAMA workstation command with adapter registry.
+    docstring: 'Register commands by server_id: ollama-server | workstation | database-server.'
     file: docker/run_adapter.py
-    line: 52
+    line: 58
     name: register_commands
   scripts/check_provider_endpoints.py:_is_local_ollama:
     args:
@@ -1555,6 +1669,129 @@ functions:
     file: src/database_client/config_validator.py
     line: 164
     name: validate_config_dict
+  src/database_server/commands/__init__.py:register_database_commands:
+    args:
+    - registry
+    docstring: Register all database-server commands with the adapter registry.
+    file: src/database_server/commands/__init__.py
+    line: 27
+    name: register_database_commands
+  src/database_server/commands/message_write_command.py:_get_config:
+    args: []
+    docstring: Return app config from adapter config singleton.
+    file: src/database_server/commands/message_write_command.py
+    line: 18
+    name: _get_config
+  src/database_server/commands/message_write_command.py:get_schema:
+    args:
+    - cls
+    docstring: Strict JSON Schema; additionalProperties false.
+    file: src/database_server/commands/message_write_command.py
+    line: 41
+    name: get_schema
+  src/database_server/commands/messages_get_by_session_command.py:_get_config:
+    args: []
+    docstring: Return app config from adapter config singleton.
+    file: src/database_server/commands/messages_get_by_session_command.py
+    line: 18
+    name: _get_config
+  src/database_server/commands/messages_get_by_session_command.py:get_schema:
+    args:
+    - cls
+    docstring: Strict JSON Schema.
+    file: src/database_server/commands/messages_get_by_session_command.py
+    line: 41
+    name: get_schema
+  src/database_server/commands/session_create_command.py:_ensure_list:
+    args:
+    - val
+    docstring: Ensure value is list of strings.
+    file: src/database_server/commands/session_create_command.py
+    line: 39
+    name: _ensure_list
+  src/database_server/commands/session_create_command.py:_get_config:
+    args: []
+    docstring: Return app config from adapter config singleton.
+    file: src/database_server/commands/session_create_command.py
+    line: 28
+    name: _get_config
+  src/database_server/commands/session_create_command.py:get_schema:
+    args:
+    - cls
+    docstring: Strict JSON Schema.
+    file: src/database_server/commands/session_create_command.py
+    line: 60
+    name: get_schema
+  src/database_server/commands/session_get_command.py:_decode_val:
+    args:
+    - val
+    docstring: Decode Redis response to string.
+    file: src/database_server/commands/session_get_command.py
+    line: 39
+    name: _decode_val
+  src/database_server/commands/session_get_command.py:_get_config:
+    args: []
+    docstring: Return app config from adapter config singleton.
+    file: src/database_server/commands/session_get_command.py
+    line: 28
+    name: _get_config
+  src/database_server/commands/session_get_command.py:_parse_bool:
+    args:
+    - val
+    - default
+    docstring: Parse bool from Redis value.
+    file: src/database_server/commands/session_get_command.py
+    line: 60
+    name: _parse_bool
+  src/database_server/commands/session_get_command.py:_parse_list:
+    args:
+    - val
+    docstring: Parse JSON array of strings from Redis field.
+    file: src/database_server/commands/session_get_command.py
+    line: 48
+    name: _parse_list
+  src/database_server/commands/session_get_command.py:get_schema:
+    args:
+    - cls
+    docstring: Strict JSON Schema.
+    file: src/database_server/commands/session_get_command.py
+    line: 77
+    name: get_schema
+  src/database_server/commands/session_update_command.py:_decode_val:
+    args:
+    - val
+    docstring: Decode Redis response.
+    file: src/database_server/commands/session_update_command.py
+    line: 38
+    name: _decode_val
+  src/database_server/commands/session_update_command.py:_get_config:
+    args: []
+    docstring: Return app config from adapter config singleton.
+    file: src/database_server/commands/session_update_command.py
+    line: 27
+    name: _get_config
+  src/database_server/commands/session_update_command.py:_parse_bool:
+    args:
+    - val
+    - default
+    docstring: Parse bool from Redis value.
+    file: src/database_server/commands/session_update_command.py
+    line: 59
+    name: _parse_bool
+  src/database_server/commands/session_update_command.py:_parse_list:
+    args:
+    - val
+    docstring: Parse JSON array of strings.
+    file: src/database_server/commands/session_update_command.py
+    line: 47
+    name: _parse_list
+  src/database_server/commands/session_update_command.py:get_schema:
+    args:
+    - cls
+    docstring: Strict JSON Schema.
+    file: src/database_server/commands/session_update_command.py
+    line: 79
+    name: get_schema
   src/database_server/config_cli.py:_cmd_generate:
     args:
     - args
@@ -1664,7 +1901,7 @@ functions:
 
       If template is None, uses default template with certs_dir from env or cwd.'
     file: src/database_server/config_generator.py
-    line: 254
+    line: 269
     name: generate_from_merged
   src/database_server/config_generator.py:generate_server_config:
     args:
@@ -1712,7 +1949,7 @@ functions:
 
       Returns combined list of error messages; empty if valid.'
     file: src/database_server/config_validator.py
-    line: 181
+    line: 204
     name: validate_config
   src/database_server/config_validator.py:validate_config_or_exit:
     args:
@@ -1724,7 +1961,7 @@ functions:
 
       Use on server startup so invalid config blocks startup with explicit diagnostics.'
     file: src/database_server/config_validator.py
-    line: 218
+    line: 241
     name: validate_config_or_exit
   src/database_server/config_validator.py:validate_database_server_config:
     args:
@@ -1739,6 +1976,30 @@ functions:
     file: src/database_server/config_validator.py
     line: 21
     name: validate_database_server_config
+  src/database_server/redis_facade.py:get_redis_client:
+    args:
+    - app_config
+    docstring: 'Return Redis client for database_server.storage when backend is redis.
+
+
+      Uses lazy singleton keyed by (host, port, password) so config changes
+
+      (e.g. reload) get a new client. Returns None if backend is not redis
+
+      or redis config is missing.'
+    file: src/database_server/redis_facade.py
+    line: 16
+    name: get_redis_client
+  src/database_server/redis_facade.py:get_storage_prefixes:
+    args:
+    - app_config
+    docstring: 'Return (message_key_prefix, session_key_prefix) from database_server.storage.
+
+
+      Defaults: ("message", "session"). Used when backend is redis.'
+    file: src/database_server/redis_facade.py
+    line: 51
+    name: get_storage_prefixes
   src/model_workspace_client/build/lib/model_workspace_client/config_cli.py:_cmd_generate:
     args:
     - args
@@ -2438,20 +2699,13 @@ functions:
     file: src/ollama_workstation/call_stack.py
     line: 23
     name: push
-  src/ollama_workstation/chat_flow.py:_server_url_cache_from_list_servers:
-    args:
-    - raw
-    docstring: Build server_id -> server_url from list_servers response (proxy = DNS).
-    file: src/ollama_workstation/chat_flow.py
-    line: 50
-    name: _server_url_cache_from_list_servers
   src/ollama_workstation/chat_flow.py:_tool_message:
     args:
     - tool_name
     - content
     docstring: 'Build OLLAMA tool message: role tool, tool_name, content (spec 2.2).'
     file: src/ollama_workstation/chat_flow.py
-    line: 41
+    line: 40
     name: _tool_message
   src/ollama_workstation/command_alias_registry.py:__init__:
     args:
@@ -2578,28 +2832,28 @@ functions:
     - cls
     docstring: 'Error: message, optional code.'
     file: src/ollama_workstation/commands/direct_chat_command.py
-    line: 85
+    line: 86
     name: get_error_schema
   src/ollama_workstation/commands/direct_chat_command.py:get_metadata:
     args:
     - cls
     docstring: Metadata for the command.
     file: src/ollama_workstation/commands/direct_chat_command.py
-    line: 96
+    line: 97
     name: get_metadata
   src/ollama_workstation/commands/direct_chat_command.py:get_result_schema:
     args:
     - cls
     docstring: 'Result: message, duration_sec, model.'
     file: src/ollama_workstation/commands/direct_chat_command.py
-    line: 69
+    line: 70
     name: get_result_schema
   src/ollama_workstation/commands/direct_chat_command.py:get_schema:
     args:
     - cls
     docstring: 'Parameters: content (required), optional model, config_path.'
     file: src/ollama_workstation/commands/direct_chat_command.py
-    line: 47
+    line: 48
     name: get_schema
   src/ollama_workstation/commands/get_model_context_command.py:_messages_for_display:
     args:
@@ -2758,6 +3012,177 @@ functions:
     file: src/ollama_workstation/commands/ollama_chat_schema.py
     line: 143
     name: get_ollama_chat_result_schema
+  src/ollama_workstation/commands/ollama_server_chat_command.py:_get_config_data:
+    args: []
+    docstring: Adapter config dict from mcp_proxy_adapter.
+    file: src/ollama_workstation/commands/ollama_server_chat_command.py
+    line: 25
+    name: _get_config_data
+  src/ollama_workstation/commands/ollama_server_chat_command.py:_sync_post_chat:
+    args:
+    - base_url
+    - body
+    - timeout
+    docstring: Sync POST /api/chat.
+    file: src/ollama_workstation/commands/ollama_server_chat_command.py
+    line: 180
+    name: _sync_post_chat
+  src/ollama_workstation/commands/ollama_server_chat_command.py:get_error_schema:
+    args:
+    - cls
+    docstring: 'Error: message, code.'
+    file: src/ollama_workstation/commands/ollama_server_chat_command.py
+    line: 104
+    name: get_error_schema
+  src/ollama_workstation/commands/ollama_server_chat_command.py:get_metadata:
+    args:
+    - cls
+    docstring: Metadata for discovery/help.
+    file: src/ollama_workstation/commands/ollama_server_chat_command.py
+    line: 116
+    name: get_metadata
+  src/ollama_workstation/commands/ollama_server_chat_command.py:get_result_schema:
+    args:
+    - cls
+    docstring: 'Result: message, prompt_eval_count, eval_count.'
+    file: src/ollama_workstation/commands/ollama_server_chat_command.py
+    line: 85
+    name: get_result_schema
+  src/ollama_workstation/commands/ollama_server_chat_command.py:get_schema:
+    args:
+    - cls
+    docstring: Strict JSON Schema for parameters.
+    file: src/ollama_workstation/commands/ollama_server_chat_command.py
+    line: 48
+    name: get_schema
+  src/ollama_workstation/commands/ollama_server_embed_command.py:_get_config_data:
+    args: []
+    docstring: Adapter config dict from mcp_proxy_adapter.
+    file: src/ollama_workstation/commands/ollama_server_embed_command.py
+    line: 23
+    name: _get_config_data
+  src/ollama_workstation/commands/ollama_server_embed_command.py:_sync_post_embed:
+    args:
+    - base_url
+    - body
+    - timeout
+    docstring: Sync POST /api/embed.
+    file: src/ollama_workstation/commands/ollama_server_embed_command.py
+    line: 164
+    name: _sync_post_embed
+  src/ollama_workstation/commands/ollama_server_embed_command.py:get_error_schema:
+    args:
+    - cls
+    docstring: 'Error: message, code.'
+    file: src/ollama_workstation/commands/ollama_server_embed_command.py
+    line: 88
+    name: get_error_schema
+  src/ollama_workstation/commands/ollama_server_embed_command.py:get_metadata:
+    args:
+    - cls
+    docstring: Metadata for discovery/help.
+    file: src/ollama_workstation/commands/ollama_server_embed_command.py
+    line: 100
+    name: get_metadata
+  src/ollama_workstation/commands/ollama_server_embed_command.py:get_result_schema:
+    args:
+    - cls
+    docstring: 'Result: embeddings, model, prompt_eval_count.'
+    file: src/ollama_workstation/commands/ollama_server_embed_command.py
+    line: 71
+    name: get_result_schema
+  src/ollama_workstation/commands/ollama_server_embed_command.py:get_schema:
+    args:
+    - cls
+    docstring: Strict JSON Schema for parameters.
+    file: src/ollama_workstation/commands/ollama_server_embed_command.py
+    line: 46
+    name: get_schema
+  src/ollama_workstation/commands/ollama_server_list_command.py:_get_config_data:
+    args: []
+    docstring: Adapter config dict from mcp_proxy_adapter.
+    file: src/ollama_workstation/commands/ollama_server_list_command.py
+    line: 25
+    name: _get_config_data
+  src/ollama_workstation/commands/ollama_server_list_command.py:_sync_get_tags:
+    args:
+    - base_url
+    - timeout
+    docstring: Sync GET /api/tags.
+    file: src/ollama_workstation/commands/ollama_server_list_command.py
+    line: 120
+    name: _sync_get_tags
+  src/ollama_workstation/commands/ollama_server_list_command.py:get_error_schema:
+    args:
+    - cls
+    docstring: 'Error: message, code.'
+    file: src/ollama_workstation/commands/ollama_server_list_command.py
+    line: 71
+    name: get_error_schema
+  src/ollama_workstation/commands/ollama_server_list_command.py:get_metadata:
+    args:
+    - cls
+    docstring: Metadata for discovery/help.
+    file: src/ollama_workstation/commands/ollama_server_list_command.py
+    line: 83
+    name: get_metadata
+  src/ollama_workstation/commands/ollama_server_list_command.py:get_result_schema:
+    args:
+    - cls
+    docstring: 'Result: models array.'
+    file: src/ollama_workstation/commands/ollama_server_list_command.py
+    line: 55
+    name: get_result_schema
+  src/ollama_workstation/commands/ollama_server_list_command.py:get_schema:
+    args:
+    - cls
+    docstring: No parameters; strict schema.
+    file: src/ollama_workstation/commands/ollama_server_list_command.py
+    line: 45
+    name: get_schema
+  src/ollama_workstation/commands/ollama_server_pull_command.py:_get_config_data:
+    args: []
+    docstring: Adapter config dict from mcp_proxy_adapter.
+    file: src/ollama_workstation/commands/ollama_server_pull_command.py
+    line: 25
+    name: _get_config_data
+  src/ollama_workstation/commands/ollama_server_pull_command.py:_sync_post_pull:
+    args:
+    - base_url
+    - body
+    - timeout
+    docstring: Sync POST /api/pull. Returns True on 200.
+    file: src/ollama_workstation/commands/ollama_server_pull_command.py
+    line: 163
+    name: _sync_post_pull
+  src/ollama_workstation/commands/ollama_server_pull_command.py:get_error_schema:
+    args:
+    - cls
+    docstring: 'Error: message, code.'
+    file: src/ollama_workstation/commands/ollama_server_pull_command.py
+    line: 93
+    name: get_error_schema
+  src/ollama_workstation/commands/ollama_server_pull_command.py:get_metadata:
+    args:
+    - cls
+    docstring: Metadata for discovery/help.
+    file: src/ollama_workstation/commands/ollama_server_pull_command.py
+    line: 105
+    name: get_metadata
+  src/ollama_workstation/commands/ollama_server_pull_command.py:get_result_schema:
+    args:
+    - cls
+    docstring: 'Result: status, optional message.'
+    file: src/ollama_workstation/commands/ollama_server_pull_command.py
+    line: 74
+    name: get_result_schema
+  src/ollama_workstation/commands/ollama_server_pull_command.py:get_schema:
+    args:
+    - cls
+    docstring: Strict JSON Schema for parameters.
+    file: src/ollama_workstation/commands/ollama_server_pull_command.py
+    line: 49
+    name: get_schema
   src/ollama_workstation/commands/remove_command_from_session_command.py:get_error_schema:
     args:
     - cls
@@ -2957,7 +3382,7 @@ functions:
     - self
     docstring: Normalize URLs (strip trailing slash) and validate.
     file: src/ollama_workstation/config.py
-    line: 123
+    line: 133
     name: __post_init__
   src/ollama_workstation/config.py:_get:
     args:
@@ -2965,7 +3390,7 @@ functions:
     - default
     docstring: Get config value from root or ollama_workstation section.
     file: src/ollama_workstation/config.py
-    line: 237
+    line: 247
     name: _get
   src/ollama_workstation/config.py:_load_commands_policy_config:
     args:
@@ -2979,7 +3404,7 @@ functions:
 
       deny_by_default with empty allowed (no tools until config lists allowed_commands).'
     file: src/ollama_workstation/config.py
-    line: 449
+    line: 479
     name: _load_commands_policy_config
   src/ollama_workstation/config.py:_opt_key:
     args:
@@ -2987,7 +3412,7 @@ functions:
     - key
     docstring: null
     file: src/ollama_workstation/config.py
-    line: 297
+    line: 307
     name: _opt_key
   src/ollama_workstation/config.py:_parse_int:
     args:
@@ -2995,7 +3420,7 @@ functions:
     - default
     docstring: Parse an integer from config or env; return default if invalid.
     file: src/ollama_workstation/config.py
-    line: 154
+    line: 164
     name: _parse_int
   src/ollama_workstation/config.py:_parse_number:
     args:
@@ -3003,7 +3428,7 @@ functions:
     - default
     docstring: Parse a number from config or env; return default if invalid.
     file: src/ollama_workstation/config.py
-    line: 144
+    line: 154
     name: _parse_number
   src/ollama_workstation/config.py:_proxy_from_registration:
     args:
@@ -3015,7 +3440,7 @@ functions:
 
       for cert, key, ca. Returns (protocol, host, port, cert_path, key_path, ca_path).'
     file: src/ollama_workstation/config.py
-    line: 164
+    line: 174
     name: _proxy_from_registration
   src/ollama_workstation/config.py:load_config:
     args:
@@ -3026,7 +3451,7 @@ functions:
       \ path to YAML or JSON config file.\n\nReturns:\n    WorkstationConfig instance.\n\
       \nRaises:\n    ValueError: If required fields are missing after loading."
     file: src/ollama_workstation/config.py
-    line: 197
+    line: 207
     name: load_config
   src/ollama_workstation/config_cli.py:_cmd_generate:
     args:
@@ -3279,9 +3704,11 @@ functions:
   src/ollama_workstation/docker_config_validation.py:validate_project_config:
     args:
     - app_config
-    docstring: 'Project-specific validation (mTLS, ollama_workstation.ollama).
+    docstring: 'Project-specific validation (mTLS, ollama_workstation.ollama or ollama_server).
 
-      Returns list of error messages; empty if valid.'
+      Returns list of error messages; empty if valid.
+
+      When registration.server_id is ollama-server, only ollama base_url is required.'
     file: src/ollama_workstation/docker_config_validation.py
     line: 232
     name: validate_project_config
@@ -3805,6 +4232,17 @@ functions:
     file: src/ollama_workstation/ollama_representation.py
     line: 28
     name: serialize_tools
+  src/ollama_workstation/ollama_server_config.py:get_ollama_server_settings:
+    args:
+    - config_data
+    docstring: "Get base_url and timeout for Ollama API from adapter config.\n\nPrefers\
+      \ ollama_server.base_url / request_timeout_seconds; falls back to\nollama_workstation.ollama.base_url\
+      \ and timeout (or 120).\n\nArgs:\n    config_data: Adapter config dict (e.g.\
+      \ get_config().config_data).\n\nReturns:\n    (base_url, timeout_seconds). base_url\
+      \ has no trailing slash."
+    file: src/ollama_workstation/ollama_server_config.py
+    line: 19
+    name: get_ollama_server_settings
   src/ollama_workstation/provider_client_base.py:chat:
     args:
     - self
@@ -4239,8 +4677,14 @@ functions:
     args: []
     docstring: Return all workstation command classes included in command catalog.
     file: src/ollama_workstation/registration.py
-    line: 161
+    line: 165
     name: _command_classes
+  src/ollama_workstation/registration.py:_command_classes_ollama_server:
+    args: []
+    docstring: Return ollama-server command classes (chat, embed, list, pull).
+    file: src/ollama_workstation/registration.py
+    line: 182
+    name: _command_classes_ollama_server
   src/ollama_workstation/registration.py:_ensure_object_schema:
     args:
     - schema
@@ -4249,21 +4693,21 @@ functions:
 
       This keeps command discovery/help output deterministic for downstream clients.'
     file: src/ollama_workstation/registration.py
-    line: 41
+    line: 45
     name: _ensure_object_schema
   src/ollama_workstation/registration.py:_metadata_wrapper:
     args:
     - cls
     docstring: null
     file: src/ollama_workstation/registration.py
-    line: 90
+    line: 94
     name: _metadata_wrapper
   src/ollama_workstation/registration.py:_normalize_path:
     args:
     - value
     docstring: Normalize config path to slash-separated string for substring checks.
     file: src/ollama_workstation/registration.py
-    line: 36
+    line: 40
     name: _normalize_path
   src/ollama_workstation/registration.py:_normalized_metadata:
     args:
@@ -4272,14 +4716,14 @@ functions:
     docstring: Build metadata with unified schema keys and minimum detail level =
       man.
     file: src/ollama_workstation/registration.py
-    line: 60
+    line: 64
     name: _normalized_metadata
   src/ollama_workstation/registration.py:_validate_registration_contract:
     args:
     - config_data
     docstring: Validate registration config against phase-1 naming freeze constraints.
     file: src/ollama_workstation/registration.py
-    line: 102
+    line: 106
     name: _validate_registration_contract
   src/ollama_workstation/registration.py:_wrap_metadata:
     args:
@@ -4287,8 +4731,18 @@ functions:
     docstring: Patch get_metadata once so registry/help/discovery receive normalized
       shape.
     file: src/ollama_workstation/registration.py
-    line: 82
+    line: 86
     name: _wrap_metadata
+  src/ollama_workstation/registration.py:register_ollama_server:
+    args:
+    - registry
+    docstring: "Register ollama-server commands with the given adapter registry.\n\
+      \nUse when adapter runs with registration.server_id=ollama-server.\nRegisters:\
+      \ chat, embed, list, pull (full Ollama API surface).\n\nArgs:\n    registry:\
+      \ CommandRegistry instance\n    (e.g. from mcp_proxy_adapter.commands.command_registry)."
+    file: src/ollama_workstation/registration.py
+    line: 192
+    name: register_ollama_server
   src/ollama_workstation/registration.py:register_ollama_workstation:
     args:
     - registry
@@ -4297,7 +4751,7 @@ functions:
       \ server_status, and session commands are available.\n\nArgs:\n    registry:\
       \ CommandRegistry instance\n    (e.g. from mcp_proxy_adapter.commands.command_registry)."
     file: src/ollama_workstation/registration.py
-    line: 178
+    line: 208
     name: register_ollama_workstation
   src/ollama_workstation/relevance_slot_builder.py:__init__:
     args:
@@ -4685,16 +5139,8 @@ functions:
     args: []
     docstring: null
     file: tests/unit/test_chat_flow.py
-    line: 25
+    line: 28
     name: config
-  tests/unit/test_chat_flow.py:post:
-    args:
-    - _url
-    - json
-    docstring: null
-    file: tests/unit/test_chat_flow.py
-    line: 61
-    name: post
   tests/unit/test_command_alias_registry.py:test_alias_configured_returns_display_name:
     args: []
     docstring: When alias is set, get_display_name returns it.
@@ -5241,6 +5687,42 @@ functions:
     file: tests/unit/test_database_client_config_validator.py
     line: 174
     name: test_validate_config_valid_file
+  tests/unit/test_database_server_commands.py:__init__:
+    args:
+    - self
+    docstring: null
+    file: tests/unit/test_database_server_commands.py
+    line: 48
+    name: __init__
+  tests/unit/test_database_server_commands.py:register:
+    args:
+    - self
+    - cmd_cls
+    - category
+    docstring: null
+    file: tests/unit/test_database_server_commands.py
+    line: 51
+    name: register
+  tests/unit/test_database_server_commands.py:test_message_write_command_schema_strict:
+    args: []
+    docstring: MessageWriteCommand.get_schema has required fields and additionalProperties
+      false.
+    file: tests/unit/test_database_server_commands.py
+    line: 17
+    name: test_message_write_command_schema_strict
+  tests/unit/test_database_server_commands.py:test_register_database_commands_registers_all:
+    args: []
+    docstring: register_database_commands registers all command classes.
+    file: tests/unit/test_database_server_commands.py
+    line: 44
+    name: test_register_database_commands_registers_all
+  tests/unit/test_database_server_commands.py:test_session_get_command_schema_strict:
+    args: []
+    docstring: SessionGetCommand schema has session_id required and additionalProperties
+      false.
+    file: tests/unit/test_database_server_commands.py
+    line: 36
+    name: test_session_get_command_schema_strict
   tests/unit/test_database_server_config_cli.py:_valid_db_server_config:
     args: []
     docstring: Minimal valid DB server config for validation tests.
@@ -5398,35 +5880,35 @@ functions:
     - tmp_path
     docstring: validate_config returns error when file does not exist.
     file: tests/unit/test_database_server_config_validator.py
-    line: 145
+    line: 167
     name: test_validate_config_file_not_found
   tests/unit/test_database_server_config_validator.py:test_validate_config_invalid_json:
     args:
     - tmp_path
     docstring: validate_config returns error for invalid JSON.
     file: tests/unit/test_database_server_config_validator.py
-    line: 152
+    line: 174
     name: test_validate_config_invalid_json
   tests/unit/test_database_server_config_validator.py:test_validate_config_or_exit_does_not_exit_when_valid:
     args:
     - tmp_path
     docstring: validate_config_or_exit does not exit when config is valid.
     file: tests/unit/test_database_server_config_validator.py
-    line: 182
+    line: 204
     name: test_validate_config_or_exit_does_not_exit_when_valid
   tests/unit/test_database_server_config_validator.py:test_validate_config_or_exit_exits_on_errors:
     args:
     - tmp_path
     docstring: validate_config_or_exit calls sys.exit(1) when validation fails.
     file: tests/unit/test_database_server_config_validator.py
-    line: 172
+    line: 194
     name: test_validate_config_or_exit_exits_on_errors
   tests/unit/test_database_server_config_validator.py:test_validate_config_valid_file_skip_adapter:
     args:
     - tmp_path
     docstring: validate_config with skip_adapter=True validates only DB-server section.
     file: tests/unit/test_database_server_config_validator.py
-    line: 161
+    line: 183
     name: test_validate_config_valid_file_skip_adapter
   tests/unit/test_database_server_config_validator.py:test_validate_database_server_config_advertised_host_required:
     args: []
@@ -5465,6 +5947,18 @@ functions:
     file: tests/unit/test_database_server_config_validator.py
     line: 88
     name: test_validate_database_server_config_mtls_requires_verify_client
+  tests/unit/test_database_server_config_validator.py:test_validate_database_server_config_redis_backend_missing_host:
+    args: []
+    docstring: When backend is redis, redis_host is required.
+    file: tests/unit/test_database_server_config_validator.py
+    line: 156
+    name: test_validate_database_server_config_redis_backend_missing_host
+  tests/unit/test_database_server_config_validator.py:test_validate_database_server_config_redis_backend_valid:
+    args: []
+    docstring: When backend is redis, redis_host and optional redis_port are valid.
+    file: tests/unit/test_database_server_config_validator.py
+    line: 145
+    name: test_validate_database_server_config_redis_backend_valid
   tests/unit/test_database_server_config_validator.py:test_validate_database_server_config_require_mtls_must_be_true:
     args: []
     docstring: database_server.auth.require_mtls must be true.
@@ -6505,6 +6999,30 @@ functions:
     file: tests/unit/test_ollama_representation.py
     line: 22
     name: test_serialize_tools_ollama_format
+  tests/unit/test_ollama_server_config.py:test_get_ollama_server_settings_defaults:
+    args: []
+    docstring: Defaults when config empty or invalid.
+    file: tests/unit/test_ollama_server_config.py
+    line: 47
+    name: test_get_ollama_server_settings_defaults
+  tests/unit/test_ollama_server_config.py:test_get_ollama_server_settings_ollama_server_section:
+    args: []
+    docstring: base_url and timeout from ollama_server section.
+    file: tests/unit/test_ollama_server_config.py
+    line: 19
+    name: test_get_ollama_server_settings_ollama_server_section
+  tests/unit/test_ollama_server_config.py:test_get_ollama_server_settings_ollama_workstation_fallback:
+    args: []
+    docstring: base_url from ollama_workstation.ollama when ollama_server missing.
+    file: tests/unit/test_ollama_server_config.py
+    line: 32
+    name: test_get_ollama_server_settings_ollama_workstation_fallback
+  tests/unit/test_ollama_server_config.py:test_get_ollama_server_settings_strips_trailing_slash:
+    args: []
+    docstring: base_url has no trailing slash.
+    file: tests/unit/test_ollama_server_config.py
+    line: 58
+    name: test_get_ollama_server_settings_strips_trailing_slash
   tests/unit/test_provider_client_base.py:chat:
     args:
     - self
@@ -6936,7 +7454,7 @@ functions:
     - self
     docstring: null
     file: tests/unit/test_registration.py
-    line: 23
+    line: 24
     name: __init__
   tests/unit/test_registration.py:register:
     args:
@@ -6945,25 +7463,31 @@ functions:
     - section
     docstring: null
     file: tests/unit/test_registration.py
-    line: 26
+    line: 27
     name: register
+  tests/unit/test_registration.py:test_register_ollama_server_registers_four_commands:
+    args: []
+    docstring: 'ollama-server catalog: chat, embed, list, pull with strict JSON Schema.'
+    file: tests/unit/test_registration.py
+    line: 46
+    name: test_register_ollama_server_registers_four_commands
   tests/unit/test_registration.py:test_register_ollama_workstation_registers_catalog_with_man_metadata:
     args: []
     docstring: All commands are registered and expose normalized metadata for help/discovery.
     file: tests/unit/test_registration.py
-    line: 30
+    line: 31
     name: test_register_ollama_workstation_registers_catalog_with_man_metadata
   tests/unit/test_registration.py:test_validate_registration_contract_accepts_naming_freeze_shape:
     args: []
     docstring: mTLS contract from naming freeze passes strict registration validation.
     file: tests/unit/test_registration.py
-    line: 45
+    line: 61
     name: test_validate_registration_contract_accepts_naming_freeze_shape
   tests/unit/test_registration.py:test_validate_registration_contract_rejects_proxy_url_mismatch:
     args: []
     docstring: register_url must be derived from mcp_proxy_url from config.
     file: tests/unit/test_registration.py
-    line: 70
+    line: 86
     name: test_validate_registration_contract_rejects_proxy_url_mismatch
   tests/unit/test_representation_registry.py:format_tool_result:
     args:
@@ -7491,9 +8015,21 @@ imports:
     line: 12
     name: logging
     type: import
+  docker/run_adapter.py:register_database_commands:
+    file: docker/run_adapter.py
+    line: 64
+    module: database_server.commands
+    name: register_database_commands
+    type: import_from
+  docker/run_adapter.py:register_ollama_server:
+    file: docker/run_adapter.py
+    line: 68
+    module: ollama_workstation.registration
+    name: register_ollama_server
+    type: import_from
   docker/run_adapter.py:register_ollama_workstation:
     file: docker/run_adapter.py
-    line: 54
+    line: 72
     module: ollama_workstation.registration
     name: register_ollama_workstation
     type: import_from
@@ -7548,6 +8084,12 @@ imports:
     line: 15
     name: time
     type: import
+  docker/run_adapter.py:validate_database_server_config:
+    file: docker/run_adapter.py
+    line: 105
+    module: database_server.config_validator
+    name: validate_database_server_config
+    type: import_from
   docker/run_adapter.py:validate_project_config:
     file: docker/run_adapter.py
     line: 29
@@ -8455,6 +8997,356 @@ imports:
     module: urllib.parse
     name: urlparse
     type: import_from
+  src/database_server/commands/__init__.py:Any:
+    file: src/database_server/commands/__init__.py
+    line: 8
+    module: typing
+    name: Any
+    type: import_from
+  src/database_server/commands/__init__.py:MessageWriteCommand:
+    file: src/database_server/commands/__init__.py
+    line: 10
+    module: database_server.commands.message_write_command
+    name: MessageWriteCommand
+    type: import_from
+  src/database_server/commands/__init__.py:MessagesGetBySessionCommand:
+    file: src/database_server/commands/__init__.py
+    line: 11
+    module: database_server.commands.messages_get_by_session_command
+    name: MessagesGetBySessionCommand
+    type: import_from
+  src/database_server/commands/__init__.py:SessionCreateCommand:
+    file: src/database_server/commands/__init__.py
+    line: 14
+    module: database_server.commands.session_create_command
+    name: SessionCreateCommand
+    type: import_from
+  src/database_server/commands/__init__.py:SessionGetCommand:
+    file: src/database_server/commands/__init__.py
+    line: 15
+    module: database_server.commands.session_get_command
+    name: SessionGetCommand
+    type: import_from
+  src/database_server/commands/__init__.py:SessionUpdateCommand:
+    file: src/database_server/commands/__init__.py
+    line: 16
+    module: database_server.commands.session_update_command
+    name: SessionUpdateCommand
+    type: import_from
+  src/database_server/commands/message_write_command.py:Any:
+    file: src/database_server/commands/message_write_command.py
+    line: 10
+    module: typing
+    name: Any
+    type: import_from
+  src/database_server/commands/message_write_command.py:Command:
+    file: src/database_server/commands/message_write_command.py
+    line: 12
+    module: mcp_proxy_adapter.commands.base
+    name: Command
+    type: import_from
+  src/database_server/commands/message_write_command.py:Dict:
+    file: src/database_server/commands/message_write_command.py
+    line: 10
+    module: typing
+    name: Dict
+    type: import_from
+  src/database_server/commands/message_write_command.py:ErrorResult:
+    file: src/database_server/commands/message_write_command.py
+    line: 13
+    module: mcp_proxy_adapter.commands.result
+    name: ErrorResult
+    type: import_from
+  src/database_server/commands/message_write_command.py:SuccessResult:
+    file: src/database_server/commands/message_write_command.py
+    line: 13
+    module: mcp_proxy_adapter.commands.result
+    name: SuccessResult
+    type: import_from
+  src/database_server/commands/message_write_command.py:annotations:
+    file: src/database_server/commands/message_write_command.py
+    line: 8
+    module: __future__
+    name: annotations
+    type: import_from
+  src/database_server/commands/message_write_command.py:get_config:
+    file: src/database_server/commands/message_write_command.py
+    line: 21
+    module: mcp_proxy_adapter.config
+    name: get_config
+    type: import_from
+  src/database_server/commands/message_write_command.py:get_redis_client:
+    file: src/database_server/commands/message_write_command.py
+    line: 15
+    module: database_server.redis_facade
+    name: get_redis_client
+    type: import_from
+  src/database_server/commands/message_write_command.py:get_storage_prefixes:
+    file: src/database_server/commands/message_write_command.py
+    line: 15
+    module: database_server.redis_facade
+    name: get_storage_prefixes
+    type: import_from
+  src/database_server/commands/messages_get_by_session_command.py:Any:
+    file: src/database_server/commands/messages_get_by_session_command.py
+    line: 10
+    module: typing
+    name: Any
+    type: import_from
+  src/database_server/commands/messages_get_by_session_command.py:Command:
+    file: src/database_server/commands/messages_get_by_session_command.py
+    line: 12
+    module: mcp_proxy_adapter.commands.base
+    name: Command
+    type: import_from
+  src/database_server/commands/messages_get_by_session_command.py:Dict:
+    file: src/database_server/commands/messages_get_by_session_command.py
+    line: 10
+    module: typing
+    name: Dict
+    type: import_from
+  src/database_server/commands/messages_get_by_session_command.py:ErrorResult:
+    file: src/database_server/commands/messages_get_by_session_command.py
+    line: 13
+    module: mcp_proxy_adapter.commands.result
+    name: ErrorResult
+    type: import_from
+  src/database_server/commands/messages_get_by_session_command.py:List:
+    file: src/database_server/commands/messages_get_by_session_command.py
+    line: 10
+    module: typing
+    name: List
+    type: import_from
+  src/database_server/commands/messages_get_by_session_command.py:SuccessResult:
+    file: src/database_server/commands/messages_get_by_session_command.py
+    line: 13
+    module: mcp_proxy_adapter.commands.result
+    name: SuccessResult
+    type: import_from
+  src/database_server/commands/messages_get_by_session_command.py:annotations:
+    file: src/database_server/commands/messages_get_by_session_command.py
+    line: 8
+    module: __future__
+    name: annotations
+    type: import_from
+  src/database_server/commands/messages_get_by_session_command.py:get_config:
+    file: src/database_server/commands/messages_get_by_session_command.py
+    line: 21
+    module: mcp_proxy_adapter.config
+    name: get_config
+    type: import_from
+  src/database_server/commands/messages_get_by_session_command.py:get_redis_client:
+    file: src/database_server/commands/messages_get_by_session_command.py
+    line: 15
+    module: database_server.redis_facade
+    name: get_redis_client
+    type: import_from
+  src/database_server/commands/messages_get_by_session_command.py:get_storage_prefixes:
+    file: src/database_server/commands/messages_get_by_session_command.py
+    line: 15
+    module: database_server.redis_facade
+    name: get_storage_prefixes
+    type: import_from
+  src/database_server/commands/session_create_command.py:Any:
+    file: src/database_server/commands/session_create_command.py
+    line: 12
+    module: typing
+    name: Any
+    type: import_from
+  src/database_server/commands/session_create_command.py:Command:
+    file: src/database_server/commands/session_create_command.py
+    line: 14
+    module: mcp_proxy_adapter.commands.base
+    name: Command
+    type: import_from
+  src/database_server/commands/session_create_command.py:Dict:
+    file: src/database_server/commands/session_create_command.py
+    line: 12
+    module: typing
+    name: Dict
+    type: import_from
+  src/database_server/commands/session_create_command.py:ErrorResult:
+    file: src/database_server/commands/session_create_command.py
+    line: 15
+    module: mcp_proxy_adapter.commands.result
+    name: ErrorResult
+    type: import_from
+  src/database_server/commands/session_create_command.py:List:
+    file: src/database_server/commands/session_create_command.py
+    line: 12
+    module: typing
+    name: List
+    type: import_from
+  src/database_server/commands/session_create_command.py:SuccessResult:
+    file: src/database_server/commands/session_create_command.py
+    line: 15
+    module: mcp_proxy_adapter.commands.result
+    name: SuccessResult
+    type: import_from
+  src/database_server/commands/session_create_command.py:annotations:
+    file: src/database_server/commands/session_create_command.py
+    line: 8
+    module: __future__
+    name: annotations
+    type: import_from
+  src/database_server/commands/session_create_command.py:get_config:
+    file: src/database_server/commands/session_create_command.py
+    line: 31
+    module: mcp_proxy_adapter.config
+    name: get_config
+    type: import_from
+  src/database_server/commands/session_create_command.py:get_redis_client:
+    file: src/database_server/commands/session_create_command.py
+    line: 17
+    module: database_server.redis_facade
+    name: get_redis_client
+    type: import_from
+  src/database_server/commands/session_create_command.py:get_storage_prefixes:
+    file: src/database_server/commands/session_create_command.py
+    line: 17
+    module: database_server.redis_facade
+    name: get_storage_prefixes
+    type: import_from
+  src/database_server/commands/session_create_command.py:json:
+    file: src/database_server/commands/session_create_command.py
+    line: 10
+    name: json
+    type: import
+  src/database_server/commands/session_create_command.py:uuid:
+    file: src/database_server/commands/session_create_command.py
+    line: 11
+    name: uuid
+    type: import
+  src/database_server/commands/session_get_command.py:Any:
+    file: src/database_server/commands/session_get_command.py
+    line: 11
+    module: typing
+    name: Any
+    type: import_from
+  src/database_server/commands/session_get_command.py:Command:
+    file: src/database_server/commands/session_get_command.py
+    line: 13
+    module: mcp_proxy_adapter.commands.base
+    name: Command
+    type: import_from
+  src/database_server/commands/session_get_command.py:Dict:
+    file: src/database_server/commands/session_get_command.py
+    line: 11
+    module: typing
+    name: Dict
+    type: import_from
+  src/database_server/commands/session_get_command.py:ErrorResult:
+    file: src/database_server/commands/session_get_command.py
+    line: 14
+    module: mcp_proxy_adapter.commands.result
+    name: ErrorResult
+    type: import_from
+  src/database_server/commands/session_get_command.py:Optional:
+    file: src/database_server/commands/session_get_command.py
+    line: 11
+    module: typing
+    name: Optional
+    type: import_from
+  src/database_server/commands/session_get_command.py:SuccessResult:
+    file: src/database_server/commands/session_get_command.py
+    line: 14
+    module: mcp_proxy_adapter.commands.result
+    name: SuccessResult
+    type: import_from
+  src/database_server/commands/session_get_command.py:annotations:
+    file: src/database_server/commands/session_get_command.py
+    line: 8
+    module: __future__
+    name: annotations
+    type: import_from
+  src/database_server/commands/session_get_command.py:get_config:
+    file: src/database_server/commands/session_get_command.py
+    line: 31
+    module: mcp_proxy_adapter.config
+    name: get_config
+    type: import_from
+  src/database_server/commands/session_get_command.py:get_redis_client:
+    file: src/database_server/commands/session_get_command.py
+    line: 16
+    module: database_server.redis_facade
+    name: get_redis_client
+    type: import_from
+  src/database_server/commands/session_get_command.py:get_storage_prefixes:
+    file: src/database_server/commands/session_get_command.py
+    line: 16
+    module: database_server.redis_facade
+    name: get_storage_prefixes
+    type: import_from
+  src/database_server/commands/session_get_command.py:json:
+    file: src/database_server/commands/session_get_command.py
+    line: 10
+    name: json
+    type: import
+  src/database_server/commands/session_update_command.py:Any:
+    file: src/database_server/commands/session_update_command.py
+    line: 11
+    module: typing
+    name: Any
+    type: import_from
+  src/database_server/commands/session_update_command.py:Command:
+    file: src/database_server/commands/session_update_command.py
+    line: 13
+    module: mcp_proxy_adapter.commands.base
+    name: Command
+    type: import_from
+  src/database_server/commands/session_update_command.py:Dict:
+    file: src/database_server/commands/session_update_command.py
+    line: 11
+    module: typing
+    name: Dict
+    type: import_from
+  src/database_server/commands/session_update_command.py:ErrorResult:
+    file: src/database_server/commands/session_update_command.py
+    line: 14
+    module: mcp_proxy_adapter.commands.result
+    name: ErrorResult
+    type: import_from
+  src/database_server/commands/session_update_command.py:List:
+    file: src/database_server/commands/session_update_command.py
+    line: 11
+    module: typing
+    name: List
+    type: import_from
+  src/database_server/commands/session_update_command.py:SuccessResult:
+    file: src/database_server/commands/session_update_command.py
+    line: 14
+    module: mcp_proxy_adapter.commands.result
+    name: SuccessResult
+    type: import_from
+  src/database_server/commands/session_update_command.py:annotations:
+    file: src/database_server/commands/session_update_command.py
+    line: 8
+    module: __future__
+    name: annotations
+    type: import_from
+  src/database_server/commands/session_update_command.py:get_config:
+    file: src/database_server/commands/session_update_command.py
+    line: 30
+    module: mcp_proxy_adapter.config
+    name: get_config
+    type: import_from
+  src/database_server/commands/session_update_command.py:get_redis_client:
+    file: src/database_server/commands/session_update_command.py
+    line: 16
+    module: database_server.redis_facade
+    name: get_redis_client
+    type: import_from
+  src/database_server/commands/session_update_command.py:get_storage_prefixes:
+    file: src/database_server/commands/session_update_command.py
+    line: 16
+    module: database_server.redis_facade
+    name: get_storage_prefixes
+    type: import_from
+  src/database_server/commands/session_update_command.py:json:
+    file: src/database_server/commands/session_update_command.py
+    line: 10
+    name: json
+    type: import
   src/database_server/config_cli.py:Any:
     file: src/database_server/config_cli.py
     line: 15
@@ -8547,7 +9439,7 @@ imports:
     type: import_from
   src/database_server/config_validator.py:SimpleConfig:
     file: src/database_server/config_validator.py
-    line: 204
+    line: 227
     module: mcp_proxy_adapter.core.config.simple_config
     name: SimpleConfig
     type: import_from
@@ -8565,6 +9457,29 @@ imports:
     file: src/database_server/config_validator.py
     line: 14
     name: sys
+    type: import
+  src/database_server/redis_facade.py:Any:
+    file: src/database_server/redis_facade.py
+    line: 10
+    module: typing
+    name: Any
+    type: import_from
+  src/database_server/redis_facade.py:Optional:
+    file: src/database_server/redis_facade.py
+    line: 10
+    module: typing
+    name: Optional
+    type: import_from
+  src/database_server/redis_facade.py:annotations:
+    file: src/database_server/redis_facade.py
+    line: 8
+    module: __future__
+    name: annotations
+    type: import_from
+  src/database_server/redis_facade.py:redis:
+    file: src/database_server/redis_facade.py
+    line: 38
+    name: redis
     type: import
   src/model_workspace_client/__init__.py:ModelWorkspaceClientConfigError:
     file: src/model_workspace_client/__init__.py
@@ -9123,109 +10038,109 @@ imports:
     type: import_from
   src/ollama_workstation/chat_flow.py:Any:
     file: src/ollama_workstation/chat_flow.py
-    line: 13
+    line: 14
     module: typing
     name: Any
     type: import_from
   src/ollama_workstation/chat_flow.py:CommandAliasRegistry:
     file: src/ollama_workstation/chat_flow.py
-    line: 17
+    line: 18
     module: command_alias_registry
     name: CommandAliasRegistry
     type: import_from
   src/ollama_workstation/chat_flow.py:CommandDiscovery:
     file: src/ollama_workstation/chat_flow.py
-    line: 18
+    line: 19
     module: command_discovery
     name: CommandDiscovery
     type: import_from
   src/ollama_workstation/chat_flow.py:ContextRepresentation:
     file: src/ollama_workstation/chat_flow.py
-    line: 32
+    line: 31
     module: context_representation
     name: ContextRepresentation
     type: import_from
   src/ollama_workstation/chat_flow.py:Dict:
     file: src/ollama_workstation/chat_flow.py
-    line: 13
+    line: 14
     module: typing
     name: Dict
     type: import_from
   src/ollama_workstation/chat_flow.py:EffectiveToolListBuilder:
     file: src/ollama_workstation/chat_flow.py
-    line: 23
+    line: 22
     module: effective_tool_list_builder
     name: EffectiveToolListBuilder
     type: import_from
   src/ollama_workstation/chat_flow.py:HELP_REFERENCE_TEXT:
     file: src/ollama_workstation/chat_flow.py
-    line: 22
+    line: 21
     module: tools
     name: HELP_REFERENCE_TEXT
     type: import_from
   src/ollama_workstation/chat_flow.py:List:
     file: src/ollama_workstation/chat_flow.py
-    line: 13
+    line: 14
     module: typing
     name: List
     type: import_from
   src/ollama_workstation/chat_flow.py:OllamaRepresentation:
     file: src/ollama_workstation/chat_flow.py
-    line: 341
+    line: 283
     module: ollama_representation
     name: OllamaRepresentation
     type: import_from
   src/ollama_workstation/chat_flow.py:Optional:
     file: src/ollama_workstation/chat_flow.py
-    line: 13
+    line: 14
     module: typing
     name: Optional
     type: import_from
   src/ollama_workstation/chat_flow.py:ProxyClient:
     file: src/ollama_workstation/chat_flow.py
-    line: 29
+    line: 27
     module: proxy_client
     name: ProxyClient
     type: import_from
   src/ollama_workstation/chat_flow.py:ProxyClientError:
     file: src/ollama_workstation/chat_flow.py
-    line: 29
+    line: 27
     module: proxy_client
     name: ProxyClientError
     type: import_from
   src/ollama_workstation/chat_flow.py:RepresentationRegistry:
     file: src/ollama_workstation/chat_flow.py
-    line: 30
+    line: 29
     module: representation_registry
     name: RepresentationRegistry
     type: import_from
   src/ollama_workstation/chat_flow.py:SafeNameTranslator:
     file: src/ollama_workstation/chat_flow.py
-    line: 31
+    line: 30
     module: safe_name_translator
     name: SafeNameTranslator
     type: import_from
   src/ollama_workstation/chat_flow.py:Session:
     file: src/ollama_workstation/chat_flow.py
-    line: 33
+    line: 32
     module: session_entity
     name: Session
     type: import_from
   src/ollama_workstation/chat_flow.py:TYPE_CHECKING:
     file: src/ollama_workstation/chat_flow.py
-    line: 13
+    line: 14
     module: typing
     name: TYPE_CHECKING
     type: import_from
   src/ollama_workstation/chat_flow.py:ToolCallRegistry:
     file: src/ollama_workstation/chat_flow.py
-    line: 36
+    line: 35
     module: tool_call_registry
     name: ToolCallRegistry
     type: import_from
   src/ollama_workstation/chat_flow.py:WorkstationConfig:
     file: src/ollama_workstation/chat_flow.py
-    line: 19
+    line: 20
     module: config
     name: WorkstationConfig
     type: import_from
@@ -9235,72 +10150,65 @@ imports:
     module: __future__
     name: annotations
     type: import_from
-  src/ollama_workstation/chat_flow.py:call_command:
+  src/ollama_workstation/chat_flow.py:asyncio:
     file: src/ollama_workstation/chat_flow.py
-    line: 20
-    module: direct_server_client
-    name: call_command
-    type: import_from
+    line: 10
+    name: asyncio
+    type: import
   src/ollama_workstation/chat_flow.py:chat_completion:
     file: src/ollama_workstation/chat_flow.py
-    line: 28
+    line: 26
     module: commercial_chat_client
     name: chat_completion
     type: import_from
   src/ollama_workstation/chat_flow.py:get_active_model:
     file: src/ollama_workstation/chat_flow.py
-    line: 25
+    line: 24
     module: model_loading_state
     name: get_active_model
     type: import_from
-  src/ollama_workstation/chat_flow.py:get_help:
+  src/ollama_workstation/chat_flow.py:get_default_client:
     file: src/ollama_workstation/chat_flow.py
-    line: 21
-    module: direct_server_client
-    name: get_help
-    type: import_from
-  src/ollama_workstation/chat_flow.py:get_ollama_client:
-    file: src/ollama_workstation/chat_flow.py
-    line: 26
-    module: ollama_client
-    name: get_ollama_client
+    line: 28
+    module: provider_registry
+    name: get_default_client
     type: import_from
   src/ollama_workstation/chat_flow.py:httpx:
     file: src/ollama_workstation/chat_flow.py
-    line: 15
+    line: 16
     name: httpx
     type: import
   src/ollama_workstation/chat_flow.py:is_model_ready:
     file: src/ollama_workstation/chat_flow.py
-    line: 25
+    line: 24
     module: model_loading_state
     name: is_model_ready
     type: import_from
   src/ollama_workstation/chat_flow.py:json:
     file: src/ollama_workstation/chat_flow.py
-    line: 10
+    line: 11
     name: json
     type: import
   src/ollama_workstation/chat_flow.py:logging:
     file: src/ollama_workstation/chat_flow.py
-    line: 11
+    line: 12
     name: logging
     type: import
   src/ollama_workstation/chat_flow.py:register_ollama_models:
     file: src/ollama_workstation/chat_flow.py
-    line: 24
+    line: 23
     module: ollama_representation
     name: register_ollama_models
     type: import_from
   src/ollama_workstation/chat_flow.py:resolve_model_endpoint:
     file: src/ollama_workstation/chat_flow.py
-    line: 27
+    line: 25
     module: model_provider_resolver
     name: resolve_model_endpoint
     type: import_from
   src/ollama_workstation/chat_flow.py:time:
     file: src/ollama_workstation/chat_flow.py
-    line: 12
+    line: 13
     name: time
     type: import
   src/ollama_workstation/command_alias_registry.py:Dict:
@@ -9457,6 +10365,30 @@ imports:
     module: ollama_chat_command
     name: OllamaChatCommand
     type: import_from
+  src/ollama_workstation/commands/__init__.py:OllamaServerChatCommand:
+    file: src/ollama_workstation/commands/__init__.py
+    line: 21
+    module: ollama_server_chat_command
+    name: OllamaServerChatCommand
+    type: import_from
+  src/ollama_workstation/commands/__init__.py:OllamaServerEmbedCommand:
+    file: src/ollama_workstation/commands/__init__.py
+    line: 22
+    module: ollama_server_embed_command
+    name: OllamaServerEmbedCommand
+    type: import_from
+  src/ollama_workstation/commands/__init__.py:OllamaServerListCommand:
+    file: src/ollama_workstation/commands/__init__.py
+    line: 23
+    module: ollama_server_list_command
+    name: OllamaServerListCommand
+    type: import_from
+  src/ollama_workstation/commands/__init__.py:OllamaServerPullCommand:
+    file: src/ollama_workstation/commands/__init__.py
+    line: 24
+    module: ollama_server_pull_command
+    name: OllamaServerPullCommand
+    type: import_from
   src/ollama_workstation/commands/__init__.py:RemoveCommandFromSessionCommand:
     file: src/ollama_workstation/commands/__init__.py
     line: 14
@@ -9548,43 +10480,43 @@ imports:
     type: import
   src/ollama_workstation/commands/direct_chat_command.py:Any:
     file: src/ollama_workstation/commands/direct_chat_command.py
-    line: 16
+    line: 17
     module: typing
     name: Any
     type: import_from
   src/ollama_workstation/commands/direct_chat_command.py:Command:
     file: src/ollama_workstation/commands/direct_chat_command.py
-    line: 18
+    line: 19
     module: mcp_proxy_adapter.commands.base
     name: Command
     type: import_from
   src/ollama_workstation/commands/direct_chat_command.py:Dict:
     file: src/ollama_workstation/commands/direct_chat_command.py
-    line: 16
+    line: 17
     module: typing
     name: Dict
     type: import_from
   src/ollama_workstation/commands/direct_chat_command.py:ErrorResult:
     file: src/ollama_workstation/commands/direct_chat_command.py
-    line: 19
+    line: 20
     module: mcp_proxy_adapter.commands.result
     name: ErrorResult
     type: import_from
   src/ollama_workstation/commands/direct_chat_command.py:Optional:
     file: src/ollama_workstation/commands/direct_chat_command.py
-    line: 16
+    line: 17
     module: typing
     name: Optional
     type: import_from
   src/ollama_workstation/commands/direct_chat_command.py:Path:
     file: src/ollama_workstation/commands/direct_chat_command.py
-    line: 15
+    line: 16
     module: pathlib
     name: Path
     type: import_from
   src/ollama_workstation/commands/direct_chat_command.py:SuccessResult:
     file: src/ollama_workstation/commands/direct_chat_command.py
-    line: 19
+    line: 20
     module: mcp_proxy_adapter.commands.result
     name: SuccessResult
     type: import_from
@@ -9594,6 +10526,11 @@ imports:
     module: __future__
     name: annotations
     type: import_from
+  src/ollama_workstation/commands/direct_chat_command.py:asyncio:
+    file: src/ollama_workstation/commands/direct_chat_command.py
+    line: 12
+    name: asyncio
+    type: import
   src/ollama_workstation/commands/direct_chat_command.py:chat_completion:
     file: src/ollama_workstation/commands/direct_chat_command.py
     line: 25
@@ -9602,30 +10539,30 @@ imports:
     type: import_from
   src/ollama_workstation/commands/direct_chat_command.py:get_active_model:
     file: src/ollama_workstation/commands/direct_chat_command.py
-    line: 22
+    line: 23
     module: model_loading_state
     name: get_active_model
     type: import_from
-  src/ollama_workstation/commands/direct_chat_command.py:get_ollama_client:
+  src/ollama_workstation/commands/direct_chat_command.py:get_default_client:
     file: src/ollama_workstation/commands/direct_chat_command.py
-    line: 23
-    module: ollama_client
-    name: get_ollama_client
+    line: 26
+    module: provider_registry
+    name: get_default_client
     type: import_from
   src/ollama_workstation/commands/direct_chat_command.py:load_config:
     file: src/ollama_workstation/commands/direct_chat_command.py
-    line: 21
+    line: 22
     module: config
     name: load_config
     type: import_from
   src/ollama_workstation/commands/direct_chat_command.py:logging:
     file: src/ollama_workstation/commands/direct_chat_command.py
-    line: 12
+    line: 13
     name: logging
     type: import
   src/ollama_workstation/commands/direct_chat_command.py:os:
     file: src/ollama_workstation/commands/direct_chat_command.py
-    line: 13
+    line: 14
     name: os
     type: import
   src/ollama_workstation/commands/direct_chat_command.py:resolve_model_endpoint:
@@ -9636,7 +10573,7 @@ imports:
     type: import_from
   src/ollama_workstation/commands/direct_chat_command.py:time:
     file: src/ollama_workstation/commands/direct_chat_command.py
-    line: 14
+    line: 15
     name: time
     type: import
   src/ollama_workstation/commands/get_model_context_command.py:Any:
@@ -10204,6 +11141,288 @@ imports:
     module: __future__
     name: annotations
     type: import_from
+  src/ollama_workstation/commands/ollama_server_chat_command.py:Any:
+    file: src/ollama_workstation/commands/ollama_server_chat_command.py
+    line: 14
+    module: typing
+    name: Any
+    type: import_from
+  src/ollama_workstation/commands/ollama_server_chat_command.py:Command:
+    file: src/ollama_workstation/commands/ollama_server_chat_command.py
+    line: 17
+    module: mcp_proxy_adapter.commands.base
+    name: Command
+    type: import_from
+  src/ollama_workstation/commands/ollama_server_chat_command.py:Dict:
+    file: src/ollama_workstation/commands/ollama_server_chat_command.py
+    line: 14
+    module: typing
+    name: Dict
+    type: import_from
+  src/ollama_workstation/commands/ollama_server_chat_command.py:ErrorResult:
+    file: src/ollama_workstation/commands/ollama_server_chat_command.py
+    line: 18
+    module: mcp_proxy_adapter.commands.result
+    name: ErrorResult
+    type: import_from
+  src/ollama_workstation/commands/ollama_server_chat_command.py:List:
+    file: src/ollama_workstation/commands/ollama_server_chat_command.py
+    line: 14
+    module: typing
+    name: List
+    type: import_from
+  src/ollama_workstation/commands/ollama_server_chat_command.py:Optional:
+    file: src/ollama_workstation/commands/ollama_server_chat_command.py
+    line: 14
+    module: typing
+    name: Optional
+    type: import_from
+  src/ollama_workstation/commands/ollama_server_chat_command.py:SuccessResult:
+    file: src/ollama_workstation/commands/ollama_server_chat_command.py
+    line: 18
+    module: mcp_proxy_adapter.commands.result
+    name: SuccessResult
+    type: import_from
+  src/ollama_workstation/commands/ollama_server_chat_command.py:annotations:
+    file: src/ollama_workstation/commands/ollama_server_chat_command.py
+    line: 10
+    module: __future__
+    name: annotations
+    type: import_from
+  src/ollama_workstation/commands/ollama_server_chat_command.py:asyncio:
+    file: src/ollama_workstation/commands/ollama_server_chat_command.py
+    line: 12
+    name: asyncio
+    type: import
+  src/ollama_workstation/commands/ollama_server_chat_command.py:get_config:
+    file: src/ollama_workstation/commands/ollama_server_chat_command.py
+    line: 28
+    module: mcp_proxy_adapter.config
+    name: get_config
+    type: import_from
+  src/ollama_workstation/commands/ollama_server_chat_command.py:get_ollama_server_settings:
+    file: src/ollama_workstation/commands/ollama_server_chat_command.py
+    line: 20
+    module: ollama_server_config
+    name: get_ollama_server_settings
+    type: import_from
+  src/ollama_workstation/commands/ollama_server_chat_command.py:httpx:
+    file: src/ollama_workstation/commands/ollama_server_chat_command.py
+    line: 16
+    name: httpx
+    type: import
+  src/ollama_workstation/commands/ollama_server_chat_command.py:logging:
+    file: src/ollama_workstation/commands/ollama_server_chat_command.py
+    line: 13
+    name: logging
+    type: import
+  src/ollama_workstation/commands/ollama_server_embed_command.py:Any:
+    file: src/ollama_workstation/commands/ollama_server_embed_command.py
+    line: 12
+    module: typing
+    name: Any
+    type: import_from
+  src/ollama_workstation/commands/ollama_server_embed_command.py:Command:
+    file: src/ollama_workstation/commands/ollama_server_embed_command.py
+    line: 15
+    module: mcp_proxy_adapter.commands.base
+    name: Command
+    type: import_from
+  src/ollama_workstation/commands/ollama_server_embed_command.py:Dict:
+    file: src/ollama_workstation/commands/ollama_server_embed_command.py
+    line: 12
+    module: typing
+    name: Dict
+    type: import_from
+  src/ollama_workstation/commands/ollama_server_embed_command.py:ErrorResult:
+    file: src/ollama_workstation/commands/ollama_server_embed_command.py
+    line: 16
+    module: mcp_proxy_adapter.commands.result
+    name: ErrorResult
+    type: import_from
+  src/ollama_workstation/commands/ollama_server_embed_command.py:List:
+    file: src/ollama_workstation/commands/ollama_server_embed_command.py
+    line: 12
+    module: typing
+    name: List
+    type: import_from
+  src/ollama_workstation/commands/ollama_server_embed_command.py:SuccessResult:
+    file: src/ollama_workstation/commands/ollama_server_embed_command.py
+    line: 16
+    module: mcp_proxy_adapter.commands.result
+    name: SuccessResult
+    type: import_from
+  src/ollama_workstation/commands/ollama_server_embed_command.py:Union:
+    file: src/ollama_workstation/commands/ollama_server_embed_command.py
+    line: 12
+    module: typing
+    name: Union
+    type: import_from
+  src/ollama_workstation/commands/ollama_server_embed_command.py:annotations:
+    file: src/ollama_workstation/commands/ollama_server_embed_command.py
+    line: 8
+    module: __future__
+    name: annotations
+    type: import_from
+  src/ollama_workstation/commands/ollama_server_embed_command.py:asyncio:
+    file: src/ollama_workstation/commands/ollama_server_embed_command.py
+    line: 10
+    name: asyncio
+    type: import
+  src/ollama_workstation/commands/ollama_server_embed_command.py:get_config:
+    file: src/ollama_workstation/commands/ollama_server_embed_command.py
+    line: 26
+    module: mcp_proxy_adapter.config
+    name: get_config
+    type: import_from
+  src/ollama_workstation/commands/ollama_server_embed_command.py:get_ollama_server_settings:
+    file: src/ollama_workstation/commands/ollama_server_embed_command.py
+    line: 18
+    module: ollama_server_config
+    name: get_ollama_server_settings
+    type: import_from
+  src/ollama_workstation/commands/ollama_server_embed_command.py:httpx:
+    file: src/ollama_workstation/commands/ollama_server_embed_command.py
+    line: 14
+    name: httpx
+    type: import
+  src/ollama_workstation/commands/ollama_server_embed_command.py:logging:
+    file: src/ollama_workstation/commands/ollama_server_embed_command.py
+    line: 11
+    name: logging
+    type: import
+  src/ollama_workstation/commands/ollama_server_list_command.py:Any:
+    file: src/ollama_workstation/commands/ollama_server_list_command.py
+    line: 14
+    module: typing
+    name: Any
+    type: import_from
+  src/ollama_workstation/commands/ollama_server_list_command.py:Command:
+    file: src/ollama_workstation/commands/ollama_server_list_command.py
+    line: 17
+    module: mcp_proxy_adapter.commands.base
+    name: Command
+    type: import_from
+  src/ollama_workstation/commands/ollama_server_list_command.py:Dict:
+    file: src/ollama_workstation/commands/ollama_server_list_command.py
+    line: 14
+    module: typing
+    name: Dict
+    type: import_from
+  src/ollama_workstation/commands/ollama_server_list_command.py:ErrorResult:
+    file: src/ollama_workstation/commands/ollama_server_list_command.py
+    line: 18
+    module: mcp_proxy_adapter.commands.result
+    name: ErrorResult
+    type: import_from
+  src/ollama_workstation/commands/ollama_server_list_command.py:SuccessResult:
+    file: src/ollama_workstation/commands/ollama_server_list_command.py
+    line: 18
+    module: mcp_proxy_adapter.commands.result
+    name: SuccessResult
+    type: import_from
+  src/ollama_workstation/commands/ollama_server_list_command.py:annotations:
+    file: src/ollama_workstation/commands/ollama_server_list_command.py
+    line: 10
+    module: __future__
+    name: annotations
+    type: import_from
+  src/ollama_workstation/commands/ollama_server_list_command.py:asyncio:
+    file: src/ollama_workstation/commands/ollama_server_list_command.py
+    line: 12
+    name: asyncio
+    type: import
+  src/ollama_workstation/commands/ollama_server_list_command.py:get_config:
+    file: src/ollama_workstation/commands/ollama_server_list_command.py
+    line: 28
+    module: mcp_proxy_adapter.config
+    name: get_config
+    type: import_from
+  src/ollama_workstation/commands/ollama_server_list_command.py:get_ollama_server_settings:
+    file: src/ollama_workstation/commands/ollama_server_list_command.py
+    line: 20
+    module: ollama_server_config
+    name: get_ollama_server_settings
+    type: import_from
+  src/ollama_workstation/commands/ollama_server_list_command.py:httpx:
+    file: src/ollama_workstation/commands/ollama_server_list_command.py
+    line: 16
+    name: httpx
+    type: import
+  src/ollama_workstation/commands/ollama_server_list_command.py:logging:
+    file: src/ollama_workstation/commands/ollama_server_list_command.py
+    line: 13
+    name: logging
+    type: import
+  src/ollama_workstation/commands/ollama_server_pull_command.py:Any:
+    file: src/ollama_workstation/commands/ollama_server_pull_command.py
+    line: 14
+    module: typing
+    name: Any
+    type: import_from
+  src/ollama_workstation/commands/ollama_server_pull_command.py:Command:
+    file: src/ollama_workstation/commands/ollama_server_pull_command.py
+    line: 17
+    module: mcp_proxy_adapter.commands.base
+    name: Command
+    type: import_from
+  src/ollama_workstation/commands/ollama_server_pull_command.py:Dict:
+    file: src/ollama_workstation/commands/ollama_server_pull_command.py
+    line: 14
+    module: typing
+    name: Dict
+    type: import_from
+  src/ollama_workstation/commands/ollama_server_pull_command.py:ErrorResult:
+    file: src/ollama_workstation/commands/ollama_server_pull_command.py
+    line: 18
+    module: mcp_proxy_adapter.commands.result
+    name: ErrorResult
+    type: import_from
+  src/ollama_workstation/commands/ollama_server_pull_command.py:Optional:
+    file: src/ollama_workstation/commands/ollama_server_pull_command.py
+    line: 14
+    module: typing
+    name: Optional
+    type: import_from
+  src/ollama_workstation/commands/ollama_server_pull_command.py:SuccessResult:
+    file: src/ollama_workstation/commands/ollama_server_pull_command.py
+    line: 18
+    module: mcp_proxy_adapter.commands.result
+    name: SuccessResult
+    type: import_from
+  src/ollama_workstation/commands/ollama_server_pull_command.py:annotations:
+    file: src/ollama_workstation/commands/ollama_server_pull_command.py
+    line: 10
+    module: __future__
+    name: annotations
+    type: import_from
+  src/ollama_workstation/commands/ollama_server_pull_command.py:asyncio:
+    file: src/ollama_workstation/commands/ollama_server_pull_command.py
+    line: 12
+    name: asyncio
+    type: import
+  src/ollama_workstation/commands/ollama_server_pull_command.py:get_config:
+    file: src/ollama_workstation/commands/ollama_server_pull_command.py
+    line: 28
+    module: mcp_proxy_adapter.config
+    name: get_config
+    type: import_from
+  src/ollama_workstation/commands/ollama_server_pull_command.py:get_ollama_server_settings:
+    file: src/ollama_workstation/commands/ollama_server_pull_command.py
+    line: 20
+    module: ollama_server_config
+    name: get_ollama_server_settings
+    type: import_from
+  src/ollama_workstation/commands/ollama_server_pull_command.py:httpx:
+    file: src/ollama_workstation/commands/ollama_server_pull_command.py
+    line: 16
+    name: httpx
+    type: import
+  src/ollama_workstation/commands/ollama_server_pull_command.py:logging:
+    file: src/ollama_workstation/commands/ollama_server_pull_command.py
+    line: 13
+    name: logging
+    type: import
   src/ollama_workstation/commands/remove_command_from_session_command.py:Any:
     file: src/ollama_workstation/commands/remove_command_from_session_command.py
     line: 10
@@ -10612,9 +11831,21 @@ imports:
     module: dataclasses
     name: field
     type: import_from
+  src/ollama_workstation/config.py:generate_provider_clients_section:
+    file: src/ollama_workstation/config.py
+    line: 22
+    module: ollama_workstation.provider_client_config_generator
+    name: generate_provider_clients_section
+    type: import_from
+  src/ollama_workstation/config.py:get_default_ollama_provider_section:
+    file: src/ollama_workstation/config.py
+    line: 22
+    module: ollama_workstation.provider_client_config_generator
+    name: get_default_ollama_provider_section
+    type: import_from
   src/ollama_workstation/config.py:json:
     file: src/ollama_workstation/config.py
-    line: 230
+    line: 240
     name: json
     type: import
   src/ollama_workstation/config.py:os:
@@ -10628,9 +11859,15 @@ imports:
     module: urllib.parse
     name: urlparse
     type: import_from
+  src/ollama_workstation/config.py:validate_provider_clients_or_raise:
+    file: src/ollama_workstation/config.py
+    line: 26
+    module: ollama_workstation.provider_client_config_validator
+    name: validate_provider_clients_or_raise
+    type: import_from
   src/ollama_workstation/config.py:yaml:
     file: src/ollama_workstation/config.py
-    line: 221
+    line: 231
     name: yaml
     type: import
   src/ollama_workstation/config_cli.py:Path:
@@ -11488,6 +12725,30 @@ imports:
     line: 11
     name: json
     type: import
+  src/ollama_workstation/ollama_server_config.py:Any:
+    file: src/ollama_workstation/ollama_server_config.py
+    line: 13
+    module: typing
+    name: Any
+    type: import_from
+  src/ollama_workstation/ollama_server_config.py:Dict:
+    file: src/ollama_workstation/ollama_server_config.py
+    line: 13
+    module: typing
+    name: Dict
+    type: import_from
+  src/ollama_workstation/ollama_server_config.py:Tuple:
+    file: src/ollama_workstation/ollama_server_config.py
+    line: 13
+    module: typing
+    name: Tuple
+    type: import_from
+  src/ollama_workstation/ollama_server_config.py:annotations:
+    file: src/ollama_workstation/ollama_server_config.py
+    line: 11
+    module: __future__
+    name: annotations
+    type: import_from
   src/ollama_workstation/provider_client_base.py:ABC:
     file: src/ollama_workstation/provider_client_base.py
     line: 13
@@ -11774,6 +13035,30 @@ imports:
     module: commands
     name: OllamaChatCommand
     type: import_from
+  src/ollama_workstation/registration.py:OllamaServerChatCommand:
+    file: src/ollama_workstation/registration.py
+    line: 12
+    module: commands
+    name: OllamaServerChatCommand
+    type: import_from
+  src/ollama_workstation/registration.py:OllamaServerEmbedCommand:
+    file: src/ollama_workstation/registration.py
+    line: 12
+    module: commands
+    name: OllamaServerEmbedCommand
+    type: import_from
+  src/ollama_workstation/registration.py:OllamaServerListCommand:
+    file: src/ollama_workstation/registration.py
+    line: 12
+    module: commands
+    name: OllamaServerListCommand
+    type: import_from
+  src/ollama_workstation/registration.py:OllamaServerPullCommand:
+    file: src/ollama_workstation/registration.py
+    line: 12
+    module: commands
+    name: OllamaServerPullCommand
+    type: import_from
   src/ollama_workstation/registration.py:RemoveCommandFromSessionCommand:
     file: src/ollama_workstation/registration.py
     line: 12
@@ -11818,7 +13103,7 @@ imports:
     type: import_from
   src/ollama_workstation/registration.py:get_config:
     file: src/ollama_workstation/registration.py
-    line: 192
+    line: 222
     module: mcp_proxy_adapter.config
     name: get_config
     type: import_from
@@ -12371,7 +13656,7 @@ imports:
     type: import_from
   tests/unit/test_chat_flow.py:ProxyClientError:
     file: tests/unit/test_chat_flow.py
-    line: 112
+    line: 102
     module: ollama_workstation.proxy_client
     name: ProxyClientError
     type: import_from
@@ -12380,6 +13665,12 @@ imports:
     line: 14
     module: ollama_workstation.config
     name: WorkstationConfig
+    type: import_from
+  tests/unit/test_chat_flow.py:generate_provider_clients_section:
+    file: tests/unit/test_chat_flow.py
+    line: 16
+    module: ollama_workstation.provider_client_config_generator
+    name: generate_provider_clients_section
     type: import_from
   tests/unit/test_chat_flow.py:patch:
     file: tests/unit/test_chat_flow.py
@@ -12855,6 +14146,41 @@ imports:
     line: 13
     module: database_client.config_validator
     name: validate_config_dict
+    type: import_from
+  tests/unit/test_database_server_commands.py:COMMAND_CLASSES:
+    file: tests/unit/test_database_server_commands.py
+    line: 12
+    module: database_server.commands
+    name: COMMAND_CLASSES
+    type: import_from
+  tests/unit/test_database_server_commands.py:MessageWriteCommand:
+    file: tests/unit/test_database_server_commands.py
+    line: 13
+    module: database_server.commands.message_write_command
+    name: MessageWriteCommand
+    type: import_from
+  tests/unit/test_database_server_commands.py:SessionGetCommand:
+    file: tests/unit/test_database_server_commands.py
+    line: 14
+    module: database_server.commands.session_get_command
+    name: SessionGetCommand
+    type: import_from
+  tests/unit/test_database_server_commands.py:patch:
+    file: tests/unit/test_database_server_commands.py
+    line: 8
+    module: unittest.mock
+    name: patch
+    type: import_from
+  tests/unit/test_database_server_commands.py:pytest:
+    file: tests/unit/test_database_server_commands.py
+    line: 10
+    name: pytest
+    type: import
+  tests/unit/test_database_server_commands.py:register_database_commands:
+    file: tests/unit/test_database_server_commands.py
+    line: 12
+    module: database_server.commands
+    name: register_database_commands
     type: import_from
   tests/unit/test_database_server_config_cli.py:Path:
     file: tests/unit/test_database_server_config_cli.py
@@ -13617,6 +14943,28 @@ imports:
     line: 8
     name: sys
     type: import
+  tests/unit/test_ollama_server_config.py:Path:
+    file: tests/unit/test_ollama_server_config.py
+    line: 9
+    module: pathlib
+    name: Path
+    type: import_from
+  tests/unit/test_ollama_server_config.py:get_ollama_server_settings:
+    file: tests/unit/test_ollama_server_config.py
+    line: 14
+    module: ollama_workstation.ollama_server_config
+    name: get_ollama_server_settings
+    type: import_from
+  tests/unit/test_ollama_server_config.py:pytest:
+    file: tests/unit/test_ollama_server_config.py
+    line: 11
+    name: pytest
+    type: import
+  tests/unit/test_ollama_server_config.py:sys:
+    file: tests/unit/test_ollama_server_config.py
+    line: 8
+    name: sys
+    type: import
   tests/unit/test_provider_client_base.py:Any:
     file: tests/unit/test_provider_client_base.py
     line: 10
@@ -14024,6 +15372,12 @@ imports:
     line: 11
     name: pytest
     type: import
+  tests/unit/test_registration.py:register_ollama_server:
+    file: tests/unit/test_registration.py
+    line: 14
+    module: ollama_workstation.registration
+    name: register_ollama_server
+    type: import_from
   tests/unit/test_registration.py:register_ollama_workstation:
     file: tests/unit/test_registration.py
     line: 14

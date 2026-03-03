@@ -48,12 +48,30 @@ OLLAMA_WORKSTATION_SERVER_DESCRIPTION = (
     "server_status reports adapter readiness or model loading."
 )
 
+DATABASE_SERVER_DESCRIPTION = (
+    "Database Server: MCP adapter exposing Redis domain API. Commands: "
+    "message_write, messages_get_by_session, session_get, session_create, "
+    "session_update. Full command catalog with strict JSON Schema; mTLS."
+)
+
 
 def register_commands() -> None:
-    """Register OLLAMA workstation command with adapter registry."""
-    from ollama_workstation.registration import register_ollama_workstation
+    """Register commands by server_id: ollama-server | workstation | database-server."""
+    cfg = get_config()
+    cfg_data = getattr(cfg, "config_data", None) or {}
+    server_id = str((cfg_data.get("registration") or {}).get("server_id") or "").strip()
+    if server_id == "database-server":
+        from database_server.commands import register_database_commands
 
-    register_ollama_workstation(registry)
+        register_database_commands(registry)
+    elif server_id == "ollama-server":
+        from ollama_workstation.registration import register_ollama_server
+
+        register_ollama_server(registry)
+    else:
+        from ollama_workstation.registration import register_ollama_workstation
+
+        register_ollama_workstation(registry)
 
 
 def main() -> int:
@@ -80,8 +98,15 @@ def main() -> int:
     # 1. Adapter validation first
     errors = [getattr(e, "message", str(e)) for e in simple_config.validate()]
 
-    # 2. Project-specific validation
-    errors.extend(validate_project_config(app_config))
+    # 2. Project-specific validation by server role
+    reg = app_config.get("registration") or {}
+    server_id = str(reg.get("server_id") or "").strip()
+    if server_id == "database-server":
+        from database_server.config_validator import validate_database_server_config
+
+        errors.extend(validate_database_server_config(app_config))
+    else:
+        errors.extend(validate_project_config(app_config))
 
     if errors:
         for msg in errors:
@@ -122,9 +147,16 @@ def main() -> int:
     if hasattr(cfg, "feature_manager"):
         cfg.feature_manager.config_data = cfg.config_data
 
+    if server_id == "database-server":
+        app_title = "Database Server Adapter"
+        app_description = DATABASE_SERVER_DESCRIPTION
+    else:
+        app_title = "OLLAMA Workstation Adapter"
+        app_description = OLLAMA_WORKSTATION_SERVER_DESCRIPTION
+
     app = create_app(
-        title="OLLAMA Workstation Adapter",
-        description=OLLAMA_WORKSTATION_SERVER_DESCRIPTION,
+        title=app_title,
+        description=app_description,
         version="1.0.0",
         app_config=app_config,
         config_path=str(cfg_path),
@@ -134,9 +166,9 @@ def main() -> int:
 
     ow = app_config.get("ollama_workstation") or {}
     oo = (ow.get("ollama") or {}) if isinstance(ow, dict) else {}
-    model_list = []
+    model_list: list[str] = []
     model_server_url = ""
-    if isinstance(ow, dict):
+    if server_id != "database-server" and isinstance(ow, dict):
         model_server_url = (
             oo.get("model_server_url") or oo.get("base_url") or "http://127.0.0.1:11434"
         ).strip()

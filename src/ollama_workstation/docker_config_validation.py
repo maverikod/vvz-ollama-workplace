@@ -1,6 +1,6 @@
 """
 Project-specific validation for adapter config
-(mTLS, ollama_workstation.ollama_models, commercial model API keys).
+(mTLS, ollama_workstation.ollama, commercial model API keys).
 Used by docker/run_adapter.py; kept in src for unit testing.
 
 Author: Vasiliy Zdanovskiy
@@ -20,7 +20,7 @@ MODEL_PREFIX_TO_PROVIDER: tuple[tuple[str, str], ...] = (
     ("deepseek", "deepseek"),
 )
 
-# Model id prefix -> required config key for commercial providers (legacy).
+# Model id prefix -> required config key for commercial providers.
 COMMERCIAL_PROVIDER_KEY_BY_PREFIX: tuple[tuple[str, str], ...] = (
     ("gemini", "google_api_key"),
     ("claude", "anthropic_api_key"),
@@ -47,6 +47,28 @@ PROVIDER_TO_CONFIG_KEY: dict[str, str] = {
 VALID_PROVIDER_NAMES: frozenset[str] = frozenset(
     {"ollama", "google", "anthropic", "openai", "xai", "grok", "deepseek", "openrouter"}
 )
+
+
+def _get_ollama_from_ow(ow: dict) -> dict | None:
+    """
+    Read ollama settings from ollama_workstation.ollama section only.
+    Returns dict with normalized keys or None if section missing/invalid.
+    """
+    section = ow.get("ollama")
+    if not isinstance(section, dict):
+        return None
+    base = (section.get("base_url") or "").strip()
+    msurl = (section.get("model_server_url") or section.get("base_url") or "").strip()
+    return {
+        "ollama_base_url": base,
+        "model_server_url": msurl or base,
+        "ollama_model": (section.get("model") or "").strip(),
+        "ollama_models": (
+            section.get("models") if isinstance(section.get("models"), list) else []
+        ),
+        "model_server_container_name": (section.get("container_name") or "").strip(),
+        "model_server_image": (section.get("container_image") or "").strip(),
+    }
 
 
 def get_provider_for_model(model_id: str) -> str:
@@ -136,7 +158,7 @@ def validate_model_providers(
 ) -> list[str]:
     """
     When a model is selected, url and api_key for its provider are mandatory.
-    Uses model_providers (provider -> {url, api_key}) or legacy flat keys.
+    Uses model_providers (provider -> {url, api_key}).
     Returns list of error messages.
     """
     errors: list[str] = []
@@ -148,9 +170,8 @@ def validate_model_providers(
     if not isinstance(provider_urls, dict):
         provider_urls = {}
 
-    base_url = (ow.get("ollama_base_url") or "").strip()
-    model_server_url = (ow.get("model_server_url") or "").strip()
-    ollama_url = base_url or model_server_url
+    oo = _get_ollama_from_ow(ow)
+    ollama_url = (oo["ollama_base_url"] or oo["model_server_url"]) if oo else ""
 
     for prov in providers:
         if prov == "ollama":
@@ -210,8 +231,9 @@ def validate_commercial_model_keys(
 
 def validate_project_config(app_config: dict) -> list[str]:
     """
-    Project-specific validation (mTLS, ollama_workstation.ollama_models).
+    Project-specific validation (mTLS, ollama_workstation.ollama or ollama_server).
     Returns list of error messages; empty if valid.
+    When registration.server_id is ollama-server, only ollama base_url is required.
     """
     errors: list[str] = []
     server_cfg = app_config.get("server", {})
@@ -224,30 +246,57 @@ def validate_project_config(app_config: dict) -> list[str]:
         if not transport.get("verify_client"):
             errors.append("mtls requires transport.verify_client=true")
 
+    server_id = str(
+        (app_config.get("registration") or {}).get("server_id") or ""
+    ).strip()
+    if server_id == "ollama-server":
+        # Minimal: need base_url (ollama_server or ollama_workstation.ollama)
+        oss = app_config.get("ollama_server") or {}
+        ow = app_config.get("ollama_workstation") or {}
+        oo = ow.get("ollama") if isinstance(ow, dict) else {}
+        base = ""
+        if isinstance(oss, dict):
+            base = (oss.get("base_url") or "").strip()
+        if not base and isinstance(oo, dict):
+            base = (oo.get("base_url") or oo.get("model_server_url") or "").strip()
+        if not base:
+            errors.append(
+                "ollama-server requires ollama_server.base_url or "
+                "ollama_workstation.ollama.base_url",
+            )
+        return errors
+
     ow = app_config.get("ollama_workstation") or {}
-    base_url = (ow.get("ollama_base_url") or "").strip()
-    model_server_url = (ow.get("model_server_url") or "").strip()
-    if not base_url and not model_server_url:
-        errors.append("ollama_workstation must set ollama_base_url or model_server_url")
-    if model_server_url and not model_server_url.startswith(("http://", "https://")):
-        errors.append("ollama_workstation.model_server_url must be http(s) URL")
-    # When model selected: url and api_key for its provider are mandatory.
-    errors.extend(
-        validate_model_providers(
-            ow,
-            ow.get("ollama_model"),
-            ow.get("ollama_models"),
+    oo = _get_ollama_from_ow(ow)
+    if oo is None:
+        errors.append("ollama_workstation.ollama is required and must be an object")
+    else:
+        base_url = oo["ollama_base_url"]
+        model_server_url = oo["model_server_url"]
+        if not base_url and not model_server_url:
+            errors.append(
+                "ollama_workstation.ollama must set base_url or model_server_url"
+            )
+        if model_server_url and not model_server_url.startswith(
+            ("http://", "https://")
+        ):
+            errors.append(
+                "ollama_workstation.ollama.model_server_url must be http(s) URL"
+            )
+        errors.extend(
+            validate_model_providers(
+                ow, oo["ollama_model"] or None, oo["ollama_models"] or None
+            )
         )
-    )
-    om = ow.get("ollama_models")
-    if om is not None:
-        if not isinstance(om, list):
-            errors.append("ollama_workstation.ollama_models must be a list")
-        else:
+        raw_om = (ow.get("ollama") or {}).get("models")
+        om = oo["ollama_models"]
+        if raw_om is not None and not isinstance(raw_om, list):
+            errors.append("ollama_workstation.ollama.models must be a list")
+        elif om:
             for i, item in enumerate(om):
                 if not isinstance(item, str) or not item.strip():
                     errors.append(
-                        "ollama_workstation.ollama_models[%s] must be "
+                        "ollama_workstation.ollama.models[%s] must be "
                         "non-empty string" % i
                     )
                     break
@@ -360,12 +409,12 @@ def validate_project_config(app_config: dict) -> list[str]:
                     break
     if ow.get("redis_host") is not None and not isinstance(ow.get("redis_host"), str):
         errors.append("ollama_workstation.redis_host must be a string")
-    cname = ow.get("model_server_container_name")
-    cimg = ow.get("model_server_image")
+    cname = (oo or {}).get("model_server_container_name") or ""
+    cimg = (oo or {}).get("model_server_image") or ""
     if cname is not None and not isinstance(cname, str):
-        errors.append("ollama_workstation.model_server_container_name must be a string")
+        errors.append("ollama_workstation.ollama.container_name must be a string")
     if cimg is not None and not isinstance(cimg, str):
-        errors.append("ollama_workstation.model_server_image must be a string")
+        errors.append("ollama_workstation.ollama.container_image must be a string")
     if (
         cname
         and isinstance(cname, str)
@@ -373,7 +422,7 @@ def validate_project_config(app_config: dict) -> list[str]:
         and (not cimg or not str(cimg).strip())
     ):
         errors.append(
-            "ollama_workstation.model_server_container_name requires model_server_image"
+            "ollama_workstation.ollama.container_name requires container_image"
         )
     if ow.get("redis_key_prefix") is not None and not isinstance(
         ow.get("redis_key_prefix"), str

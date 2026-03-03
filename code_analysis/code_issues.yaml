@@ -4,23 +4,26 @@ issues:
   - class: StubRep
     file: tests/unit/test_representation_registry.py
     line: 22
+  - class: MockRegistry
+    file: tests/unit/test_database_server_commands.py
+    line: 47
   files_too_large:
   - exceeds_limit: 1
     file: src/model_workspace_client/build/lib/model_workspace_client/config_cli.py
     limit: 400
     lines: 401
-  - exceeds_limit: 47
+  - exceeds_limit: 68
     file: src/ollama_workstation/docker_config_validation.py
     limit: 400
-    lines: 447
-  - exceeds_limit: 266
+    lines: 468
+  - exceeds_limit: 201
     file: src/ollama_workstation/chat_flow.py
     limit: 400
-    lines: 666
-  - exceeds_limit: 78
+    lines: 601
+  - exceeds_limit: 108
     file: src/ollama_workstation/config.py
     limit: 400
-    lines: 478
+    lines: 508
   - exceeds_limit: 16
     file: src/ollama_workstation/commands/get_model_context_command.py
     limit: 400
@@ -93,133 +96,121 @@ issues:
   - description: Relative import '.command_alias_registry' cannot be resolved
     file: src/ollama_workstation/chat_flow.py
     imported: CommandAliasRegistry
-    line: 17
+    line: 18
     module: .command_alias_registry
     type: import_from_relative
   - description: Relative import '.command_discovery' cannot be resolved
     file: src/ollama_workstation/chat_flow.py
     imported: CommandDiscovery
-    line: 18
+    line: 19
     module: .command_discovery
     type: import_from_relative
   - description: Relative import '.config' cannot be resolved
     file: src/ollama_workstation/chat_flow.py
     imported: WorkstationConfig
-    line: 19
-    module: .config
-    type: import_from_relative
-  - description: Relative import '.direct_server_client' cannot be resolved
-    file: src/ollama_workstation/chat_flow.py
-    imported: call_command
     line: 20
-    module: .direct_server_client
-    type: import_from_relative
-  - description: Relative import '.direct_server_client' cannot be resolved
-    file: src/ollama_workstation/chat_flow.py
-    imported: get_help
-    line: 21
-    module: .direct_server_client
+    module: .config
     type: import_from_relative
   - description: Relative import '.tools' cannot be resolved
     file: src/ollama_workstation/chat_flow.py
     imported: HELP_REFERENCE_TEXT
-    line: 22
+    line: 21
     module: .tools
     type: import_from_relative
   - description: Relative import '.effective_tool_list_builder' cannot be resolved
     file: src/ollama_workstation/chat_flow.py
     imported: EffectiveToolListBuilder
-    line: 23
+    line: 22
     module: .effective_tool_list_builder
     type: import_from_relative
   - description: Relative import '.ollama_representation' cannot be resolved
     file: src/ollama_workstation/chat_flow.py
     imported: OllamaRepresentation
-    line: 24
+    line: 23
     module: .ollama_representation
     type: import_from_relative
   - description: Relative import '.ollama_representation' cannot be resolved
     file: src/ollama_workstation/chat_flow.py
     imported: register_ollama_models
-    line: 24
+    line: 23
     module: .ollama_representation
     type: import_from_relative
   - description: Relative import '.model_loading_state' cannot be resolved
     file: src/ollama_workstation/chat_flow.py
     imported: get_active_model
-    line: 25
+    line: 24
     module: .model_loading_state
     type: import_from_relative
   - description: Relative import '.model_loading_state' cannot be resolved
     file: src/ollama_workstation/chat_flow.py
     imported: is_model_ready
-    line: 25
+    line: 24
     module: .model_loading_state
-    type: import_from_relative
-  - description: Relative import '.ollama_client' cannot be resolved
-    file: src/ollama_workstation/chat_flow.py
-    imported: get_ollama_client
-    line: 26
-    module: .ollama_client
     type: import_from_relative
   - description: Relative import '.model_provider_resolver' cannot be resolved
     file: src/ollama_workstation/chat_flow.py
     imported: resolve_model_endpoint
-    line: 27
+    line: 25
     module: .model_provider_resolver
     type: import_from_relative
   - description: Relative import '.commercial_chat_client' cannot be resolved
     file: src/ollama_workstation/chat_flow.py
     imported: chat_completion
-    line: 28
+    line: 26
     module: .commercial_chat_client
     type: import_from_relative
   - description: Relative import '.proxy_client' cannot be resolved
     file: src/ollama_workstation/chat_flow.py
     imported: ProxyClient
-    line: 29
+    line: 27
     module: .proxy_client
     type: import_from_relative
   - description: Relative import '.proxy_client' cannot be resolved
     file: src/ollama_workstation/chat_flow.py
     imported: ProxyClientError
-    line: 29
+    line: 27
     module: .proxy_client
+    type: import_from_relative
+  - description: Relative import '.provider_registry' cannot be resolved
+    file: src/ollama_workstation/chat_flow.py
+    imported: get_default_client
+    line: 28
+    module: .provider_registry
     type: import_from_relative
   - description: Relative import '.representation_registry' cannot be resolved
     file: src/ollama_workstation/chat_flow.py
     imported: RepresentationRegistry
-    line: 30
+    line: 29
     module: .representation_registry
     type: import_from_relative
   - description: Relative import '.safe_name_translator' cannot be resolved
     file: src/ollama_workstation/chat_flow.py
     imported: SafeNameTranslator
-    line: 31
+    line: 30
     module: .safe_name_translator
     type: import_from_relative
   - description: Relative import '.context_representation' cannot be resolved
     file: src/ollama_workstation/chat_flow.py
     imported: ContextRepresentation
-    line: 32
+    line: 31
     module: .context_representation
     type: import_from_relative
   - description: Relative import '.session_entity' cannot be resolved
     file: src/ollama_workstation/chat_flow.py
     imported: Session
-    line: 33
+    line: 32
     module: .session_entity
     type: import_from_relative
   - description: Relative import '.tool_call_registry' cannot be resolved
     file: src/ollama_workstation/chat_flow.py
     imported: ToolCallRegistry
-    line: 36
+    line: 35
     module: .tool_call_registry
     type: import_from_relative
   - description: Relative import '.ollama_representation' cannot be resolved
     file: src/ollama_workstation/chat_flow.py
     imported: OllamaRepresentation
-    line: 341
+    line: 283
     module: .ollama_representation
     type: import_from_relative
   - description: Relative import '.call_stack' cannot be resolved
@@ -309,6 +300,30 @@ issues:
   - description: Relative import '.commands' cannot be resolved
     file: src/ollama_workstation/registration.py
     imported: OllamaChatCommand
+    line: 12
+    module: .commands
+    type: import_from_relative
+  - description: Relative import '.commands' cannot be resolved
+    file: src/ollama_workstation/registration.py
+    imported: OllamaServerChatCommand
+    line: 12
+    module: .commands
+    type: import_from_relative
+  - description: Relative import '.commands' cannot be resolved
+    file: src/ollama_workstation/registration.py
+    imported: OllamaServerEmbedCommand
+    line: 12
+    module: .commands
+    type: import_from_relative
+  - description: Relative import '.commands' cannot be resolved
+    file: src/ollama_workstation/registration.py
+    imported: OllamaServerListCommand
+    line: 12
+    module: .commands
+    type: import_from_relative
+  - description: Relative import '.commands' cannot be resolved
+    file: src/ollama_workstation/registration.py
+    imported: OllamaServerPullCommand
     line: 12
     module: .commands
     type: import_from_relative
@@ -726,6 +741,18 @@ issues:
     line: 34
     module: .session_init_command
     type: import_from_relative
+  - description: Relative import '..ollama_server_config' cannot be resolved
+    file: src/ollama_workstation/commands/ollama_server_pull_command.py
+    imported: get_ollama_server_settings
+    line: 20
+    module: ..ollama_server_config
+    type: import_from_relative
+  - description: Relative import '..ollama_server_config' cannot be resolved
+    file: src/ollama_workstation/commands/ollama_server_embed_command.py
+    imported: get_ollama_server_settings
+    line: 18
+    module: ..ollama_server_config
+    type: import_from_relative
   - description: Relative import '..config' cannot be resolved
     file: src/ollama_workstation/commands/add_command_to_session_command.py
     imported: load_config
@@ -927,20 +954,14 @@ issues:
   - description: Relative import '..config' cannot be resolved
     file: src/ollama_workstation/commands/direct_chat_command.py
     imported: load_config
-    line: 21
+    line: 22
     module: ..config
     type: import_from_relative
   - description: Relative import '..model_loading_state' cannot be resolved
     file: src/ollama_workstation/commands/direct_chat_command.py
     imported: get_active_model
-    line: 22
-    module: ..model_loading_state
-    type: import_from_relative
-  - description: Relative import '..ollama_client' cannot be resolved
-    file: src/ollama_workstation/commands/direct_chat_command.py
-    imported: get_ollama_client
     line: 23
-    module: ..ollama_client
+    module: ..model_loading_state
     type: import_from_relative
   - description: Relative import '..model_provider_resolver' cannot be resolved
     file: src/ollama_workstation/commands/direct_chat_command.py
@@ -953,6 +974,12 @@ issues:
     imported: chat_completion
     line: 25
     module: ..commercial_chat_client
+    type: import_from_relative
+  - description: Relative import '..provider_registry' cannot be resolved
+    file: src/ollama_workstation/commands/direct_chat_command.py
+    imported: get_default_client
+    line: 26
+    module: ..provider_registry
     type: import_from_relative
   - description: Relative import '..model_loading_state' cannot be resolved
     file: src/ollama_workstation/commands/set_default_model_command.py
@@ -1033,6 +1060,36 @@ issues:
     line: 20
     module: .set_default_model_command
     type: import_from_relative
+  - description: Relative import '.ollama_server_chat_command' cannot be resolved
+    file: src/ollama_workstation/commands/__init__.py
+    imported: OllamaServerChatCommand
+    line: 21
+    module: .ollama_server_chat_command
+    type: import_from_relative
+  - description: Relative import '.ollama_server_embed_command' cannot be resolved
+    file: src/ollama_workstation/commands/__init__.py
+    imported: OllamaServerEmbedCommand
+    line: 22
+    module: .ollama_server_embed_command
+    type: import_from_relative
+  - description: Relative import '.ollama_server_list_command' cannot be resolved
+    file: src/ollama_workstation/commands/__init__.py
+    imported: OllamaServerListCommand
+    line: 23
+    module: .ollama_server_list_command
+    type: import_from_relative
+  - description: Relative import '.ollama_server_pull_command' cannot be resolved
+    file: src/ollama_workstation/commands/__init__.py
+    imported: OllamaServerPullCommand
+    line: 24
+    module: .ollama_server_pull_command
+    type: import_from_relative
+  - description: Relative import '..ollama_server_config' cannot be resolved
+    file: src/ollama_workstation/commands/ollama_server_list_command.py
+    imported: get_ollama_server_settings
+    line: 20
+    module: ..ollama_server_config
+    type: import_from_relative
   - description: Relative import '.session_init_command' cannot be resolved
     file: src/ollama_workstation/commands/session_update_command.py
     imported: _get_session_store
@@ -1044,6 +1101,12 @@ issues:
     imported: _get_session_store
     line: 15
     module: .session_init_command
+    type: import_from_relative
+  - description: Relative import '..ollama_server_config' cannot be resolved
+    file: src/ollama_workstation/commands/ollama_server_chat_command.py
+    imported: get_ollama_server_settings
+    line: 20
+    module: ..ollama_server_config
     type: import_from_relative
   - description: Relative import '..model_loading_state' cannot be resolved
     file: src/ollama_workstation/commands/get_model_state_command.py
@@ -1276,11 +1339,11 @@ issues:
     method: __init__
   - class: null
     file: src/ollama_workstation/registration.py
-    line: 90
+    line: 94
     method: _metadata_wrapper
   - class: null
     file: src/ollama_workstation/config.py
-    line: 297
+    line: 307
     method: _opt_key
   - class: null
     file: src/ollama_workstation/config_cli.py
@@ -1392,19 +1455,19 @@ issues:
     method: _parse_validate_args
   - class: _DummyRegistry
     file: tests/unit/test_registration.py
-    line: 23
+    line: 24
     method: __init__
   - class: _DummyRegistry
     file: tests/unit/test_registration.py
-    line: 26
+    line: 27
     method: register
   - class: null
     file: tests/unit/test_registration.py
-    line: 23
+    line: 24
     method: __init__
   - class: null
     file: tests/unit/test_registration.py
-    line: 26
+    line: 27
     method: register
   - class: StubMessageStore
     file: tests/unit/test_context_builder.py
@@ -1460,12 +1523,8 @@ issues:
     method: format_tool_result
   - class: null
     file: tests/unit/test_chat_flow.py
-    line: 25
+    line: 28
     method: config
-  - class: null
-    file: tests/unit/test_chat_flow.py
-    line: 61
-    method: post
   - class: _MockRedis
     file: tests/unit/test_session_store.py
     line: 60
@@ -1522,6 +1581,22 @@ issues:
     file: tests/unit/test_proxy_client.py
     line: 30
     method: config
+  - class: MockRegistry
+    file: tests/unit/test_database_server_commands.py
+    line: 48
+    method: __init__
+  - class: MockRegistry
+    file: tests/unit/test_database_server_commands.py
+    line: 51
+    method: register
+  - class: null
+    file: tests/unit/test_database_server_commands.py
+    line: 48
+    method: __init__
+  - class: null
+    file: tests/unit/test_database_server_commands.py
+    line: 51
+    method: register
   - class: StubProviderClient
     file: tests/unit/test_provider_client_base.py
     line: 44
@@ -1604,7 +1679,7 @@ issues:
     method: main
   - class: null
     file: docker/run_adapter.py
-    line: 107
+    line: 132
     method: _patched_wait_for
   - class: null
     file: docker/generate_config.py
@@ -1617,14 +1692,14 @@ issues:
   not_implemented_in_non_abstract: []
 summary:
   any_type_usage: 0
-  classes_without_docstrings: 1
+  classes_without_docstrings: 2
   files_too_large: 6
   files_without_docstrings: 3
   generic_exception_usage: 0
   imports_in_middle: 0
-  invalid_imports: 182
+  invalid_imports: 192
   max_lines_limit: 400
   methods_with_pass: 1
-  methods_without_docstrings: 122
+  methods_without_docstrings: 125
   not_implemented_in_non_abstract: 0
-  total_issues: 315
+  total_issues: 329

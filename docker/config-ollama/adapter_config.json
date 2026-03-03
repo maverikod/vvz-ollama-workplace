@@ -1,0 +1,89 @@
+{
+  "server": {
+    "host": "0.0.0.0",
+    "port": 8019,
+    "protocol": "mtls",
+    "servername": "ollama-server",
+    "ssl": {
+      "cert": "/app/certs/server.crt",
+      "key": "/app/certs/server.key",
+      "ca": "/app/certs/ca.crt",
+      "crl": null,
+      "dnscheck": false,
+      "check_hostname": null
+    },
+    "rules": null,
+    "log_dir": "/app/logs",
+    "debug": false,
+    "log_level": "INFO",
+    "advertised_host": "ollama-server"
+  },
+  "client": {
+    "enabled": false,
+    "protocol": "http",
+    "ssl": null
+  },
+  "registration": {
+    "enabled": true,
+    "protocol": "mtls",
+    "register_url": "https://mcp-proxy:3004/register",
+    "unregister_url": "https://mcp-proxy:3004/unregister",
+    "heartbeat_interval": 30,
+    "ssl": {
+      "cert": "/app/certs/client.crt",
+      "key": "/app/certs/client.key",
+      "ca": "/app/certs/ca.crt",
+      "crl": null,
+      "dnscheck": false,
+      "check_hostname": null
+    },
+    "server_id": "ollama-server",
+    "server_name": "OLLAMA Server",
+    "instance_uuid": "00000000-0000-4000-8000-000000000012",
+    "auto_on_startup": true,
+    "auto_on_shutdown": true,
+    "heartbeat": {
+      "url": "https://mcp-proxy:3004/proxy/heartbeat",
+      "interval": 30
+    }
+  },
+  "server_validation": {
+    "enabled": false,
+    "protocol": "http",
+    "ssl": null,
+    "timeout": 10,
+    "use_token": false,
+    "use_roles": false,
+    "tokens": {},
+    "roles": {},
+    "auth_header": "X-API-Key",
+    "roles_header": "X-Roles",
+    "health_path": "/health",
+    "check_hostname": false
+  },
+  "auth": {
+    "use_token": false,
+    "use_roles": false,
+    "tokens": {},
+    "roles": {}
+  },
+  "queue_manager": {
+    "enabled": true,
+    "in_memory": true,
+    "registry_path": null,
+    "shutdown_timeout": 30.0,
+    "max_concurrent_jobs": 10,
+    "max_queue_size": null,
+    "per_job_type_limits": null,
+    "completed_job_retention_seconds": 21600,
+    "default_poll_interval": 0.0,
+    "default_max_wait_time": null
+  },
+  "transport": {
+    "verify_client": true
+  },
+  "ollama_server": {
+    "base_url": "http://ollama:11434",
+    "request_timeout_seconds": 60
+  }
+}

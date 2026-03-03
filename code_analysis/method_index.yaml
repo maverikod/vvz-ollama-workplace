@@ -94,6 +94,13 @@ MessageStore:
 MessageStreamWriter:
 - __init__
 - write
+MessageWriteCommand:
+- get_schema
+MessagesGetBySessionCommand:
+- get_schema
+MockRegistry:
+- __init__
+- register
 ModelCallDepthGuard:
 - __init__
 - can_enter_model_call
@@ -130,6 +137,26 @@ OllamaRepresentation:
 - serialize_tools
 - serialize_messages
 - format_tool_result
+OllamaServerChatCommand:
+- get_schema
+- get_result_schema
+- get_error_schema
+- get_metadata
+OllamaServerEmbedCommand:
+- get_schema
+- get_result_schema
+- get_error_schema
+- get_metadata
+OllamaServerListCommand:
+- get_schema
+- get_result_schema
+- get_error_schema
+- get_metadata
+OllamaServerPullCommand:
+- get_schema
+- get_result_schema
+- get_error_schema
+- get_metadata
 ProviderError:
 - __init__
 ProviderProtocolError: []
@@ -173,6 +200,10 @@ ServerStatusCommand:
 Session:
 - __post_init__
 - create
+SessionCreateCommand:
+- get_schema
+SessionGetCommand:
+- get_schema
 SessionInitCommand:
 - get_schema
 - get_result_schema
@@ -183,6 +214,7 @@ SessionStore:
 - create
 - update
 SessionUpdateCommand:
+- get_schema
 - get_schema
 - get_result_schema
 - get_error_schema
