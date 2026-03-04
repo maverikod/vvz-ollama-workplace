@@ -3,13 +3,13 @@
 **Author:** Vasiliy Zdanovskiy  
 **Email:** vasilyvz@gmail.com  
 
-This document describes the **model workspace** only: how it uses the **client to ollama-adapter** and the **proxy client**, and how it is configured. It does not describe Redis or Ollama internals. Aligned with [SPEC §4, §8](../../docs/plans/refactoring_adapter_structure/SPEC.md).
+This document describes the **model workspace** only: how it uses **provider clients** (ollama_provider_client, redis_provider_client) and the **proxy client**, and how it is configured. For the workspace, **Ollama server is just a separate provider**. It does not describe Redis or Ollama internals. Aligned with [SPEC §4, §5, §8](../../docs/plans/refactoring_adapter_structure/SPEC.md).
 
 ---
 
 ## Chosen option
 
-**Option A (adapter Command):** The workspace is exposed as an adapter Command (e.g. `ollama_chat`) that accepts `messages`, optional `model`, `stream`, `max_tool_rounds`; uses the **proxy client** for MCP Proxy tool execution and the **client to ollama-adapter** for chat; returns the final assistant message and full history.
+**Option A (adapter Command):** The workspace is exposed as an adapter Command (e.g. `ollama_chat`) that accepts `messages`, optional `model`, `stream`, `max_tool_rounds`; uses the **proxy client** for MCP Proxy tool execution and a **provider client** (e.g. ollama_provider_client) for chat; returns the final assistant message and full history.
 
 **Option B:** Standalone service (e.g. FastAPI) with an endpoint such as `POST /ollama/chat`, same flow inside; may register with the proxy as a server.
 
@@ -21,8 +21,8 @@ This document describes the **model workspace** only: how it uses the **client t
 2. The adapter handles auth and request/response; the command receives validated params.
 3. **Workspace** loads config, builds **context** (see [context_formation.md](context_formation.md)), then runs the chat flow.
 4. **Chat flow:**
-   - Build chat request for the **client to ollama-adapter** (model, messages, tools from workspace tool definitions).
-   - **Client to ollama-adapter** returns a message that may contain `tool_calls`.
+   - Build chat request for the **provider client** (e.g. ollama_provider_client: model, messages, tools from workspace tool definitions).
+   - **Provider client** returns a message that may contain `tool_calls`.
    - For each tool call, the workspace calls the **MCP Proxy** via **proxy client** (list_servers, call_server, or help), then appends a tool message to the conversation.
    - Repeat until the model returns no `tool_calls` or `max_tool_rounds` is reached.
 5. Return the final message and history to the adapter, which serializes it in the response.
@@ -34,7 +34,7 @@ This document describes the **model workspace** only: how it uses the **client t
 | Field | Required | Description |
 |-------|----------|-------------|
 | mcp_proxy_url | Yes | Base URL of the MCP Proxy (e.g. `http://localhost:3004`). |
-| Client to ollama-adapter config | Yes | Connection to ollama-adapter via proxy (server id, model, timeouts); see root [provider_client_config_standard.md](../../docs/standards/provider_client_config_standard.md). |
+| provider_clients (Ollama, etc.) | Yes | Config for each provider (Ollama = one provider; server id, model, timeouts); see root [provider_client_config_standard.md](../../docs/standards/provider_client_config_standard.md). |
 | ollama_model (or default model) | Yes | Default model name for chat (e.g. `llama3.1`). |
 | ollama_timeout | No | Timeout in seconds for chat requests (default 60). |
 | max_tool_rounds | No | Max tool-call rounds per chat (default 10). |

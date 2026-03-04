@@ -12,7 +12,7 @@ Recommended layout and conventions. **Canonical plan:** [docs/plans/refactoring_
 ```
 ollama/
 ├── docs/                    # Root documentation only (common, plans)
-│   ├── standards.md         # Standards
+│   ├── README.md            # Integration (сопряжение) docs only
 │   ├── project_structure.md # This file
 │   ├── container_usage.md   # Stack: containers, build/run, mTLS
 │   ├── registration_troubleshooting.md
@@ -21,14 +21,16 @@ ollama/
 │   └── plans/               # Plans, incl. refactoring SPEC
 ├── mtls_certificates/       # Shared mTLS certs for all adapters
 ├── model_workspace/         # Subproject: model-workspace-server app
-├── ollama_adapter/          # Subproject: Ollama adapter (client + server)
-├── redis_adapter/           # Subproject: Redis adapter (client + server)
+├── ollama_adapter/          # Subproject: Ollama adapter (server)
+├── redis_adapter/           # Subproject: Redis adapter (server)
+├── ollama_provider_client/  # Subproject: provider client for Ollama (for model_workspace)
+├── redis_provider_client/   # Subproject: provider client for Redis (for model_workspace)
 ├── .gitignore
 └── README.md
 ```
 
-- **Root** contains only common docs and `mtls_certificates`. No application `src/`, `tests/`, or per-subproject config in root (SPEC: «Никакого кода приложений, зависимостей и конфигов подпроектов в корне»).
-- **Three subprojects:** each is a separate directory with its own `docs/`, `src/<package>/`, `tests/`, `config/`, `pyproject.toml`, etc. Each is suitable for PyPI.
+- **Root** contains only common docs and `mtls_certificates`. No application code in root.
+- **Five subprojects (SPEC §5):** model_workspace, ollama_adapter, redis_adapter, ollama_provider_client, redis_provider_client. Each has its own `docs/`, `src/<package>/`, `tests/`, `config/`, `pyproject.toml`, etc. For model_workspace, **Ollama server is just a separate provider**; it uses ollama_provider_client and redis_provider_client.
 
 ---
 
@@ -38,7 +40,7 @@ ollama/
 |-------------------------|----------------------------------|------|
 | **redis-adapter**       | Redis + mcp-proxy-adapter server | Storage; access only via adapter (WebSocket). |
 | **ollama-adapter**      | Ollama + mcp-proxy-adapter server| Models; access only via adapter (WebSocket).   |
-| **model-workspace-server** | Model workspace app only     | Uses **client** to redis-adapter and **client** to ollama-adapter; no Redis or Ollama inside. |
+| **model-workspace-server** | Model workspace app only     | Uses **provider clients** (ollama_provider_client, redis_provider_client). Ollama = one provider; no Redis or Ollama inside. |
 
 ---
 
@@ -47,9 +49,11 @@ ollama/
 Root **docs/** contains **only** documents about **coupling/integration** of the three subprojects. See [docs/README.md](README.md) for the list.
 
 - **docs/** — project_structure, container_usage (stack), registration_troubleshooting, standards/ (provider client API and config), plans/ (SPEC). Optional: RULES.md, standards.md, ollama_setup.md.
-- **model_workspace/docs/** — only model workspace: ТЗ, techspec, design, context_formation, deployment (deployment links to root for stack/registration).
-- **ollama_adapter/docs/** — only Ollama adapter: ТЗ, subproject README; SPEC in root.
-- **redis_adapter/docs/** — only Redis adapter: ТЗ, subproject README; SPEC in root.
+- **model_workspace/docs/** — only model workspace: ТЗ, techspec, design, context_formation, deployment.
+- **ollama_adapter/docs/** — only Ollama adapter (server): ТЗ, README.
+- **redis_adapter/docs/** — only Redis adapter (server): ТЗ, README.
+- **ollama_provider_client/docs/** — provider client for Ollama (for model_workspace; Ollama = one provider).
+- **redis_provider_client/docs/** — provider client for Redis (storage) for model_workspace.
 
 ---
 
@@ -72,7 +76,9 @@ Code and doc rules (one class per file, headers, black/flake8/mypy, code_mapper)
 
 ## 5. References
 
-- **SPEC (Russian):** [docs/plans/refactoring_adapter_structure/SPEC.md](plans/refactoring_adapter_structure/SPEC.md) — target architecture, WebSocket, tunnel mode, three containers, Ollama/Redis client design.
+- **SPEC (Russian):** [docs/plans/refactoring_adapter_structure/SPEC.md](plans/refactoring_adapter_structure/SPEC.md) — target architecture, five subprojects, provider clients, Ollama = one provider.
 - **Model workspace ТЗ:** model_workspace/docs/ТЗ.md
 - **Ollama adapter ТЗ:** ollama_adapter/docs/ТЗ.md
 - **Redis adapter ТЗ:** redis_adapter/docs/ТЗ.md
+- **Ollama provider client ТЗ:** ollama_provider_client/docs/ТЗ.md
+- **Redis provider client ТЗ:** redis_provider_client/docs/ТЗ.md

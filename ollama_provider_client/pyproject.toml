@@ -3,17 +3,13 @@ requires = ["setuptools>=61", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "model-workspace"
+name = "ollama-provider-client"
 version = "0.1.0"
-description = "Model workspace: chat and tools via redis-adapter and ollama-adapter clients"
+description = "Ollama provider client: uniform API for model workspace (chat, embed); talks to ollama-adapter"
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
-    "mcp-proxy-adapter",
-    "ollama-provider-client",
-    "redis-provider-client",
     "httpx",
-    "PyYAML",
 ]
 
 [project.optional-dependencies]

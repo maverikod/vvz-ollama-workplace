@@ -1,0 +1,14 @@
+# Author: Vasiliy Zdanovskiy
+# email: vasilyvz@gmail.com
+
+.venv/
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+dist/
+build/
+.coverage
+.pytest_cache/
+.mypy_cache/
+code_analysis/

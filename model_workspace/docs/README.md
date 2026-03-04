@@ -5,13 +5,13 @@
 
 Documentation for the **model_workspace** subproject only. Stack-wide topics (Redis, Ollama, containers, registration, mTLS, provider client standards) are in **root** `docs/`.
 
-**Per SPEC §4:** The **model-workspace-server** uses **clients** to redis-adapter and ollama-adapter (WebSocket via proxy). It has **no** Redis or Ollama inside. Canonical plan: [docs/plans/refactoring_adapter_structure/SPEC.md](../../docs/plans/refactoring_adapter_structure/SPEC.md).
+**Per SPEC §4, §5:** The **model-workspace-server** uses **provider client** packages (ollama_provider_client, redis_provider_client). **For the model workspace, Ollama server is just a separate provider.** No Redis or Ollama inside. Canonical plan: [docs/plans/refactoring_adapter_structure/SPEC.md](../../docs/plans/refactoring_adapter_structure/SPEC.md).
 
 ---
 
 ## Technical specification (ТЗ)
 
-**[ТЗ.md](ТЗ.md)** — technical specification for this subproject: model workspace application using **client to redis-adapter** and **client to ollama-adapter** (no Redis or Ollama inside), configuration, container **model-workspace-server**, overview.
+**[ТЗ.md](ТЗ.md)** — technical specification for this subproject: model workspace application using **ollama_provider_client** and **redis_provider_client** (Ollama = one provider); configuration, container **model-workspace-server**, overview.
 
 ---
 
@@ -20,7 +20,7 @@ Documentation for the **model_workspace** subproject only. Stack-wide topics (Re
 | Doc | Description |
 |-----|-------------|
 | **[techspec.md](techspec.md)** | Workspace role, tools (list_servers, call_server, help), chat flow, config. No Redis/OLLAMA internals. |
-| **[design.md](design.md)** | Data flow: workspace → client to ollama-adapter, workspace → proxy client. Config. |
+| **[design.md](design.md)** | Data flow: workspace → provider clients (Ollama, Redis), workspace → proxy client. Config. |
 | **[context_formation.md](context_formation.md)** | Context building (ContextBuilder), limits, segment order, relevance slot, token usage. |
 | **[deployment.md](deployment.md)** | How to run the workspace; **links to root** for stack, registration, mTLS. |
 

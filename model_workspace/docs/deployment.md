@@ -9,7 +9,7 @@ This document describes **only** how to run the **model workspace** (this subpro
 
 ## What this subproject is
 
-The **model_workspace** is the application (container **model-workspace-server** per SPEC §4) that uses **client to redis-adapter** and **client to ollama-adapter** (WebSocket via proxy). It does **not** run Redis or Ollama inside. See [ТЗ.md](ТЗ.md), [techspec.md](techspec.md), and root [SPEC](../../docs/plans/refactoring_adapter_structure/SPEC.md).
+The **model_workspace** is the application (container **model-workspace-server** per SPEC §4) that uses **provider client** packages (**ollama_provider_client**, **redis_provider_client**). For the model workspace, **Ollama server is just a separate provider**. It does **not** run Redis or Ollama inside. See [ТЗ.md](ТЗ.md), [techspec.md](techspec.md), and root [SPEC](../../docs/plans/refactoring_adapter_structure/SPEC.md).
 
 ---
 
@@ -17,7 +17,7 @@ The **model_workspace** is the application (container **model-workspace-server**
 
 - **As part of the full stack:** Use the root project’s Docker and scripts. See root **[docs/container_usage.md](../../docs/container_usage.md)** for build, run, networks, mounts, and mTLS.
 - **Registration with MCP proxy:** Common for all adapters. See root **[docs/registration_troubleshooting.md](../../docs/registration_troubleshooting.md)** when you see “Proxy not available”.
-- **Config:** Workspace config (mcp_proxy_url, client to ollama-adapter / redis-adapter, model, context limits) is part of the adapter or app config; see [design.md](design.md) and root [provider_client_config_standard](../../docs/standards/provider_client_config_standard.md).
+- **Config:** Workspace config (mcp_proxy_url, provider_clients, model, context limits) is part of the adapter or app config; see [design.md](design.md) and root [provider_client_config_standard](../../docs/standards/provider_client_config_standard.md).
 
 ---
 
