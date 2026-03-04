@@ -1,125 +1,75 @@
-# Project structure standards (OLLAMA workstation)
+# Project structure (aligned with refactoring SPEC)
 
 **Author:** Vasiliy Zdanovskiy  
 **Email:** vasilyvz@gmail.com  
 
-Recommended layout and conventions for the OLLAMA workstation project. Align new code and config with this structure.
+Recommended layout and conventions. **Canonical plan:** [docs/plans/refactoring_adapter_structure/SPEC.md](plans/refactoring_adapter_structure/SPEC.md). All documentation and code layout must match the SPEC.
 
 ---
 
-## 1. Root layout
+## 1. Root layout (SPEC §5)
 
 ```
 ollama/
-├── docs/                 # Root documentation (common, plans, refactoring)
-│   ├── standards.md      # Standards
-│   ├── project_structure.md
-│   ├── reports/          # AI reports (отчёты ИИ)
-│   ├── plans/            # Plans (планы), incl. refactoring SPEC
-│   └── ...
-├── model_workspace/      # Subproject: model workspace app
-│   └── docs/             # Workstation specs: techspec, design, context_formation,
-│                         # container_usage, registration_troubleshooting, standards/
-├── ollama_adapter/       # Subproject (see its docs/)
-├── redis_adapter/       # Subproject (see its docs/)
-├── src/                  # (legacy / shared if any)
-├── tests/
-├── config/
-├── examples/
-├── code_analysis/        # code_mapper indices (generated)
-├── .venv/
-├── projectid
-├── pyproject.toml
+├── docs/                    # Root documentation only (common, plans)
+│   ├── standards.md         # Standards
+│   ├── project_structure.md # This file
+│   ├── container_usage.md   # Stack: containers, build/run, mTLS
+│   ├── registration_troubleshooting.md
+│   ├── standards/           # Provider client API and config (normative)
+│   ├── reports/             # AI reports (отчёты ИИ)
+│   └── plans/               # Plans, incl. refactoring SPEC
+├── mtls_certificates/       # Shared mTLS certs for all adapters
+├── model_workspace/         # Subproject: model-workspace-server app
+├── ollama_adapter/          # Subproject: Ollama adapter (client + server)
+├── redis_adapter/           # Subproject: Redis adapter (client + server)
 ├── .gitignore
 └── README.md
 ```
 
----
-
-## 2. docs — documentation and guides
-
-- **docs/** — root documentation: common standards, project structure, plans (e.g. refactoring SPEC). Model-workspace-specific docs (techspec, design, context formation, container usage, registration troubleshooting, provider client standards) live in **model_workspace/docs/**.
-
-## 3. docs/reports — AI reports
-
-- **docs/reports/** — reports produced by AI (отчёты ИИ). Store here any generated analyses, run summaries, or other AI-authored reports. Do not use this folder for hand-written documentation (use other `docs/` files for that).
-
-## 4. docs/plans — plans
-
-- **docs/plans/** — plans (планы). Implementation plans, cleanup plans, roadmaps, and other planning documents go here.
+- **Root** contains only common docs and `mtls_certificates`. No application `src/`, `tests/`, or per-subproject config in root (SPEC: «Никакого кода приложений, зависимостей и конфигов подпроектов в корне»).
+- **Three subprojects:** each is a separate directory with its own `docs/`, `src/<package>/`, `tests/`, `config/`, `pyproject.toml`, etc. Each is suitable for PyPI.
 
 ---
 
-## 5. Package layout (under `src/` or project root)
+## 2. Containers (SPEC §4)
 
-- **One class per file** (except small enums/exceptions); facade + smaller modules when a class grows.
-- Keep files under **350–400 lines**; split when exceeded.
-
-Suggested structure for the workstation component:
-
-```
-src/ollama_workstation/
-├── __init__.py
-├── config.py           # Config model / loader (mcp_proxy_url, ollama_*, etc.)
-├── tools.py            # OLLAMA tool definitions (list_servers, call_server, help)
-├── chat_flow.py        # Chat loop: request → OLLAMA → tool_calls → proxy → repeat
-├── proxy_client.py     # Thin wrapper over adapter client or HTTP to proxy
-├── commands/           # Adapter commands (if Option A)
-│   ├── __init__.py
-│   └── ollama_chat_command.py
-└── exceptions.py       # Project-specific exceptions (optional)
-```
-
-If Option B (standalone service):
-
-```
-src/ollama_workstation/
-├── ...
-├── api/
-│   ├── __init__.py
-│   └── routes.py       # e.g. POST /ollama/chat
-└── main.py             # FastAPI app entry
-```
+| Container               | Contents                         | Role |
+|-------------------------|----------------------------------|------|
+| **redis-adapter**       | Redis + mcp-proxy-adapter server | Storage; access only via adapter (WebSocket). |
+| **ollama-adapter**      | Ollama + mcp-proxy-adapter server| Models; access only via adapter (WebSocket).   |
+| **model-workspace-server** | Model workspace app only     | Uses **client** to redis-adapter and **client** to ollama-adapter; no Redis or Ollama inside. |
 
 ---
 
-## 6. Configuration
+## 3. Root docs — what lives where
 
-- **config/** — example YAML/JSON and schema.
-- Config schema or example MUST cover: `mcp_proxy_url`, `ollama_base_url`, `ollama_model`, optional `ollama_timeout`, `max_tool_rounds`, and any TLS/API key fields.
-
----
-
-## 7. Tests
-
-- **tests/** — unit and integration tests.
-- Mirror package structure where useful (e.g. `tests/unit/`, `tests/integration/`).
-- Test command registration and chat flow (with mocked OLLAMA and proxy) as per tech spec.
+- **docs/** — common documentation: standards, project structure, stack (container_usage), registration troubleshooting, provider client standards. Plans (e.g. refactoring SPEC) in `docs/plans/`.
+- **model_workspace/docs/** — only model workspace: ТЗ, techspec, design, context_formation, deployment (deployment links to root for stack/registration).
+- **ollama_adapter/docs/** — only Ollama adapter: ТЗ, subproject README; SPEC in root.
+- **redis_adapter/docs/** — only Redis adapter: ТЗ, subproject README; SPEC in root.
 
 ---
 
-## 8. Examples
+## 4. Per-subproject layout (SPEC §5)
 
-- **examples/** — minimal runnable script or request example showing: send one user message to the workstation, get model reply after possible tool use.
-- Document in README or docs how to run the example and required config.
+Each subproject has the same pattern:
 
----
+- **docs/** — ТЗ.md, README.md, reports/, plans/
+- **src/<package>/** — application code (one class per file; max 350–400 lines per file)
+- **tests/** — unit/, integration/
+- **config/** — example/schema config
+- **examples/** — minimal runnable examples
+- **code_analysis/** — generated by code_mapper; do not edit
+- **pyproject.toml**, **.gitignore**, **README.md**, **projectid**
 
-## 9. Code analysis
-
-- **code_analysis/** — generated by code_mapper; do not edit by hand.
-- Run code_mapper after each batch of file changes to keep indices up to date.
-
----
-
-## 10. Virtual environment and tooling
-
-- Use **.venv** in project root; never use `--break-system-packages`.
-- Standard checks after edits: **black**, **flake8**, **mypy**; fix all reported issues.
+Code and doc rules (one class per file, headers, black/flake8/mypy, code_mapper) apply **within each subproject**.
 
 ---
 
-## 11. Imports and dependencies
+## 5. References
 
-- Imports only at the top of the file, except when implementing lazy loading.
-- Prefer dependency on **mcp-proxy-adapter** (adapter client, Command, registry) rather than reimplementing proxy protocol.
+- **SPEC (Russian):** [docs/plans/refactoring_adapter_structure/SPEC.md](plans/refactoring_adapter_structure/SPEC.md) — target architecture, WebSocket, tunnel mode, three containers, Ollama/Redis client design.
+- **Model workspace ТЗ:** model_workspace/docs/ТЗ.md
+- **Ollama adapter ТЗ:** ollama_adapter/docs/ТЗ.md
+- **Redis adapter ТЗ:** redis_adapter/docs/ТЗ.md

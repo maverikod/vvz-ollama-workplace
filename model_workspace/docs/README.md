@@ -3,28 +3,39 @@
 **Author:** Vasiliy Zdanovskiy  
 **email:** vasilyvz@gmail.com
 
-Documentation and guides for the model_workspace subproject.
+Documentation for the **model_workspace** subproject only. Stack-wide topics (Redis, Ollama, containers, registration, mTLS, provider client standards) are in **root** `docs/`.
+
+**Per SPEC §4:** The **model-workspace-server** uses **clients** to redis-adapter and ollama-adapter (WebSocket via proxy). It has **no** Redis or Ollama inside. Canonical plan: [docs/plans/refactoring_adapter_structure/SPEC.md](../../docs/plans/refactoring_adapter_structure/SPEC.md).
 
 ---
 
 ## Technical specification (ТЗ)
 
-**[ТЗ.md](ТЗ.md)** — technical specification for the subproject: model workspace application using redis_adapter and ollama_adapter clients (no Redis or Ollama inside), configuration, container, overview of functionality.
-
-General context (cluster, three subprojects): repository root `docs/plans/refactoring_adapter_structure/SPEC.md`.
+**[ТЗ.md](ТЗ.md)** — technical specification for this subproject: model workspace application using **client to redis-adapter** and **client to ollama-adapter** (no Redis or Ollama inside), configuration, container **model-workspace-server**, overview.
 
 ---
 
-## Workstation docs (moved from root docs)
+## Workspace-only docs (this subproject)
 
-- **[techspec.md](techspec.md)** — technical specification: OLLAMA workstation, tools (list_servers, call_server, help), chat flow, config, integration with mcp-proxy-adapter.
-- **[design.md](design.md)** — design Option A: adapter Command `ollama_chat`, data flow, config, proxy API.
-- **[context_formation.md](context_formation.md)** — context building (ContextBuilder), limits, segment order, relevance slot, token usage logging.
-- **[container_usage.md](container_usage.md)** — running OLLAMA + Redis + adapter container, registration, mTLS, test container, commercial models.
-- **[registration_troubleshooting.md](registration_troubleshooting.md)** — "Proxy not available", CA, mTLS, checklist.
-- **standards/** — provider client and config standards:
-  - [provider_client_standard.md](standards/provider_client_standard.md) — normative API for provider clients (chat, embed, healthcheck, errors).
-  - [provider_client_config_standard.md](standards/provider_client_config_standard.md) — provider_clients config structure and validation.
+| Doc | Description |
+|-----|-------------|
+| **[techspec.md](techspec.md)** | Workspace role, tools (list_servers, call_server, help), chat flow, config. No Redis/OLLAMA internals. |
+| **[design.md](design.md)** | Data flow: workspace → client to ollama-adapter, workspace → proxy client. Config. |
+| **[context_formation.md](context_formation.md)** | Context building (ContextBuilder), limits, segment order, relevance slot, token usage. |
+| **[deployment.md](deployment.md)** | How to run the workspace; **links to root** for stack, registration, mTLS. |
+
+---
+
+## Common / stack-wide (root docs)
+
+These live in the **repository root** `docs/`, not here. The workspace **uses** them; it does not duplicate them.
+
+| Topic | Location |
+|-------|----------|
+| Stack (containers, OLLAMA, Redis, build/run, mTLS) | Root [docs/container_usage.md](../../docs/container_usage.md) |
+| Registration, “Proxy not available” | Root [docs/registration_troubleshooting.md](../../docs/registration_troubleshooting.md) |
+| Provider client API (normative) | Root [docs/standards/provider_client_standard.md](../../docs/standards/provider_client_standard.md) |
+| Provider client config (normative) | Root [docs/standards/provider_client_config_standard.md](../../docs/standards/provider_client_config_standard.md) |
 
 ---
 
