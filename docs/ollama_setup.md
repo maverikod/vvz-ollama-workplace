@@ -3,7 +3,7 @@
 **Author:** Vasiliy Zdanovskiy  
 **Email:** vasilyvz@gmail.com  
 
-When using the **OLLAMA + adapter container**, stop local OLLAMA and use only the OLLAMA inside the container. See [container_usage.md](container_usage.md).
+When using the **OLLAMA + adapter container**, stop local OLLAMA and use only the OLLAMA inside the container. See [model_workspace/docs/container_usage.md](../model_workspace/docs/container_usage.md).
 
 ## Install (run on your machine)
 

@@ -7,7 +7,7 @@ email: vasilyvz@gmail.com
 
 This document is the **single source of truth** for the abstract base class and all concrete provider clients. Implementations (abstract base class in step 04 and concrete clients) MUST follow this standard.
 
-References: [CLIENT_UNIFICATION_TZ.md](../plans/provider_client_unification/CLIENT_UNIFICATION_TZ.md), [SCOPE_FREEZE.md](../plans/provider_client_unification/atomic/SCOPE_FREEZE.md).
+References: [CLIENT_UNIFICATION_TZ.md](../../../docs/plans/provider_client_unification/CLIENT_UNIFICATION_TZ.md), [SCOPE_FREEZE.md](../../../docs/plans/provider_client_unification/atomic/SCOPE_FREEZE.md).
 
 ---
 
@@ -60,7 +60,7 @@ Every provider client MUST implement the following methods. Signatures and seman
 - If the provider **does not support embeddings**:
   - The client MUST set **`supports_embeddings = False`** (or equivalent capability flag) so the workstation can avoid calling `embed` when not needed.
   - The client MUST implement **`embed(request)`** so that when called, it raises a **single, well-defined error** (e.g. `CapabilityNotSupportedError`, or a documented subtype of `ValidationError` from the shared error module), **without performing any network call**.
-- The workstation SHOULD check `supports_embeddings` before calling `embed`. If the workstation calls `embed` on a client that reported `supports_embeddings = False`, the client’s raising the defined error is acceptable and considered correct behaviour.
+- The workstation SHOULD check `supports_embeddings` before calling `embed`. If the workstation calls `embed` on a client that reported `supports_embeddings = False`, the client's raising the defined error is acceptable and considered correct behaviour.
 - **Not allowed:** implementing only a capability flag without implementing the `embed` method. The method MUST always be present; unsupported embeddings are expressed by the flag plus the defined error on call.
 
 ---

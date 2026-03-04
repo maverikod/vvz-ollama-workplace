@@ -5,7 +5,7 @@
 
 This document describes how the model context is built (ContextBuilder) and what constraints apply. Use it to align behaviour and to verify limits without calling the model.
 
-**Why it matters:** The model is used as the **agent’s tool**. Without the right context (including semantically relevant history via the relevance slot), the model is not useful. See techspec §1.1.
+**Why it matters:** The model is used as the **agent's tool**. Without the right context (including semantically relevant history via the relevance slot), the model is not useful. See [techspec.md](techspec.md) §1.1.
 
 ---
 
@@ -30,7 +30,7 @@ No model is called during context building; trimming and ordering are determinis
 | **last_n_messages** | Maximum number of history messages to include (by count). | 10 |
 | **min_semantic_tokens** | Reserved space for semantic/relevance slot. | 256 |
 | **min_documentation_tokens** | Reserved space for documentation slot. | 0 |
-| **model_context_tokens** | Model’s context window (builder init). From config or representation. | 4096 |
+| **model_context_tokens** | Model's context window (builder init). From config or representation. | 4096 |
 | **standards_file_path** | Optional path: file content is prepended to standards. | "" |
 | **rules_file_path** | Optional path: file content is prepended to session rules. | "" |
 
@@ -41,12 +41,12 @@ Session can also define `standards` and `session_rules` (lists of strings), merg
 ## 3. Effective limit and remainder
 
 - **effective_limit** = `min(model_context_tokens, max(1, max_context_tokens))`  
-  So the cap is the stricter of: the model’s window and the requested `max_context_tokens`.
+  So the cap is the stricter of: the model's window and the requested `max_context_tokens`.
 
 - **remainder** = `effective_limit - min_semantic_tokens - min_documentation_tokens`
 
 - **Constraint:** `remainder >= 0`.  
-  If `remainder < 0`, **ContextBuilder.build()** raises **ContextBuilderError** with a message like “Remainder < min_semantic_tokens; reduce last_n or increase limit”. No request is sent to the model.
+  If `remainder < 0`, **ContextBuilder.build()** raises **ContextBuilderError** with a message like "Remainder < min_semantic_tokens; reduce last_n or increase limit". No request is sent to the model.
 
 So: if you set `max_context_tokens` (or the model window) too small relative to `min_semantic_tokens + min_documentation_tokens`, the build fails before any serialization.
 
@@ -89,7 +89,7 @@ After that, the **current user message** is appended by the caller (not inside C
 
 So the **only hard numeric constraint** in the builder is:  
 `effective_limit - min_semantic_tokens - min_documentation_tokens >= 0`.  
-Everything else is “include up to N messages” and “append these blocks”. Overflow beyond the model window is not enforced in code and would be the responsibility of the API or a future token-counting trim step.
+Everything else is "include up to N messages" and "append these blocks". Overflow beyond the model window is not enforced in code and would be the responsibility of the API or a future token-counting trim step.
 
 ---
 
@@ -116,7 +116,7 @@ Everything else is “include up to N messages” and “append these blocks”.
 
 ## 8. Where it is used
 
-- **ollama_chat** (OllamaChatCommand): builds context with config’s max_context_tokens, last_n_messages, min_semantic_tokens, min_documentation_tokens; on ContextBuilderError falls back to all messages from store + current (no trim/slots).
+- **ollama_chat** (OllamaChatCommand): builds context with config's max_context_tokens, last_n_messages, min_semantic_tokens, min_documentation_tokens; on ContextBuilderError falls back to all messages from store + current (no trim/slots).
 - **get_model_context** (GetModelContextCommand): same build; on error returns error result instead of fallback.
 - Both use the same ContextBuilder contract; verification scripts can use in-memory session and message stores and no OLLAMA/Redis to assert these rules.
 
@@ -145,19 +145,16 @@ Use these log lines to compare token usage across runs or settings.
 
 1. **Create a session** (e.g. `session_init` with model `qwen2.5-coder:1.5b`).
 
-2. **Run a coherent dialogue** (at least 25 exchanges) with **clearly separated topics** so that “old” content is outside the `last_n_messages` window (e.g. if `last_n_messages=10`, use at least 6–7 full turns on other topics before the callback):
-   - **Block A (turns 1–5):** Introduce a topic with unique wording, e.g. “Мій кіт Вася. Він любить їсти **рибу** та спати на дивані.” / “Вася ще любить молоко. Запиши як факт про **їжу**.”
-   - **Block B (turns 6–12):** Different topic, e.g. “Пишу проект на Python, тести в pytest.” (several exchanges).
-   - **Block C (turns 13–18):** Another topic, e.g. “Планую поїздку в Київ.” (several exchanges).
-   - **Block D (turns 19–20):** Short return to cat, e.g. “Вася сьогодні не їв.”
+2. **Run a coherent dialogue** (at least 25 exchanges) with **clearly separated topics** so that "old" content is outside the `last_n_messages` window (e.g. if `last_n_messages=10`, use at least 6–7 full turns on other topics before the callback):
+   - **Block A (turns 1–5):** Introduce a topic with unique wording.
+   - **Block B (turns 6–12):** Different topic.
+   - **Block C (turns 13–18):** Another topic.
+   - **Block D (turns 19–20):** Short return to first topic.
 
-3. **Semantic callback turn:** Ask a question that is **semantically close** to Block A but **does not repeat** its exact words, e.g.:  
-   “Що ми згадували про **їжу** Васи?” or “Яку їжу любить кіт?”
+3. **Semantic callback turn:** Ask a question that is **semantically close** to Block A but **does not repeat** its exact words.
 
-4. **Check context:** Call `get_model_context(session_id, content=<the semantic question>)` (or the same `content` as in step 3). In the returned `messages` list:
-   - **Expected:** At least one **older** message (from Block A) containing “риба”, “молоко” or “їжа” appears in the list. Because the relevance slot is placed **after** `last_n_messages` in the built context, such a message may appear **after** more recent messages in the list (non-chronological order) — that indicates semantic mixing.
-   - **Failure:** If the context contains only the last N messages in strict order and no older “риба/їжа” message, the relevance slot may be empty (e.g. vectorization unavailable or `min_semantic_tokens`/slot logic not used).
+4. **Check context:** Call `get_model_context(session_id, content=<the semantic question>)`. In the returned `messages` list: **Expected:** At least one **older** message from Block A appears. Non-chronological order indicates semantic mixing.
 
-5. **Repeat** the context check after a few more turns to see that the same or other older messages appear when the current question is semantically related.
+5. **Repeat** the context check after a few more turns.
 
-**Requirements:** Session store and message store (e.g. Redis) must persist history; vectorization client (embedding server) must be configured and reachable so that `RelevanceSlotBuilder` uses vector similarity rather than only word overlap. If the embedding server is unavailable, the builder falls back to word-overlap scoring, which can still reorder older messages but is less reliable for “meaning” than embeddings.
+**Requirements:** Session store and message store (e.g. Redis) must persist history; vectorization client (embedding server) must be configured and reachable so that `RelevanceSlotBuilder` uses vector similarity rather than only word overlap.

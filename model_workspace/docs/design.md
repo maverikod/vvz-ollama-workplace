@@ -5,7 +5,7 @@
 
 ## Chosen option
 
-**Option A:** Implement an adapter Command `ollama_chat` that accepts `messages`, optional `model`, `stream`, `max_tool_rounds`; uses the adapter’s client for MCP Proxy tool execution and a separate HTTP client for OLLAMA `/api/chat`; returns the final assistant message and full history.
+**Option A:** Implement an adapter Command `ollama_chat` that accepts `messages`, optional `model`, `stream`, `max_tool_rounds`; uses the adapter's client for MCP Proxy tool execution and a separate HTTP client to OLLAMA `/api/chat`; returns the final assistant message and full history.
 
 ## Data flow
 
@@ -41,8 +41,8 @@ The workstation assumes the MCP Proxy exposes JSON-RPC at `{proxy_url}/api/jsonr
 - **call_server** — params: `server_id`, `command`, optional `copy_number` (default 1), optional `params`. Returns the command result.
 - **help** — params: `server_id`, optional `copy_number`, optional `command`. Returns help text or structure.
 
-If the proxy uses a different API (e.g. OpenAPI REST), the thin client in `proxy_client.py` must be adapted to the proxy’s endpoints and payloads; config (URL, TLS, timeouts) is reused.
+If the proxy uses a different API (e.g. OpenAPI REST), the thin client in `proxy_client.py` must be adapted to the proxy's endpoints and payloads; config (URL, TLS, timeouts) is reused.
 
 ## Optional: register workstation with MCP Proxy (ТЗ 1.2)
 
-So that external clients can call “chat with OLLAMA + MCP tools” via the proxy: configure the adapter’s proxy registration (e.g. `registration` or `proxy_client` section in the app config) so that the server that runs the `ollama_chat` command registers with the MCP Proxy at startup. Then clients call the proxy, which routes to this server and thus to `ollama_chat`. See the adapter docs for registration section format.
+So that external clients can call "chat with OLLAMA + MCP tools" via the proxy: configure the adapter's proxy registration (e.g. `registration` or `proxy_client` section in the app config) so that the server that runs the `ollama_chat` command registers with the MCP Proxy at startup. Then clients call the proxy, which routes to this server and thus to `ollama_chat`. See the adapter docs for registration section format.

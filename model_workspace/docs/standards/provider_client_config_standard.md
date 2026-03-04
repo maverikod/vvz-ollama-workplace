@@ -7,7 +7,7 @@ email: vasilyvz@gmail.com
 
 Normative document for the provider client configuration structure and validation rules. Steps 05 (schema), 06 (validator), and 07 (generator) must be implemented by following this document alone.
 
-References: [CLIENT_UNIFICATION_TZ.md](../plans/provider_client_unification/CLIENT_UNIFICATION_TZ.md) (Configuration Standard), [SCOPE_FREEZE.md](../plans/provider_client_unification/atomic/SCOPE_FREEZE.md).
+References: [CLIENT_UNIFICATION_TZ.md](../../../docs/plans/provider_client_unification/CLIENT_UNIFICATION_TZ.md) (Configuration Standard), [SCOPE_FREEZE.md](../../../docs/plans/provider_client_unification/atomic/SCOPE_FREEZE.md).
 
 ---
 

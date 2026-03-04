@@ -11,22 +11,25 @@ Recommended layout and conventions for the OLLAMA workstation project. Align new
 
 ```
 ollama/
-├── docs/                 # Documentation and guides (документация и руководства)
-│   ├── techspec.md       # Technical specification
-│   ├── standards.md      # Standards derived from techspec
+├── docs/                 # Root documentation (common, plans, refactoring)
+│   ├── standards.md      # Standards
 │   ├── project_structure.md
 │   ├── reports/          # AI reports (отчёты ИИ)
-│   ├── plans/            # Plans (планы)
+│   ├── plans/            # Plans (планы), incl. refactoring SPEC
 │   └── ...
-├── src/                  # Application source (or package name)
-│   └── ollama_workstation/  # Main package
-├── tests/                # Tests
-├── config/                # Example or default config files
-├── examples/              # Minimal scripts / request examples
+├── model_workspace/      # Subproject: model workspace app
+│   └── docs/             # Workstation specs: techspec, design, context_formation,
+│                         # container_usage, registration_troubleshooting, standards/
+├── ollama_adapter/       # Subproject (see its docs/)
+├── redis_adapter/       # Subproject (see its docs/)
+├── src/                  # (legacy / shared if any)
+├── tests/
+├── config/
+├── examples/
 ├── code_analysis/        # code_mapper indices (generated)
-├── .venv/                 # Virtual environment
-├── projectid              # Project identifier for tools
-├── pyproject.toml        # Or setup.py / requirements.txt
+├── .venv/
+├── projectid
+├── pyproject.toml
 ├── .gitignore
 └── README.md
 ```
@@ -35,7 +38,7 @@ ollama/
 
 ## 2. docs — documentation and guides
 
-- **docs/** — project documentation and guides (документация и руководства). All hand-written specs, standards, how-tos, and reference docs go here (e.g. techspec.md, standards.md, project_structure.md, RULES.md). Language: English unless the product owner requests otherwise.
+- **docs/** — root documentation: common standards, project structure, plans (e.g. refactoring SPEC). Model-workspace-specific docs (techspec, design, context formation, container usage, registration troubleshooting, provider client standards) live in **model_workspace/docs/**.
 
 ## 3. docs/reports — AI reports
 

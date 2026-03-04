@@ -17,17 +17,17 @@ Add to **mcp-proxy-adapter** (or deliver as an extension/companion) an **OLLAMA 
 
 So: **on top of the adapter, build a workstation for OLLAMA that can talk to the MCP Proxy.**
 
-**Role of the model:** The OLLAMA model is used **as the agent’s tool** (e.g. by Cursor or another AI client). For that to be useful, the model must receive **relevant context** — not only the last N messages, but also past turns that are **semantically relevant** to the current request. Without embedding-based relevance (vectorization + relevance slot), the model cannot use long dialogue history effectively and is of little value as a tool. Therefore the **embedding service** and **relevance slot by vector similarity** are essential for the workstation, not optional.
+**Role of the model:** The OLLAMA model is used **as the agent's tool** (e.g. by Cursor or another AI client). For that to be useful, the model must receive **relevant context** — not only the last N messages, but also past turns that are **semantically relevant** to the current request. Without embedding-based relevance (vectorization + relevance slot), the model cannot use long dialogue history effectively and is of little value as a tool. Therefore the **embedding service** and **relevance slot by vector similarity** are essential for the workstation, not optional.
 
 ### 1.2 Scope
 
-- **In scope:** Design and implementation of a component that (1) connects to OLLAMA (chat API with tools), (2) injects MCP-Proxy tools into requests, (3) handles OLLAMA tool_calls by calling the MCP Proxy, (4) optionally registers itself with the MCP Proxy so that external clients can “chat with OLLAMA + MCP tools” via the proxy. Configuration (proxy URL, OLLAMA URL, model name). Documentation and a minimal example.
+- **In scope:** Design and implementation of a component that (1) connects to OLLAMA (chat API with tools), (2) injects MCP-Proxy tools into requests, (3) handles OLLAMA tool_calls by calling the MCP Proxy, (4) optionally registers itself with the MCP Proxy so that external clients can "chat with OLLAMA + MCP tools" via the proxy. Configuration (proxy URL, OLLAMA URL, model name). Documentation and a minimal example.
 - **Out of scope:** Modifying OLLAMA source code; implementing the MCP protocol from scratch; supporting every OLLAMA API (focus on `/api/chat` with tools). Other backends (e.g. OpenAI) are not required by this ТЗ.
 
 ### 1.3 Goals
 
 1. OLLAMA (the model) can **list** servers and **call** commands on any server registered in the MCP Proxy.
-2. The solution is **based on mcp-proxy-adapter** (reuse its client to talk to the proxy, and optionally expose a Command that runs “chat with OLLAMA + proxy tools”).
+2. The solution is **based on mcp-proxy-adapter** (reuse its client to talk to the proxy, and optionally expose a Command that runs "chat with OLLAMA + proxy tools").
 3. Single place of configuration: MCP Proxy URL, OLLAMA base URL, model name, timeouts.
 
 ---
@@ -44,7 +44,7 @@ The following tools must be provided to OLLAMA in every relevant chat request. T
 | **call_server**  | Execute a command on a registered server. | `server_id` (string), `copy_number` (integer, optional, default 1), `command` (string), `params` (object, optional) | MCP Proxy `call_server`. |
 | **help**         | Get help/usage for a server or a specific command. | `server_id` (string), `copy_number` (integer, optional), `command` (string, optional) | MCP Proxy `help`. |
 
-Additional proxy tools (e.g. `health_check`, `network_check`) may be added later; the above three are mandatory for a minimal “workstation”.
+Additional proxy tools (e.g. `health_check`, `network_check`) may be added later; the above three are mandatory for a minimal "workstation".
 
 ### 2.2 Chat flow with tools
 
@@ -53,7 +53,7 @@ Additional proxy tools (e.g. `health_check`, `network_check`) may be added later
    - `model`, `messages`, `stream` (optional),
    - `tools` = array of tool definitions (list_servers, call_server, help) in OLLAMA format: `{ "type": "function", "function": { "name", "description", "parameters" } }`.
 3. OLLAMA returns a message that may contain `tool_calls`.
-4. For each tool call, the workstation **calls the MCP Proxy** (using the adapter’s existing client or HTTP client configured with proxy URL), obtains the result, and appends a message `{ "role": "tool", "tool_name": "<name>", "content": "<result>" }` to the conversation.
+4. For each tool call, the workstation **calls the MCP Proxy** (using the adapter's existing client or HTTP client configured with proxy URL), obtains the result, and appends a message `{ "role": "tool", "tool_name": "<name>", "content": "<result>" }` to the conversation.
 5. Repeat from step 2 (send updated messages to OLLAMA) until the model returns a message without tool_calls or a maximum iteration count is reached.
 6. The final model reply (and optionally the full message history) is returned to the caller.
 
@@ -61,7 +61,7 @@ Additional proxy tools (e.g. `health_check`, `network_check`) may be added later
 
 - **Option A (recommended):** Implement an **adapter Command** (e.g. `ollama_chat` or `ollama_chat_with_proxy_tools`) that:
   - Accepts params: `messages` (array), `model` (optional), `stream` (optional), `max_tool_rounds` (optional).
-  - Uses the adapter’s **client** (JsonRpcTransport + ProxyApiMixin) to call the MCP Proxy for tool execution; uses a separate HTTP client to call OLLAMA `/api/chat`.
+  - Uses the adapter's **client** (JsonRpcTransport + ProxyApiMixin) to call the MCP Proxy for tool execution; uses a separate HTTP client to call OLLAMA `/api/chat`.
   - Returns the final assistant message and optionally the full history.
 - **Option B:** Implement a **standalone service** (e.g. FastAPI) that exposes one endpoint, e.g. `POST /ollama/chat`, and internally performs the same flow; this service may be built with the adapter and register with the proxy as `ollama-workstation`.
 - In both cases, the **MCP Proxy URL** and **OLLAMA URL** (and model name) must be configurable (config file or environment).
@@ -79,7 +79,7 @@ Additional proxy tools (e.g. `health_check`, `network_check`) may be added later
 
 ## 3. Non-functional requirements
 
-- **Reuse:** Prefer the adapter’s existing client (e.g. `JsonRpcClient`, transport, proxy API) for MCP Proxy calls; avoid duplicating proxy protocol logic.
+- **Reuse:** Prefer the adapter's existing client (e.g. `JsonRpcClient`, transport, proxy API) for MCP Proxy calls; avoid duplicating proxy protocol logic.
 - **Errors:** If the proxy call fails, put the error message in the tool result content so the model can see it; do not drop the conversation.
 - **Logging:** Log tool invocations (tool name, arguments, proxy response status) for debugging; no sensitive data in logs.
 - **Documentation:** English; describe how to configure and run the workstation and how to call the new command (or endpoint) from the MCP Proxy.
@@ -94,7 +94,7 @@ Additional proxy tools (e.g. `health_check`, `network_check`) may be added later
    - Logic: build OLLAMA chat request with tools → send to OLLAMA → on tool_calls, call MCP Proxy → append tool results → repeat.
    - Command (if Option A) registered in the adapter registry; or HTTP endpoint (if Option B).
 3. **Config** — schema or example (YAML/JSON/env) for proxy URL, OLLAMA URL, model, timeouts.
-4. **Example** — minimal script or request example: “send one user message to the workstation and get the model’s reply after possible tool use.”
+4. **Example** — minimal script or request example: "send one user message to the workstation and get the model's reply after possible tool use."
 
 ---
 
@@ -108,7 +108,7 @@ Additional proxy tools (e.g. `health_check`, `network_check`) may be added later
 
 ## 6. Integration with mcp-proxy-adapter (reference)
 
-This section summarizes patterns from the **mcp-proxy-adapter** package (e.g. 6.9.x) for implementing the OLLAMA workstation as an adapter Command or as a service that uses the adapter’s client. Use it to align initialization, command registration, and proxy calls.
+This section summarizes patterns from the **mcp-proxy-adapter** package (e.g. 6.9.x) for implementing the OLLAMA workstation as an adapter Command or as a service that uses the adapter's client. Use it to align initialization, command registration, and proxy calls.
 
 ### 6.1 Package entry points
 
@@ -135,8 +135,8 @@ This section summarizes patterns from the **mcp-proxy-adapter** package (e.g. 6.
 
 - **JsonRpcClient** is constructed with `protocol`, `host`, `port`, and optionally `token_header`, `token`, `cert`, `key`, `ca`, `check_hostname`, `timeout`. It talks to a **single** server (adapter or proxy).
 - **Calling the adapter server (JSON-RPC):** `response = await client.jsonrpc_call(method, params)`; then `client._extract_result(response)` to get the result or raise on error. High-level: `await client.execute_command(command, params)`.
-- **Calling the external MCP Proxy:** The adapter’s `ProxyApiMixin` provides `list_proxy_servers(proxy_url)` (GET to proxy’s `/list` or `/servers`) and methods for register/heartbeat/unregister. If the proxy exposes `list_servers`, `call_server`, `help` via **OpenAPI** (REST) rather than JSON-RPC, the workstation must use an HTTP client (e.g. same transport as `JsonRpcClient` or `httpx`) and map tool parameters to the proxy’s endpoints and payloads. Document the proxy API (URLs and request/response shape) in the design.
-- **Reuse:** Prefer the adapter’s client and transport for proxy calls where the proxy API matches (e.g. JSON-RPC); otherwise implement a thin proxy client that uses the same config (URL, TLS, timeouts) and reuse it for all three tools.
+- **Calling the external MCP Proxy:** The adapter's `ProxyApiMixin` provides `list_proxy_servers(proxy_url)` (GET to proxy's `/list` or `/servers`) and methods for register/heartbeat/unregister. If the proxy exposes `list_servers`, `call_server`, `help` via **OpenAPI** (REST) rather than JSON-RPC, the workstation must use an HTTP client (e.g. same transport as `JsonRpcClient` or `httpx`) and map tool parameters to the proxy's endpoints and payloads. Document the proxy API (URLs and request/response shape) in the design.
+- **Reuse:** Prefer the adapter's client and transport for proxy calls where the proxy API matches (e.g. JSON-RPC); otherwise implement a thin proxy client that uses the same config (URL, TLS, timeouts) and reuse it for all three tools.
 
 ### 6.5 Application startup sequence (example)
 
@@ -145,7 +145,7 @@ This section summarizes patterns from the **mcp-proxy-adapter** package (e.g. 6.
 3. Register custom commands: `register_all_commands()` which calls `registry.register(OllamaChatCommand, "custom")` (and any other commands).
 4. Start the server (e.g. via `ServerEngineFactory.get_engine("hypercorn")` and `engine.run_server(app, server_config)`).
 
-Optional: register the workstation with the MCP Proxy (registration section in config) so external clients can call “chat with OLLAMA + proxy tools” via the proxy.
+Optional: register the workstation with the MCP Proxy (registration section in config) so external clients can call "chat with OLLAMA + proxy tools" via the proxy.
 
 ### 6.6 References in the adapter package
 
