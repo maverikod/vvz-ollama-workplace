@@ -3,7 +3,7 @@
 **Author:** Vasiliy Zdanovskiy  
 **Email:** vasilyvz@gmail.com  
 
-Recommended layout and conventions. **Canonical plan:** [docs/plans/refactoring_adapter_structure/SPEC.md](plans/refactoring_adapter_structure/SPEC.md). All documentation and code layout must match the SPEC.
+Recommended layout and conventions. **Canonical plan:** [docs/plans/refactoring_adapter_structure/SPEC.md](plans/refactoring_adapter_structure/SPEC.md). **Main overview of subprojects:** [docs/SUBPROJECTS_OVERVIEW.md](SUBPROJECTS_OVERVIEW.md) (six categories; all clients based on adapter client, hide provider specifics).
 
 ---
 
@@ -30,7 +30,7 @@ ollama/
 ```
 
 - **Root** contains only common docs and `mtls_certificates`. No application code in root.
-- **Five subprojects (SPEC §5):** model_workspace, ollama_adapter, redis_adapter, ollama_provider_client, redis_provider_client. Each has its own `docs/`, `src/<package>/`, `tests/`, `config/`, `pyproject.toml`, etc. For model_workspace, **Ollama server is just a separate provider**; it uses ollama_provider_client and redis_provider_client.
+- **Subprojects (SPEC §5):** six categories — (1) ollama_adapter, (2) redis_adapter, (3) model_workspace, (4) ollama_provider_client, (5) redis_provider_client, (6) other provider clients (e.g. openai_provider_client). All **clients** are based on the adapter client and hide provider-specific format and API. See [SUBPROJECTS_OVERVIEW.md](SUBPROJECTS_OVERVIEW.md).
 
 ---
 

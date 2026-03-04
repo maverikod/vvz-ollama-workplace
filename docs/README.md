@@ -3,7 +3,9 @@
 **Author:** Vasiliy Zdanovskiy  
 **email:** vasilyvz@gmail.com
 
-In the **root** `docs/` only documents that concern **coupling/integration of the five subprojects** are kept. Subproject-specific content lives in each subproject’s `docs/`.
+In the **root** `docs/` only documents that concern **coupling/integration** of subprojects are kept. Subproject-specific content lives in each subproject’s `docs/`.
+
+**Start here:** [SUBPROJECTS_OVERVIEW.md](SUBPROJECTS_OVERVIEW.md) — overview of the six subproject categories, principle “all clients on adapter client base, hide provider specifics”, and where to find what.
 
 ---
 
@@ -11,7 +13,8 @@ In the **root** `docs/` only documents that concern **coupling/integration of th
 
 | Document | Description |
 |----------|-------------|
-| **[project_structure.md](project_structure.md)** | Layout: root and five subprojects; containers; provider clients; Ollama = one provider for model_workspace. |
+| **[SUBPROJECTS_OVERVIEW.md](SUBPROJECTS_OVERVIEW.md)** | **Main overview:** six subproject categories, clients on adapter client base, hide provider specifics, dependencies. |
+| **[project_structure.md](project_structure.md)** | Layout: root and subprojects; containers; references to overview. |
 | **[container_usage.md](container_usage.md)** | Running the full stack (redis-adapter, ollama-adapter, model-workspace-server); build, run, mTLS, networks. |
 | **[registration_troubleshooting.md](registration_troubleshooting.md)** | Registration with MCP proxy; "Proxy not available"; mTLS and checklist (common to all adapters). |
 | **[standards/provider_client_standard.md](standards/provider_client_standard.md)** | Normative API of provider clients (chat, embed, healthcheck, errors) — contract between model_workspace and **provider client** packages (e.g. ollama_provider_client). |

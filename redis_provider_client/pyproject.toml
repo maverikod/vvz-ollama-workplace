@@ -9,6 +9,7 @@ description = "Redis provider client: storage API for model workspace; talks to 
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
+    "mcp-proxy-adapter",
     "httpx",
 ]
 
