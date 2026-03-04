@@ -5,15 +5,15 @@
     "protocol": "mtls",
     "servername": "localhost",
     "ssl": {
-      "cert": "/home/vasilyvz/projects/ollama/mtls_certificates/server.crt",
-      "key": "/home/vasilyvz/projects/ollama/mtls_certificates/server.key",
-      "ca": "/home/vasilyvz/projects/ollama/mtls_certificates/ca.crt",
+      "cert": "/path/to/server.crt",
+      "key": "/path/to/server.key",
+      "ca": "/path/to/ca.crt",
       "crl": null,
       "dnscheck": false,
       "check_hostname": null
     },
     "rules": null,
-    "log_dir": "/home/vasilyvz/projects/ollama/logs",
+    "log_dir": "/path/to/logs",
     "debug": false,
     "log_level": "INFO",
     "advertised_host": "localhost"
@@ -22,56 +22,117 @@
   "registration": {
     "enabled": true,
     "protocol": "mtls",
-    "register_url": "https://mcp-proxy:3004/register",
-    "unregister_url": "https://mcp-proxy:3004/unregister",
+    "register_url": "https://proxy:3004/register",
+    "unregister_url": "https://proxy:3004/unregister",
     "heartbeat_interval": 30,
     "ssl": {
-      "cert": "/home/vasilyvz/projects/ollama/mtls_certificates/client.crt",
-      "key": "/home/vasilyvz/projects/ollama/mtls_certificates/client.key",
-      "ca": "/home/vasilyvz/projects/ollama/mtls_certificates/ca.crt",
+      "cert": "/path/to/client.crt",
+      "key": "/path/to/client.key",
+      "ca": "/path/to/ca.crt",
       "crl": null,
       "dnscheck": false,
       "check_hostname": null
     },
-    "server_id": "localhost",
+    "server_id": "model-workspace-server",
     "server_name": "OLLAMA Workstation",
-    "instance_uuid": "506299bb-81c4-472f-ac4a-bd20252d17f7",
+    "instance_uuid": "00000000-0000-4000-8000-000000000001",
     "auto_on_startup": true,
     "auto_on_shutdown": true,
-    "heartbeat": {"url": "https://mcp-proxy:3004/proxy/heartbeat", "interval": 30}
+    "heartbeat": {"url": "https://proxy:3004/proxy/heartbeat", "interval": 30}
   },
   "server_validation": {"enabled": false, "protocol": "http", "ssl": null, "timeout": 10, "use_token": false, "use_roles": false, "tokens": {}, "roles": {}, "auth_header": "X-API-Key", "roles_header": "X-Roles", "health_path": "/health", "check_hostname": false},
   "auth": {"use_token": false, "use_roles": false, "tokens": {}, "roles": {}},
   "queue_manager": {"enabled": true, "in_memory": true, "registry_path": null, "shutdown_timeout": 30, "max_concurrent_jobs": 10, "max_queue_size": null, "per_job_type_limits": null, "completed_job_retention_seconds": 21600, "default_poll_interval": 0, "default_max_wait_time": null},
   "transport": {"verify_client": true},
+  "provider_clients": {
+    "default_provider": "ollama",
+    "providers": {
+      "ollama": {
+        "transport": {
+          "base_url": "http://ollama:11434",
+          "protocol": "http",
+          "request_timeout_seconds": 120
+        },
+        "auth": {},
+        "tls": {},
+        "features": {},
+        "limits": {}
+      },
+      "google": {
+        "transport": {
+          "base_url": "https://generativelanguage.googleapis.com/v1beta/openai/",
+          "protocol": "https",
+          "request_timeout_seconds": 120
+        },
+        "auth": {"api_key": "YOUR_GOOGLE_API_KEY"},
+        "tls": {"verify": true},
+        "features": {},
+        "limits": {}
+      },
+      "anthropic": {
+        "transport": {
+          "base_url": "https://api.anthropic.com/v1",
+          "protocol": "https",
+          "request_timeout_seconds": 120
+        },
+        "auth": {"api_key": "YOUR_ANTHROPIC_API_KEY"},
+        "tls": {"verify": true},
+        "features": {},
+        "limits": {}
+      },
+      "openai": {
+        "transport": {
+          "base_url": "https://api.openai.com/v1",
+          "protocol": "https",
+          "request_timeout_seconds": 120
+        },
+        "auth": {"api_key": "YOUR_OPENAI_API_KEY"},
+        "tls": {"verify": true},
+        "features": {},
+        "limits": {}
+      },
+      "xai": {
+        "transport": {
+          "base_url": "https://api.x.ai/v1",
+          "protocol": "https",
+          "request_timeout_seconds": 120
+        },
+        "auth": {"api_key": "YOUR_XAI_API_KEY"},
+        "tls": {"verify": true},
+        "features": {},
+        "limits": {}
+      },
+      "deepseek": {
+        "transport": {
+          "base_url": "https://api.deepseek.com/v1",
+          "protocol": "https",
+          "request_timeout_seconds": 120
+        },
+        "auth": {"api_key": "YOUR_DEEPSEEK_API_KEY"},
+        "tls": {"verify": true},
+        "features": {},
+        "limits": {}
+      }
+    }
+  },
   "ollama_workstation": {
     "mcp_proxy_url": "https://mcp-proxy:3004",
-    "ollama_base_url": "http://127.0.0.1:11434",
-    "model_server_url": "http://127.0.0.1:11434",
-    "ollama_model": "llama3.2",
-    "ollama_models": ["llama3.2", "gemini-2.0-flash", "gpt-4o-mini", "claude-3-5-haiku-20241022", "grok-2", "deepseek-chat"],
-    "available_providers": ["ollama", "google", "anthropic", "openai", "xai", "deepseek"],
-    "model_providers": {
-      "ollama": {"url": "http://127.0.0.1:11434"},
-      "google": {"url": "https://generativelanguage.googleapis.com/v1beta", "api_key": "YOUR_GOOGLE_API_KEY"},
-      "anthropic": {"url": "https://api.anthropic.com/v1", "api_key": "YOUR_ANTHROPIC_API_KEY"},
-      "openai": {"url": "https://api.openai.com/v1", "api_key": "YOUR_OPENAI_API_KEY"},
-      "xai": {"url": "https://api.x.ai/v1", "api_key": "YOUR_XAI_GROK_API_KEY"},
-      "deepseek": {"url": "https://api.deepseek.com/v1", "api_key": "YOUR_DEEPSEEK_API_KEY"}
+    "ollama": {
+      "base_url": "http://ollama:11434",
+      "model_server_url": "http://ollama:11434",
+      "model": "llama3.2",
+      "models": ["llama3.2", "gemini-2.0-flash", "gpt-4o-mini", "claude-3-5-haiku-20241022", "grok-2", "deepseek-chat"],
+      "timeout": 120,
+      "container_name": "ollama",
+      "container_image": "ollama/ollama"
     },
-    "google_api_key": "YOUR_GOOGLE_API_KEY",
-    "anthropic_api_key": "YOUR_ANTHROPIC_API_KEY",
-    "openai_api_key": "YOUR_OPENAI_API_KEY",
-    "xai_api_key": "YOUR_XAI_GROK_API_KEY",
-    "deepseek_api_key": "YOUR_DEEPSEEK_API_KEY",
-    "ollama_timeout": 120,
     "max_tool_rounds": 10,
     "allowed_commands": [],
     "forbidden_commands": [],
     "commands_policy": "allow_by_default",
     "command_discovery_interval_sec": 0,
     "session_store_type": "memory",
-    "redis_host": "localhost",
+    "redis_host": "redis",
     "redis_port": 6379,
     "redis_key_prefix": "message",
     "max_context_tokens": 4096,

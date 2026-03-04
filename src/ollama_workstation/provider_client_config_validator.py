@@ -150,6 +150,22 @@ def validate_provider_clients(provider_clients_data: Any) -> list[tuple[str, str
         path_prefix,
         errors,
     )
+    # Runtime-allowed commercial providers: each must have base_url and auth.
+    for prov_name, section in providers.items():
+        if not isinstance(prov_name, str) or not isinstance(section, dict):
+            continue
+        pprefix = f"provider_clients.providers.{prov_name}"
+        transport = section.get("transport")
+        base_url = (
+            (transport.get("base_url") or "").strip()
+            if isinstance(transport, dict)
+            else ""
+        )
+        if not base_url:
+            errors.append(
+                (f"{pprefix}.transport.base_url", "is required for every provider")
+            )
+        _validate_active_provider_auth_tls(prov_name, section, pprefix, errors)
     return errors
 
 

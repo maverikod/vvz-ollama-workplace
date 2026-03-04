@@ -23,6 +23,47 @@ logger = logging.getLogger(__name__)
 # Default model context window when not in config / API (step 10)
 DEFAULT_MODEL_CONTEXT_TOKENS = 4096
 
+# Chars per token for trim-after-build (same as chat_flow / ollama_chat)
+CHARS_PER_TOKEN_ESTIMATE = 4
+
+
+def _message_content_chars(msg: Dict[str, Any]) -> int:
+    """Estimate character length of message content for token trimming."""
+    content = msg.get("content")
+    if isinstance(content, str):
+        return len(content)
+    if isinstance(content, list):
+        return sum(
+            len(str(p.get("text", p))) if isinstance(p, dict) else len(str(p))
+            for p in content
+        )
+    return 0
+
+
+def trim_messages_to_token_limit(
+    messages: List[Dict[str, Any]],
+    max_tokens: int,
+    chars_per_token: int = CHARS_PER_TOKEN_ESTIMATE,
+) -> List[Dict[str, Any]]:
+    """
+    Trim from the start so estimated total tokens <= max_tokens.
+    Applied after context creation; keeps the tail (most recent).
+    """
+    if max_tokens <= 0 or not messages:
+        return list(messages)
+    total_chars = sum(_message_content_chars(m) for m in messages)
+    total_tokens = total_chars // chars_per_token
+    if total_tokens <= max_tokens:
+        return list(messages)
+    # Drop from start until within limit
+    out = list(messages)
+    running_chars = total_chars
+    i = 0
+    while i < len(out) and (running_chars // chars_per_token) > max_tokens:
+        running_chars -= _message_content_chars(out[i])
+        i += 1
+    return out[i:]
+
 
 class ContextBuilderError(Exception):
     """Raised when context build fails (session/model/remainder)."""
@@ -57,7 +98,7 @@ class ContextBuilder:
         self._standards_file_path = (standards_file_path or "").strip() or None
         self._rules_file_path = (rules_file_path or "").strip() or None
 
-    def build(
+    async def build(
         self,
         session_id: str,
         current_message: Dict[str, Any],
@@ -102,8 +143,8 @@ class ContextBuilder:
             raise ContextBuilderError(
                 "Remainder < min_semantic_tokens; reduce last_n or increase limit"
             )
-        relevance = self._relevance_slot_builder.fill_slot(
-            current_message, session_id, remainder
+        relevance = await self._relevance_slot_builder.fill_slot(
+            current_message, session_id, last_n_messages
         )
         logger.debug(
             "context_build session_id=%s standards_count=%s session_rules_count=%s",
@@ -141,4 +182,6 @@ class ContextBuilder:
             + trimmed.relevance_slot_content
         )
         serialized = representation.serialize_messages(ordered)
+        # Trim by token limit after context creation (drop from start, keep tail)
+        serialized = trim_messages_to_token_limit(serialized, effective_limit)
         return (trimmed, serialized)

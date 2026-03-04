@@ -47,7 +47,13 @@ def test_all_models_present_skips_pull(tmp_path: Path) -> None:
     config_path.write_text(
         json.dumps(
             {
-                "ollama_workstation": {"ollama_models": ["llama3.2", "qwen3"]},
+                "ollama_workstation": {
+                    "ollama": {
+                        "base_url": "http://localhost:11434",
+                        "model": "m",
+                        "models": ["llama3.2", "qwen3"],
+                    }
+                },
             }
         ),
         encoding="utf-8",
@@ -85,7 +91,13 @@ def test_missing_model_pull_and_log(
     config_path.write_text(
         json.dumps(
             {
-                "ollama_workstation": {"ollama_models": ["llama3.2", "qwen3"]},
+                "ollama_workstation": {
+                    "ollama": {
+                        "base_url": "http://localhost:11434",
+                        "model": "m",
+                        "models": ["llama3.2", "qwen3"],
+                    }
+                },
             }
         ),
         encoding="utf-8",
@@ -98,9 +110,7 @@ def test_missing_model_pull_and_log(
 
             def run_side_effect(*args, **kwargs):
                 if args[0] == ["ollama", "list"]:
-                    return MagicMock(
-                        returncode=0, stdout=list_stdout, stderr=""
-                    )
+                    return MagicMock(returncode=0, stdout=list_stdout, stderr="")
                 if args[0][:2] == ["ollama", "pull"]:
                     return MagicMock(returncode=0)
                 return MagicMock(returncode=1)
@@ -130,7 +140,13 @@ def test_model_present_with_tag_skips_pull(tmp_path: Path) -> None:
     config_path.write_text(
         json.dumps(
             {
-                "ollama_workstation": {"ollama_models": ["llama3.2"]},
+                "ollama_workstation": {
+                    "ollama": {
+                        "base_url": "http://localhost:11434",
+                        "model": "m",
+                        "models": ["llama3.2"],
+                    }
+                },
             }
         ),
         encoding="utf-8",
@@ -158,7 +174,17 @@ def test_empty_ollama_models_returns_zero_no_pull(tmp_path: Path) -> None:
     """Empty ollama_models list: no pull, return 0."""
     config_path = tmp_path / "adapter_config.json"
     config_path.write_text(
-        json.dumps({"ollama_workstation": {"ollama_models": []}}),
+        json.dumps(
+            {
+                "ollama_workstation": {
+                    "ollama": {
+                        "base_url": "http://localhost:11434",
+                        "model": "m",
+                        "models": [],
+                    }
+                }
+            }
+        ),
         encoding="utf-8",
     )
     env = {"ADAPTER_CONFIG_PATH": str(config_path)}
@@ -175,16 +201,19 @@ def test_empty_ollama_models_returns_zero_no_pull(tmp_path: Path) -> None:
     mock_run.assert_not_called()
 
 
-def test_fallback_to_ollama_model_when_ollama_models_empty(
+def test_use_ollama_model_when_models_empty(
     tmp_path: Path, capsys: pytest.CaptureFixture
 ) -> None:
-    """When ollama_models is missing, use ollama_model and pull if missing."""
+    """When ollama.models is empty, use ollama.model and pull if missing."""
     config_path = tmp_path / "adapter_config.json"
     config_path.write_text(
         json.dumps(
             {
                 "ollama_workstation": {
-                    "ollama_model": "llama3.2",
+                    "ollama": {
+                        "base_url": "http://localhost:11434",
+                        "model": "llama3.2",
+                    },
                 },
             }
         ),
@@ -198,9 +227,7 @@ def test_fallback_to_ollama_model_when_ollama_models_empty(
 
             def run_side_effect(*args, **kwargs):
                 if args[0] == ["ollama", "list"]:
-                    return MagicMock(
-                        returncode=0, stdout=list_stdout, stderr=""
-                    )
+                    return MagicMock(returncode=0, stdout=list_stdout, stderr="")
                 if args[0][:2] == ["ollama", "pull"]:
                     return MagicMock(returncode=0)
                 return MagicMock(returncode=1)

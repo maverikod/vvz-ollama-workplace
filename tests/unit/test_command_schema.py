@@ -29,4 +29,6 @@ def test_schema_name_description_parameters() -> None:
 def test_parameters_must_be_dict() -> None:
     """parameters must be a dict (JSON Schema)."""
     with pytest.raises(ValueError, match="parameters must be a dict"):
-        CommandSchema(name="x", description="y", parameters=[])  # type: ignore[arg-type]
+        CommandSchema(
+            name="x", description="y", parameters=[]
+        )  # type: ignore[arg-type]

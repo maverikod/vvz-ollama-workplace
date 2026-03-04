@@ -29,6 +29,10 @@ class Session:
     standards: tuple[str, ...]
     session_rules: tuple[str, ...]
     created_at: Optional[str] = None
+    # When True, after context is built and trimmed, optional parts (messages,
+    # relevance slot) are minimized until difference to last message starts to grow.
+    # Used to save tokens on commercial models. Set at session_init or session_update.
+    minimize_context: bool = False
 
     def __post_init__(self) -> None:
         """Ensure id is non-empty."""
@@ -45,6 +49,7 @@ class Session:
         session_rules: Optional[List[str]] = None,
         created_at: Optional[str] = None,
         session_id: Optional[str] = None,
+        minimize_context: bool = False,
     ) -> "Session":
         """Build a new session with generated id (UUID4) unless session_id given."""
         sid = session_id or str(uuid.uuid4())
@@ -56,4 +61,5 @@ class Session:
             standards=tuple(standards or []),
             session_rules=tuple(session_rules or []),
             created_at=created_at,
+            minimize_context=bool(minimize_context),
         )

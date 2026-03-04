@@ -14,7 +14,9 @@ from ollama_workstation.ollama_representation import (  # noqa: E402
     OllamaRepresentation,
     register_ollama_models,
 )
-from ollama_workstation.representation_registry import RepresentationRegistry  # noqa: E402
+from ollama_workstation.representation_registry import (  # noqa: E402
+    RepresentationRegistry,
+)
 
 
 def test_serialize_tools_ollama_format() -> None:
@@ -37,6 +39,14 @@ def test_serialize_messages_role_content() -> None:
     messages = [{"role": "user", "content": "Hello"}]
     out = rep.serialize_messages(messages)
     assert out == [{"role": "user", "content": "Hello"}]
+
+
+def test_format_tool_result() -> None:
+    """format_tool_result: dict -> JSON string, other -> str."""
+    rep = OllamaRepresentation()
+    assert rep.format_tool_result({"a": 1}) == '{"a": 1}'
+    assert rep.format_tool_result("ok") == "ok"
+    assert rep.format_tool_result(42) == "42"
 
 
 def test_register_ollama_models() -> None:

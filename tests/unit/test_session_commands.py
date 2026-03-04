@@ -74,9 +74,7 @@ async def test_session_update_execute_success() -> None:
         store = _make_store()
         s = store.create({"model": "x"})
         get_store.return_value = store
-        result = await cmd.execute(
-            parameters={"session_id": s.id, "model": "llama3.2"}
-        )
+        result = await cmd.execute(parameters={"session_id": s.id, "model": "llama3.2"})
     assert result.to_dict().get("success") is True
     assert result.data.get("ok") is True
     assert store.get(s.id).model == "llama3.2"
@@ -124,8 +122,7 @@ async def test_add_command_forbidden_by_config_rejected() -> None:
     """AddCommandToSession rejects command in config forbidden list."""
     cmd = AddCommandToSessionCommand()
     patch_load = (
-        "ollama_workstation.commands.add_command_to_session_command."
-        "load_config"
+        "ollama_workstation.commands.add_command_to_session_command." "load_config"
     )
     patch_get = (
         "ollama_workstation.commands.add_command_to_session_command."

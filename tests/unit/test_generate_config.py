@@ -142,6 +142,43 @@ def test_generate_config_commercial_model_with_key_ok(tmp_path: Path) -> None:
     assert ow.get("ollama", {}).get("model") == "gemini-1.5-flash"
     mp = ow.get("model_providers") or {}
     assert mp.get("google", {}).get("api_key") == "sk-fake-key"
+    assert "standards_file_path" in ow
+    assert "rules_file_path" in ow
+    assert ow.get("standards_file_path") == ""
+    assert ow.get("rules_file_path") == ""
+
+
+def test_generate_config_context_paths_included(tmp_path: Path) -> None:
+    """Generated config includes standards_file_path and rules_file_path for context."""
+    certs = tmp_path / "certs"
+    certs.mkdir()
+    for name in ("ca.crt", "server.crt", "server.key", "client.crt", "client.key"):
+        (certs / name).write_text("")
+
+    config_path = tmp_path / "adapter_config.json"
+    from ollama_workstation.config_generator_core import generate_adapter_config
+
+    generate_adapter_config(
+        {
+            "output_path": config_path,
+            "certs_dir": certs,
+            "server_port": 8015,
+            "mcp_proxy_host": "p",
+            "mcp_proxy_port": 3004,
+            "advertised_host": "h",
+            "log_dir": str(tmp_path),
+            "ollama_base_url": "http://127.0.0.1:11434",
+            "model_server_url": "http://127.0.0.1:11434",
+            "ollama_model": "llama3.2",
+            "ollama_models": ["llama3.2"],
+            "standards_file_path": "config/standards.md",
+            "rules_file_path": "config/rules.md",
+        }
+    )
+    data = json.loads(config_path.read_text())
+    ow = data.get("ollama_workstation") or {}
+    assert ow.get("standards_file_path") == "config/standards.md"
+    assert ow.get("rules_file_path") == "config/rules.md"
 
 
 def _run_adapter_extract_models(ow: dict) -> tuple[list[str], str]:
@@ -178,7 +215,9 @@ def test_run_adapter_extracts_models_from_generated_config(tmp_path: Path) -> No
 
         importlib.reload(gen)
         gen.main()
-        assert config_path.exists(), "generate_config should write to ADAPTER_CONFIG_PATH"
+        assert (
+            config_path.exists()
+        ), "generate_config should write to ADAPTER_CONFIG_PATH"
         data = json.loads(config_path.read_text())
         ow = data.get("ollama_workstation") or {}
         model_list, model_server_url = _run_adapter_extract_models(ow)

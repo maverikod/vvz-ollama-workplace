@@ -20,9 +20,11 @@ def test_no_alias_returns_none() -> None:
 
 def test_alias_configured_returns_display_name() -> None:
     """When alias is set, get_display_name returns it."""
-    reg = CommandAliasRegistry({
-        ("echo.ollama-adapter", "llama3.2"): "tool_echo",
-    })
+    reg = CommandAliasRegistry(
+        {
+            ("echo.ollama-adapter", "llama3.2"): "tool_echo",
+        }
+    )
     assert reg.get_display_name("echo.ollama-adapter", "llama3.2") == "tool_echo"
 
 
@@ -35,7 +37,9 @@ def test_set_alias() -> None:
 
 def test_different_model_no_alias() -> None:
     """Alias for one model does not apply to another."""
-    reg = CommandAliasRegistry({
-        ("echo.ollama-adapter", "llama3.2"): "tool_echo",
-    })
+    reg = CommandAliasRegistry(
+        {
+            ("echo.ollama-adapter", "llama3.2"): "tool_echo",
+        }
+    )
     assert reg.get_display_name("echo.ollama-adapter", "qwen3") is None

@@ -2,13 +2,15 @@
 # Copy to e.g. ollama_workstation.yaml and set values. Environment variables override.
 #
 # Required:
-mcp_proxy_url: "http://localhost:3004"
-ollama_base_url: "http://localhost:11434"
+mcp_proxy_url: "https://mcp-proxy:3004"
+ollama_base_url: "http://ollama:11434"
 ollama_model: "llama3.1"
 
 # Optional:
 # ollama_timeout: 60
 # max_tool_rounds: 10
+# redis_host: "redis"
+# redis_port: 6379
 
 # Optional: proxy auth (if your MCP Proxy requires it)
 # proxy_token_header: "X-API-Key"
@@ -16,6 +18,20 @@ ollama_model: "llama3.1"
 
 # Optional: OLLAMA API key (if required by your setup)
 # ollama_api_key: ""
+
+# Optional: commercial providers — set available_providers and the corresponding key.
+# Cheapest model per provider (see provider_models.CHEAPEST_MODEL_BY_PROVIDER):
+#   Google:    gemini-2.0-flash             → google_api_key
+#   Anthropic: claude-3-5-haiku-20241022    → anthropic_api_key
+#   OpenAI:    gpt-4o-mini                  → openai_api_key
+#   xAI Grok:  grok-2                       → xai_api_key
+#   DeepSeek:  deepseek-chat                → deepseek_api_key
+# available_providers: [ "ollama", "google" ]
+# google_api_key: ""
+# anthropic_api_key: ""
+# openai_api_key: ""
+# xai_api_key: ""
+# deepseek_api_key: ""
 
 # Optional: commands policy (dynamic commands; step 01)
 # allowed_commands: []   # allow-list (used with deny_by_default or as filter with allow_by_default)

@@ -19,25 +19,39 @@ class RemoveCommandFromSessionCommand(Command):
     """Remove command_id from session allowed list or add to forbidden."""
 
     name = "remove_command_from_session"
-    descr = "Remove a command from the session (allowed or add to forbidden)."
+    descr = (
+        "Remove command_id from session allowed and add to forbidden. Revokes access "
+        "to that command for this session. Requires session_id and command_id."
+    )
 
     @classmethod
     def get_schema(cls) -> Dict[str, Any]:
+        """Return JSON Schema for parameters: session_id, command_id."""
         return {
             "type": "object",
             "properties": {
-                "session_id": {"type": "string"},
-                "command_id": {"type": "string"},
+                "session_id": {
+                    "type": "string",
+                    "description": "Session UUID4 from session_init.",
+                },
+                "command_id": {
+                    "type": "string",
+                    "description": (
+                        "Command name to remove from allowed and add to forbidden."
+                    ),
+                },
             },
             "required": ["session_id", "command_id"],
         }
 
     @classmethod
     def get_result_schema(cls) -> Dict[str, Any]:
+        """Return JSON Schema for success result with ok boolean."""
         return {"type": "object", "properties": {"ok": {"type": "boolean"}}}
 
     @classmethod
     def get_error_schema(cls) -> Dict[str, Any]:
+        """Return JSON Schema for error result with message."""
         return {
             "type": "object",
             "properties": {"message": {"type": "string"}},
@@ -45,6 +59,7 @@ class RemoveCommandFromSessionCommand(Command):
 
     @classmethod
     def get_metadata(cls) -> Dict[str, Any]:
+        """Return command metadata: name, description, schemas."""
         desc = (cls.descr or "").strip()
         return {
             "name": cls.name,
@@ -73,9 +88,7 @@ class RemoveCommandFromSessionCommand(Command):
             session = store.get(session_id)
             if not session:
                 return ErrorResult(message="Session not found", code=-32602)
-            new_allowed = [
-                c for c in session.allowed_commands if c != command_id
-            ]
+            new_allowed = [c for c in session.allowed_commands if c != command_id]
             new_forbidden = list(session.forbidden_commands) + [command_id]
             store.update(
                 session_id,

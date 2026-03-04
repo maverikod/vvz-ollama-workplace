@@ -1,0 +1,107 @@
+{
+  "server": {
+    "host": "0.0.0.0",
+    "port": 8017,
+    "protocol": "mtls",
+    "servername": "database-server",
+    "ssl": {
+      "cert": "mtls_certificates/server/chunk-retriever.crt",
+      "key": "mtls_certificates/server/chunk-retriever.key",
+      "ca": "mtls_certificates/ca/ca.crt",
+      "crl": null,
+      "dnscheck": false,
+      "check_hostname": null
+    },
+    "rules": null,
+    "log_dir": "/app/logs",
+    "debug": false,
+    "log_level": "INFO",
+    "advertised_host": "database-server"
+  },
+  "client": {
+    "enabled": false,
+    "protocol": "http",
+    "ssl": null
+  },
+  "registration": {
+    "enabled": true,
+    "protocol": "mtls",
+    "register_url": "https://172.28.0.2:3004/register",
+    "unregister_url": "https://172.28.0.2:3004/unregister",
+    "heartbeat_interval": 30,
+    "ssl": {
+      "cert": "mtls_certificates/client/chunk-retriever.crt",
+      "key": "mtls_certificates/client/chunk-retriever.key",
+      "ca": "mtls_certificates/ca/ca.crt",
+      "crl": null,
+      "dnscheck": false,
+      "check_hostname": null
+    },
+    "server_id": "database-server",
+    "server_name": "Database Server",
+    "instance_uuid": "d9a38054-0cbc-4102-82d8-9af34f89b29d",
+    "auto_on_startup": true,
+    "auto_on_shutdown": true,
+    "heartbeat": {
+      "url": "https://172.28.0.2:3004/proxy/heartbeat",
+      "interval": 30
+    }
+  },
+  "server_validation": {
+    "enabled": false,
+    "protocol": "http",
+    "ssl": null,
+    "timeout": 10,
+    "use_token": false,
+    "use_roles": false,
+    "tokens": {},
+    "roles": {},
+    "auth_header": "X-API-Key",
+    "roles_header": "X-Roles",
+    "health_path": "/health",
+    "check_hostname": false
+  },
+  "auth": {
+    "use_token": false,
+    "use_roles": false,
+    "tokens": {},
+    "roles": {}
+  },
+  "queue_manager": {
+    "enabled": true,
+    "in_memory": true,
+    "registry_path": null,
+    "shutdown_timeout": 30.0,
+    "max_concurrent_jobs": 10,
+    "max_queue_size": null,
+    "per_job_type_limits": null,
+    "completed_job_retention_seconds": 21600,
+    "default_poll_interval": 0.0,
+    "default_max_wait_time": null
+  },
+  "transport": {
+    "verify_client": true
+  },
+  "database_server": {
+    "auth": {
+      "require_mtls": true
+    },
+    "storage": {
+      "backend": "local",
+      "data_dir": "/app/data"
+    },
+    "mount_paths": {
+      "data_dir": "/app/data",
+      "log_dir": "/app/logs",
+      "certs_dir": "mtls_certificates"
+    },
+    "limits": {
+      "max_connections": 100,
+      "request_timeout_seconds": 120
+    },
+    "runtime_identity": {
+      "instance_uuid": "d9a38054-0cbc-4102-82d8-9af34f89b29d",
+      "server_id": "database-server"
+    }
+  }
+}

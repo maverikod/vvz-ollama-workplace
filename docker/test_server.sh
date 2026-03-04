@@ -19,6 +19,7 @@ CONTAINER_NAME="${CONTAINER_NAME:-ollama-adapter}"
 ADAPTER_HOST="${ADAPTER_HOST:-localhost}"
 ADAPTER_PORT="${ADAPTER_PORT:-8015}"
 ADAPTER_URL="https://${ADAPTER_HOST}:${ADAPTER_PORT}"
+JSONRPC_PATH="${JSONRPC_PATH:-/api/jsonrpc}"
 WAIT_MAX="${WAIT_MAX:-120}"
 CERTS_DIR="${PROJECT_ROOT}/mtls_certificates"
 if [ ! -f "${CERTS_DIR}/client.crt" ] || [ ! -f "${CERTS_DIR}/client.key" ]; then
@@ -51,7 +52,7 @@ RESP=$(curl -k -s -X POST \
   --cert "${CERTS_DIR}/client.crt" --key "${CERTS_DIR}/client.key" \
   -H "Content-Type: application/json" \
   -d "${BODY}" \
-  "${ADAPTER_URL}/" 2>/dev/null || echo "{}")
+  "${ADAPTER_URL}${JSONRPC_PATH}" 2>/dev/null || echo "{}")
 if echo "${RESP}" | grep -q '"result"'; then
   echo "server_status: OK"
 else
@@ -64,7 +65,7 @@ RESP2=$(curl -k -s -X POST \
   --cert "${CERTS_DIR}/client.crt" --key "${CERTS_DIR}/client.key" \
   -H "Content-Type: application/json" \
   -d "${BODY2}" \
-  "${ADAPTER_URL}/" 2>/dev/null || echo "{}")
+  "${ADAPTER_URL}${JSONRPC_PATH}" 2>/dev/null || echo "{}")
 if echo "${RESP2}" | grep -q '"result"'; then
   echo "session_init: OK"
 else

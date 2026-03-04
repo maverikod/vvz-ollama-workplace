@@ -2,6 +2,11 @@
 Context representation base: serialize tools and messages per provider.
 Step 07.
 
+Adding a new model type = add one subclass of ContextRepresentation
+(implement serialize_tools, serialize_messages, format_tool_result)
+and register it in RepresentationRegistry for the model_id(s).
+No changes to chat_flow or discovery.
+
 Author: Vasiliy Zdanovskiy
 email: vasilyvz@gmail.com
 """
@@ -14,7 +19,8 @@ from typing import Any, Dict, List, Optional
 
 class ContextRepresentation(ABC):
     """
-    Abstract base: serialize tools and messages for a provider (Ollama, Gemini, etc.).
+    Abstract base for provider-specific context representation (Ollama, Gemini, etc.).
+    Subclass once per model/API type; register in RepresentationRegistry.
     """
 
     @abstractmethod
@@ -36,6 +42,14 @@ class ContextRepresentation(ABC):
         """
         Convert canonical messages (role, content, etc.) to provider format.
         Returns list of message objects for the API.
+        """
+        raise NotImplementedError
+
+    @abstractmethod
+    def format_tool_result(self, raw_result: Any) -> str:
+        """
+        Translate raw tool result (canonical layer output) to standard form
+        for this provider (e.g. tool message content string the model sees).
         """
         raise NotImplementedError
 

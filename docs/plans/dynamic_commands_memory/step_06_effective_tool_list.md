@@ -8,8 +8,9 @@
 ## Goal
 
 - **Effective tool list** = merge(config, session): apply config policy and config lists first, then session allowed/forbidden. Config forbidden can never be overridden by session.
-- For each command in the effective list: get display name from CommandAliasRegistry(session.model) or use SafeNameTranslator; register in ToolCallRegistry.
-- Produce the list of tools (canonical form: command_id, schema, display_name) for the representation layer to serialize, and the ToolCallRegistry for the chat flow to resolve tool calls.
+- **Dedupe by command name:** When the same command name appears on several servers (e.g. Instrument1.ServerA, Instrument1.ServerB), only the **first occurrence** (by discovery order) is kept. So the model sees one tool per command name.
+- **Model sees display_name = command name only** (e.g. Instrument1, Instrument2, Instrument3). No server suffix. Descriptions come from the schema of the chosen (first) occurrence.
+- **On call:** The code resolves display_name to (command_name, server_id) via ToolCallRegistry and calls that server directly; the model never sees or chooses the server.
 
 ## Objects
 

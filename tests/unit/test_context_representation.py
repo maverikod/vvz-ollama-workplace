@@ -9,7 +9,9 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "src"))
-from ollama_workstation.context_representation import ContextRepresentation  # noqa: E402
+from ollama_workstation.context_representation import (  # noqa: E402
+    ContextRepresentation,
+)
 
 
 class StubRepresentation(ContextRepresentation):
@@ -22,6 +24,10 @@ class StubRepresentation(ContextRepresentation):
     def serialize_messages(self, messages: list) -> list:
         """Return messages as-is."""
         return list(messages)
+
+    def format_tool_result(self, raw_result) -> str:  # noqa: ANN001
+        """Return str(raw_result)."""
+        return str(raw_result)
 
 
 def test_stub_serialize_tools() -> None:

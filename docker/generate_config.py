@@ -14,6 +14,7 @@ from pathlib import Path
 
 from ollama_workstation.config_generator_core import generate_adapter_config
 
+MCP_PROXY_URL = os.environ.get("MCP_PROXY_URL", "").strip()
 MCP_PROXY_HOST = os.environ.get("MCP_PROXY_HOST", "mcp-proxy")
 MCP_PROXY_PORT = int(os.environ.get("MCP_PROXY_PORT", "3004"))
 CERTS_DIR = os.environ.get("CERTS_DIR", "/app/certs")
@@ -33,12 +34,12 @@ OLLAMA_MODELS_LIST = [m.strip() for m in _OLLAMA_PRELOAD_ENV.split(",") if m.str
 
 
 def main() -> None:
+    mcp_proxy_url = MCP_PROXY_URL or f"https://{MCP_PROXY_HOST}:{MCP_PROXY_PORT}"
     settings = {
         "output_path": Path(CONFIG_PATH),
         "certs_dir": Path(CERTS_DIR),
         "server_port": SERVER_PORT,
-        "mcp_proxy_host": MCP_PROXY_HOST,
-        "mcp_proxy_port": MCP_PROXY_PORT,
+        "mcp_proxy_url": mcp_proxy_url,
         "advertised_host": ADVERTISED_HOST,
         "log_dir": LOG_DIR,
         "ollama_base_url": OLLAMA_BASE_URL,

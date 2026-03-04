@@ -8,6 +8,7 @@ email: vasilyvz@gmail.com
 
 from __future__ import annotations
 
+import json
 from typing import TYPE_CHECKING, Any, Dict, List
 
 from .command_schema import CommandSchema
@@ -75,6 +76,14 @@ class OllamaRepresentation(ContextRepresentation):
             if msg:
                 result.append(msg)
         return result
+
+    def format_tool_result(self, raw_result: Any) -> str:
+        """
+        Translate raw tool result to OLLAMA tool message content (JSON or str).
+        """
+        if isinstance(raw_result, dict):
+            return json.dumps(raw_result)
+        return str(raw_result)
 
 
 def register_ollama_models(

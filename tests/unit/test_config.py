@@ -25,8 +25,12 @@ from ollama_workstation.docker_config_validation import (  # noqa: E402
     get_runtime_allowed_providers,
     validate_project_config,
 )
-from ollama_workstation.model_provider_resolver import (  # noqa: E402
-    resolve_model_endpoint,
+
+_PC_OLLAMA = (
+    '"provider_clients": {"default_provider": "ollama", "providers": {"ollama": '
+    '{"transport": {"base_url": "http://localhost:11434", "protocol": "http", '
+    '"request_timeout_seconds": 120}, "auth": {}, "tls": {}, "features": {}, '
+    '"limits": {}}}}'
 )
 
 
@@ -35,7 +39,7 @@ def test_load_config_from_env(tmp_path: Path) -> None:
     path = tmp_path / "cfg.json"
     path.write_text(
         '{"ollama_workstation": {"mcp_proxy_url": "http://x:1", '
-        '"ollama": {"base_url": "http://y:2", "model": "z"}}}'
+        '"ollama": {"base_url": "http://y:2", "model": "z"}}, %s}' % _PC_OLLAMA
     )
     os.environ["OLLAMA_WORKSTATION_MCP_PROXY_URL"] = "http://proxy:3004"
     os.environ["OLLAMA_WORKSTATION_OLLAMA_BASE_URL"] = "http://ollama:11434"
@@ -43,7 +47,7 @@ def test_load_config_from_env(tmp_path: Path) -> None:
     try:
         cfg = load_config(str(path))
         assert cfg.mcp_proxy_url == "http://proxy:3004"
-        assert cfg.ollama_base_url == "http://ollama:11434"
+        assert cfg.ollama_base_url == "http://localhost:11434"
         assert cfg.ollama_model == "qwen3"
         assert cfg.max_tool_rounds == DEFAULT_MAX_TOOL_ROUNDS
         assert cfg.ollama_timeout == DEFAULT_OLLAMA_TIMEOUT
@@ -57,7 +61,7 @@ def test_load_config_from_json_file() -> None:
     """Load from JSON file with ollama section."""
     data = (
         '{"ollama_workstation":{"mcp_proxy_url":"http://p:1",'
-        '"ollama":{"base_url":"http://o:2","model":"m"}}}'
+        '"ollama":{"base_url":"http://o:2","model":"m"}},%s}' % _PC_OLLAMA
     )
     with tempfile.NamedTemporaryFile(suffix=".json", delete=False) as f:
         f.write(data.encode())
@@ -65,7 +69,7 @@ def test_load_config_from_json_file() -> None:
     try:
         cfg = load_config(path)
         assert cfg.mcp_proxy_url == "http://p:1"
-        assert cfg.ollama_base_url == "http://o:2"
+        assert cfg.ollama_base_url == "http://localhost:11434"
         assert cfg.ollama_model == "m"
     finally:
         Path(path).unlink(missing_ok=True)
@@ -76,7 +80,7 @@ def test_load_config_ollama_models() -> None:
     data = (
         '{"ollama_workstation":{"mcp_proxy_url":"http://p:1",'
         '"ollama":{"base_url":"http://o:2","model":"m",'
-        '"models":["llama3.2","qwen3"]}}}'
+        '"models":["llama3.2","qwen3"]}},%s}' % _PC_OLLAMA
     )
     with tempfile.NamedTemporaryFile(suffix=".json", delete=False) as f:
         f.write(data.encode())
@@ -95,14 +99,14 @@ def test_load_config_ollama_timeout() -> None:
     data = (
         '{"ollama_workstation":{"mcp_proxy_url":"http://p:1",'
         '"ollama":{"base_url":"http://ollama:11434","model":"qwen3",'
-        '"models":["qwen3","llama3.2"],"timeout":90}}}'
+        '"models":["qwen3","llama3.2"],"timeout":90}},%s}' % _PC_OLLAMA
     )
     with tempfile.NamedTemporaryFile(suffix=".json", delete=False) as f:
         f.write(data.encode())
         path = f.name
     try:
         cfg = load_config(path)
-        assert cfg.ollama_base_url == "http://ollama:11434"
+        assert cfg.ollama_base_url == "http://localhost:11434"
         assert cfg.ollama_model == "qwen3"
         assert cfg.ollama_models == ("qwen3", "llama3.2")
         assert cfg.ollama_timeout == 90.0
@@ -116,7 +120,7 @@ def test_load_config_commands_policy_section() -> None:
         '{"ollama_workstation":{"mcp_proxy_url":"http://p:1",'
         '"ollama":{"base_url":"http://o:2","model":"m"},'
         '"commands_policy":"deny_by_default",'
-        '"allowed_commands":["cmd.server"],"forbidden_commands":[]}}'
+        '"allowed_commands":["cmd.server"],"forbidden_commands":[]},%s}' % _PC_OLLAMA
     )
     with tempfile.NamedTemporaryFile(suffix=".json", delete=False) as f:
         f.write(data.encode())
@@ -137,7 +141,7 @@ def test_load_config_optional_fields_and_defaults(tmp_path: Path) -> None:
     path.write_text(
         '{"ollama_workstation": {"mcp_proxy_url": "http://x:1", '
         '"ollama": {"base_url": "http://y:2", "model": "z"}, '
-        '"available_providers": []}}'
+        '"available_providers": []}, %s}' % _PC_OLLAMA
     )
     cfg = load_config(str(path))
     assert cfg.ollama_timeout == DEFAULT_OLLAMA_TIMEOUT
@@ -150,7 +154,7 @@ def test_load_config_available_providers(tmp_path: Path) -> None:
     path.write_text(
         '{"ollama_workstation": {"mcp_proxy_url": "http://proxy:3004", '
         '"ollama": {"base_url": "http://localhost:11434", "model": "m"}, '
-        '"available_providers": ["ollama", "google"]}}'
+        '"available_providers": ["ollama", "google"]}, %s}' % _PC_OLLAMA
     )
     cfg = load_config(str(path))
     assert cfg.available_providers == ("ollama", "google")
@@ -187,13 +191,29 @@ def test_config_validation_required() -> None:
 def test_load_config_missing_ollama_section_raises(tmp_path: Path) -> None:
     """Config without ollama_workstation.ollama raises."""
     path = tmp_path / "cfg.json"
-    path.write_text('{"ollama_workstation": {"mcp_proxy_url": "http://p:1"}}')
+    path.write_text(
+        '{"ollama_workstation": {"mcp_proxy_url": "http://p:1"}, %s}' % _PC_OLLAMA
+    )
     with pytest.raises(ValueError, match="ollama_workstation.ollama"):
         load_config(str(path))
 
 
+def test_load_config_missing_provider_clients_raises_no_legacy_fallback(
+    tmp_path: Path,
+) -> None:
+    """Config without provider_clients raises; no autogeneration from legacy."""
+    path = tmp_path / "cfg.json"
+    path.write_text(
+        '{"ollama_workstation": {"mcp_proxy_url": "http://p:1", '
+        '"ollama": {"base_url": "http://localhost:11434", "model": "m"}, '
+        '"model_providers": {"ollama": {"url": "http://localhost:11434"}}}}'
+    )
+    with pytest.raises(ValueError, match="provider_clients is required"):
+        load_config(str(path))
+
+
 def test_local_config_example_loads_and_validates() -> None:
-    """Local config example (all providers, placeholder keys) loads and validates."""
+    """Local config example (provider_clients, placeholder keys) loads and validates."""
     root = Path(__file__).resolve().parents[2]
     path = root / "config" / "adapter_config.local.json.example"
     if not path.exists():
@@ -206,19 +226,49 @@ def test_local_config_example_loads_and_validates() -> None:
     cfg = load_config(str(path))
     assert cfg.mcp_proxy_url
     assert cfg.ollama_model
-    assert "ollama" in (cfg.available_providers or ())
-    assert cfg.model_providers.get("google", {}).get("api_key")
-    assert cfg.model_providers.get("anthropic", {}).get("api_key")
-    assert cfg.model_providers.get("openai", {}).get("api_key")
+    assert cfg.provider_clients_data is not None
+    assert "ollama" in (cfg.provider_clients_data.get("providers") or {})
+    assert "google" in (cfg.provider_clients_data.get("providers") or {})
 
 
 def test_validation_runtime_consistency_commercial_has_auth(tmp_path: Path) -> None:
     """
     For config that passes startup validation, resolver must not return
-    a commercial endpoint with missing url or api_key (consistency).
+    a commercial endpoint with missing url or api_key (provider_clients only).
     """
+    from ollama_workstation.model_provider_resolver import (  # noqa: E402
+        resolve_model_endpoint_from_provider_clients,
+    )
+
     config_path = tmp_path / "cfg.json"
     app_config = {
+        "provider_clients": {
+            "default_provider": "ollama",
+            "providers": {
+                "ollama": {
+                    "transport": {
+                        "base_url": "http://localhost:11434",
+                        "protocol": "http",
+                        "request_timeout_seconds": 120,
+                    },
+                    "auth": {},
+                    "tls": {},
+                    "features": {},
+                    "limits": {},
+                },
+                "google": {
+                    "transport": {
+                        "base_url": "https://generativelanguage.googleapis.com/v1beta/",
+                        "protocol": "https",
+                        "request_timeout_seconds": 120,
+                    },
+                    "auth": {"api_key": "test-key"},
+                    "tls": {"verify": True},
+                    "features": {},
+                    "limits": {},
+                },
+            },
+        },
         "ollama_workstation": {
             "mcp_proxy_url": "http://p:1",
             "ollama": {
@@ -227,13 +277,6 @@ def test_validation_runtime_consistency_commercial_has_auth(tmp_path: Path) -> N
                 "models": ["llama3.2", "gemini-2.0-flash"],
             },
             "available_providers": ["ollama", "google"],
-            "model_providers": {
-                "ollama": {"url": "http://localhost:11434"},
-                "google": {
-                    "url": "https://generativelanguage.googleapis.com/v1beta/",
-                    "api_key": "test-key",
-                },
-            },
         },
     }
     config_path.write_text(json.dumps(app_config), encoding="utf-8")
@@ -241,9 +284,10 @@ def test_validation_runtime_consistency_commercial_has_auth(tmp_path: Path) -> N
     assert not errors, "valid config must pass validation: %s" % errors
     cfg = load_config(str(config_path))
     runtime_allowed = get_runtime_allowed_providers(app_config)
-    # One commercial in runtime_allowed: google; model gemini-2.0-flash maps to it.
-    endpoint = resolve_model_endpoint("gemini-2.0-flash", cfg)
     assert "google" in runtime_allowed
+    endpoint = resolve_model_endpoint_from_provider_clients(
+        cfg.provider_clients_data, "gemini-2.0-flash", default_model="llama3.2"
+    )
     assert endpoint.base_url
     assert not endpoint.is_ollama
     assert endpoint.api_key, (

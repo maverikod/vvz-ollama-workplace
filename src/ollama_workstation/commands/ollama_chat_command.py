@@ -7,6 +7,7 @@ email: vasilyvz@gmail.com
 
 from __future__ import annotations
 
+import asyncio
 import logging
 import os
 import time
@@ -38,7 +39,7 @@ from ..ollama_representation import OllamaRepresentation, register_ollama_models
 from ..redis_message_record import RedisMessageRecord
 from ..representation_registry import RepresentationRegistry
 from ..relevance_slot_builder import RelevanceSlotBuilder
-from ..vectorization_client import EmbedProxyClient
+from ..vectorization_client import DirectEmbedVectorizationClient
 from .ollama_chat_schema import (
     get_ollama_chat_error_schema,
     get_ollama_chat_metadata,
@@ -163,26 +164,59 @@ class OllamaChatCommand(Command):
                 data={"ready": False, "server_status": state},
             )
 
+        _raw = getattr(config, "command_execution_timeout_seconds", 120)
+        _sec = int(_raw) if isinstance(_raw, (int, float)) else 120
+        cmd_timeout_sec = max(30, _sec - 10)
         if session_id and (content is not None and str(content).strip()):
-            return await self._execute_session_mode(
-                config=config,
-                session_id=(session_id or "").strip(),
-                content=str(content).strip(),
-                model=model,
-                stream=stream,
-                max_tool_rounds=max_tool_rounds,
-                config_path=path_to_load,
-                tools_from_file=tools_from_file,
-            )
+            try:
+                return await asyncio.wait_for(
+                    self._execute_session_mode(
+                        config=config,
+                        session_id=(session_id or "").strip(),
+                        content=str(content).strip(),
+                        model=model,
+                        stream=stream,
+                        max_tool_rounds=max_tool_rounds,
+                        config_path=path_to_load,
+                        tools_from_file=tools_from_file,
+                    ),
+                    timeout=float(cmd_timeout_sec),
+                )
+            except asyncio.TimeoutError:
+                return ErrorResult(
+                    message=(
+                        "ollama_chat timed out after %s seconds. "
+                        "The model or tool-call rounds took too long. "
+                        "Increase command_execution_timeout_seconds or ollama_timeout "
+                        "in adapter config if needed."
+                    )
+                    % cmd_timeout_sec,
+                    code=-32603,
+                )
         if messages and len(messages) > 0:
-            result = await run_chat_flow(
-                config=config,
-                messages=messages,
-                model=model,
-                stream=stream,
-                max_tool_rounds=max_tool_rounds,
-                tools_from_file=tools_from_file,
-            )
+            try:
+                result = await asyncio.wait_for(
+                    run_chat_flow(
+                        config=config,
+                        messages=messages,
+                        model=model,
+                        stream=stream,
+                        max_tool_rounds=max_tool_rounds,
+                        tools_from_file=tools_from_file,
+                    ),
+                    timeout=float(cmd_timeout_sec),
+                )
+            except asyncio.TimeoutError:
+                return ErrorResult(
+                    message=(
+                        "ollama_chat timed out after %s seconds. "
+                        "The model or tool-call rounds took too long. "
+                        "Increase command_execution_timeout_seconds or ollama_timeout "
+                        "in adapter config if needed."
+                    )
+                    % cmd_timeout_sec,
+                    code=-32603,
+                )
         else:
             return ErrorResult(
                 message=(
@@ -257,8 +291,9 @@ class OllamaChatCommand(Command):
         registry = RepresentationRegistry(default=OllamaRepresentation())
         register_ollama_models(registry, getattr(config, "ollama_models", None) or [])
         proxy_for_embed = ProxyClient(config)
-        embed_client = EmbedProxyClient(
+        embed_client = DirectEmbedVectorizationClient(
             proxy_for_embed,
+            config,
             embedding_server_id=getattr(
                 config, "embedding_server_id", "embedding-service"
             ),

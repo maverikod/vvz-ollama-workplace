@@ -130,3 +130,50 @@ def get_ollama_tools() -> List[Dict[str, Any]]:
             },
         },
     ]
+
+
+# Short reference (English) when help is called with no parameters.
+HELP_REFERENCE_TEXT: str = """
+How to use tools
+
+1. You have a list of available tools. Each tool has a name, short description,
+   and parameters (JSON Schema).
+
+2. Calling a command: Invoke a tool by its name and pass a single "arguments"
+   object (JSON) with the parameters required by that tool. The result is
+   returned as tool message content (often JSON).
+
+3. Help for a specific command: Call the "help" tool with parameter
+   "command_name" set to the command name (e.g. "echo", "embed_execute",
+   "ollama_chat") to get the full description and parameters from the server
+   that provides that command.
+
+4. This message: Call "help" with no parameters to see this reference again.
+""".strip()
+
+# Tool for model: always present. No params = short reference; command_name = full help.
+MODEL_HELP_TOOL: Dict[str, Any] = {
+    "type": "function",
+    "function": {
+        "name": "help",
+        "description": (
+            "Without parameters: returns a short reference on how to use tools "
+            "and how to call help for a specific command. With command_name: "
+            "returns full description and parameters from the server that "
+            "provides that command."
+        ),
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "command_name": {
+                    "type": "string",
+                    "description": (
+                        "Optional. Command name (e.g. echo, embed_execute) for "
+                        "full help from its server. Omit for the short reference."
+                    ),
+                },
+            },
+            "required": [],
+        },
+    },
+}

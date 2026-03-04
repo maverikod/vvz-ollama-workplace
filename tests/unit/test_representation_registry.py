@@ -11,8 +11,12 @@ from pathlib import Path
 import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "src"))
-from ollama_workstation.context_representation import ContextRepresentation  # noqa: E402
-from ollama_workstation.representation_registry import RepresentationRegistry  # noqa: E402
+from ollama_workstation.context_representation import (  # noqa: E402
+    ContextRepresentation,
+)
+from ollama_workstation.representation_registry import (  # noqa: E402
+    RepresentationRegistry,
+)
 
 
 class StubRep(ContextRepresentation):
@@ -21,6 +25,9 @@ class StubRep(ContextRepresentation):
 
     def serialize_messages(self, messages):  # noqa: ANN001
         return list(messages)
+
+    def format_tool_result(self, raw_result):  # noqa: ANN001
+        return str(raw_result)
 
 
 def test_register_and_get() -> None:

@@ -10,6 +10,7 @@ email: vasilyvz@gmail.com
 
 import argparse
 import json
+import ssl
 import sys
 from pathlib import Path
 from typing import Any
@@ -231,6 +232,11 @@ def _test_connection_impl(config_path: Path) -> tuple[bool, str]:
     dbc = app_config.get("database_client")
     if not isinstance(dbc, dict):
         return (False, "database_client section missing or invalid")
+    client_ssl = (
+        ((app_config.get("client") or {}).get("ssl") or {})
+        if isinstance(app_config.get("client"), dict)
+        else {}
+    )
     base_url = (dbc.get("base_url") or "").strip().rstrip("/")
     if not base_url:
         return (False, "database_client.base_url is empty")
@@ -246,10 +252,21 @@ def _test_connection_impl(config_path: Path) -> tuple[bool, str]:
     except ImportError:
         return (False, "httpx not available; cannot run connection test")
 
+    check_hostname = True
+    if isinstance(client_ssl, dict):
+        if client_ssl.get("check_hostname") is False:
+            check_hostname = False
+        elif client_ssl.get("dnscheck") is False:
+            check_hostname = False
+
+    ssl_ctx = ssl.create_default_context(cafile=ca_file)
+    ssl_ctx.check_hostname = bool(check_hostname)
+    ssl_ctx.verify_mode = ssl.CERT_REQUIRED
+
     try:
         with httpx.Client(
             cert=(cert_file, key_file),
-            verify=ca_file,
+            verify=ssl_ctx,
             timeout=timeout_sec,
         ) as client:
             resp = client.get(base_url)

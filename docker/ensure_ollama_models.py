@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Read the model list from adapter config (ollama_workstation.ollama_models),
+Read the model list from adapter config (ollama_workstation.ollama),
 check which are already present, and pull missing ones. Log before/after
 each pull. Single source of truth: config file only.
 
@@ -14,9 +14,7 @@ import subprocess
 import sys
 from pathlib import Path
 
-CONFIG_PATH = os.environ.get(
-    "ADAPTER_CONFIG_PATH", "/app/config/adapter_config.json"
-)
+CONFIG_PATH = os.environ.get("ADAPTER_CONFIG_PATH", "/app/config/adapter_config.json")
 
 
 def _ollama_list_models() -> set[str]:
@@ -65,15 +63,17 @@ def main() -> int:
         return 0
 
     ow = data.get("ollama_workstation") or {}
-    models: list = ow.get("ollama_models") or []
-    if not isinstance(models, list):
+    section = ow.get("ollama")
+    if not isinstance(section, dict):
         return 0
+    models = section.get("models") if isinstance(section.get("models"), list) else []
     model_names = [m for m in models if isinstance(m, str) and m.strip()]
-    # Fallback: ensure default model when ollama_models missing
-    if not model_names and ow.get("ollama_model"):
-        default = str(ow.get("ollama_model", "")).strip()
-        if default:
-            model_names = [default]
+    if (
+        not model_names
+        and "models" not in section
+        and (section.get("model") or "").strip()
+    ):
+        model_names = [(section.get("model") or "").strip()]
     if not model_names:
         return 0
 

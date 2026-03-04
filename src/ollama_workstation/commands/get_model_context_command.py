@@ -29,7 +29,7 @@ from ..proxy_client import ProxyClient
 from ..representation_registry import RepresentationRegistry
 from ..relevance_slot_builder import RelevanceSlotBuilder
 from ..safe_name_translator import SafeNameTranslator
-from ..vectorization_client import EmbedProxyClient
+from ..vectorization_client import DirectEmbedVectorizationClient
 from ..tools import MODEL_HELP_TOOL
 from .session_init_command import _get_session_store
 
@@ -299,8 +299,9 @@ class GetModelContextCommand(Command):
         registry = RepresentationRegistry(default=OllamaRepresentation())
         register_ollama_models(registry, getattr(config, "ollama_models", None) or [])
         proxy_for_embed = ProxyClient(config)
-        embed_client = EmbedProxyClient(
+        embed_client = DirectEmbedVectorizationClient(
             proxy_for_embed,
+            config,
             embedding_server_id=getattr(
                 config, "embedding_server_id", "embedding-service"
             ),

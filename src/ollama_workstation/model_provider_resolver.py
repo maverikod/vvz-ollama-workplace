@@ -11,9 +11,10 @@ email: vasilyvz@gmail.com
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Dict, Optional, TYPE_CHECKING
+from typing import Any, Dict, Optional, TYPE_CHECKING
 
 from .docker_config_validation import get_provider_for_model
+from .provider_errors import ValidationError
 
 if TYPE_CHECKING:
     from .config import WorkstationConfig
@@ -26,7 +27,7 @@ DEFAULT_PROVIDER_URLS: Dict[str, str] = {
     "openai": "https://api.openai.com/v1",
     "xai": "https://api.x.ai/v1",
     "deepseek": "https://api.deepseek.com/v1",
-    "google": "https://generativelanguage.googleapis.com/v1beta",
+    "google": "https://generativelanguage.googleapis.com/v1beta/openai/",
     "anthropic": "https://api.anthropic.com/v1",
 }
 
@@ -148,13 +149,28 @@ def resolve_model_endpoint(
             is_ollama=True,
         )
 
-    # Commercial: url and api_key from model_providers (mandatory when model selected).
+    # Commercial: use direct provider when it has url and api_key.
     url, key = _get_provider_from_config(config, provider)
+    direct_url: str = (url or "").strip().rstrip("/") or (
+        DEFAULT_PROVIDER_URLS.get(provider) or ""
+    )
+    api_key = (key or _get_api_key_for_provider(config, provider)) or None
+    if api_key is not None:
+        api_key = str(api_key).strip() or None
+    if direct_url and api_key:
+        return ModelEndpoint(
+            base_url=direct_url,
+            api_key=api_key,
+            provider=provider,
+            model_id=model_id,
+            is_ollama=False,
+        )
 
-    # Optional: OpenRouter as fallback when configured.
+    # OpenRouter only when direct provider is not fully configured.
     openrouter_url, openrouter_key = _get_provider_from_config(config, "openrouter")
-    if not openrouter_url:
-        openrouter_url = DEFAULT_PROVIDER_URLS.get("openrouter") or ""
+    openrouter_url = (openrouter_url or "").strip().rstrip("/") or (
+        DEFAULT_PROVIDER_URLS.get("openrouter") or ""
+    )
     openrouter_key = (
         openrouter_api_key
         if openrouter_api_key is not None
@@ -162,21 +178,80 @@ def resolve_model_endpoint(
     )
     if openrouter_url and openrouter_key and str(openrouter_key).strip():
         return ModelEndpoint(
-            base_url=openrouter_url.rstrip("/"),
-            api_key=openrouter_key,
+            base_url=openrouter_url,
+            api_key=openrouter_key.strip(),
             provider="openrouter",
             model_id=_openrouter_model_id(provider, model_id),
             is_ollama=False,
         )
 
-    # Direct provider: url and key from model_providers.
-    direct_url: str = url or (DEFAULT_PROVIDER_URLS.get(provider) or "")
-    if not direct_url:
-        direct_url = DEFAULT_PROVIDER_URLS.get("openai") or "https://api.openai.com/v1"
+    # No key: still return direct URL so caller gets a clear error.
     return ModelEndpoint(
-        base_url=direct_url.rstrip("/"),
-        api_key=key or _get_api_key_for_provider(config, provider),
+        base_url=direct_url or "https://api.openai.com/v1",
+        api_key=api_key,
         provider=provider,
         model_id=model_id,
         is_ollama=False,
+    )
+
+
+def _auth_credential_from_section(section: Any) -> Optional[str]:
+    """Extract api_key or bearer_token from provider section auth."""
+    auth = section.get("auth") if isinstance(section, dict) else None
+    if not isinstance(auth, dict):
+        return None
+    for key in ("api_key", "bearer_token"):
+        val = auth.get(key)
+        if val and isinstance(val, str) and val.strip():
+            return str(val.strip())
+    return None
+
+
+def resolve_model_endpoint_from_provider_clients(
+    provider_clients_data: Any,
+    model_id: str,
+    default_model: str = "llama3.2",
+) -> ModelEndpoint:
+    """
+    Resolve model_id to ModelEndpoint using only provider_clients (canonical source).
+
+    Used by model-workspace runtime; no legacy model_providers or flat api_key.
+    Raises ValidationError if provider is not in provider_clients.providers.
+    """
+    if not isinstance(provider_clients_data, dict):
+        raise ValidationError(
+            "provider_clients_data must be a dict, got "
+            f"{type(provider_clients_data).__name__}"
+        )
+    providers = provider_clients_data.get("providers")
+    if not isinstance(providers, dict):
+        raise ValidationError(
+            "provider_clients.providers is required and must be an object"
+        )
+    use_model = (model_id or "").strip() or default_model
+    provider = get_provider_for_model(use_model)
+    if provider not in providers:
+        raise ValidationError(
+            f"provider '{provider}' (for model {use_model!r}) not in "
+            f"provider_clients.providers; available: {sorted(providers.keys())}"
+        )
+    section = providers[provider]
+    if not isinstance(section, dict):
+        raise ValidationError(
+            f"provider_clients.providers.{provider} must be an object"
+        )
+    transport = section.get("transport") or {}
+    base_url = (transport.get("base_url") or "").strip().rstrip("/")
+    if not base_url:
+        raise ValidationError(
+            f"provider_clients.providers.{provider}.transport.base_url is required"
+        )
+    api_key = _auth_credential_from_section(section)
+    is_ollama = provider == "ollama"
+    return ModelEndpoint(
+        base_url=base_url,
+        api_key=api_key,
+        provider=provider,
+        model_id=use_model,
+        is_ollama=is_ollama,
     )

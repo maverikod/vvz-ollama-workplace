@@ -1,0 +1,127 @@
+2026-03-03 00:11:22 - mcp_proxy_adapter - INFO - Registered server engine: hypercorn
+2026-03-03 00:11:22 - mcp_proxy_adapter - INFO - Hypercorn engine registered (full mTLS support available)
+2026-03-03 00:11:22 - mcp_proxy_adapter - WARNING - Config warning: Unknown configuration section: ollama_workstation
+2026-03-03 00:11:22 - mcp_proxy_adapter - WARNING - Config warning: Invalid UUID format in registration.server_id: database-server
+2026-03-03 00:11:22 - mcp_proxy_adapter - INFO - 🔍 AppFactory: Creating lifespan with current_config keys: ['server', 'client', 'registration', 'server_validation', 'auth', 'queue_manager', 'transport', 'ollama_workstation']
+2026-03-03 00:11:22 - mcp_proxy_adapter - INFO - 🔍 AppFactory: lifespan created, callable=True
+2026-03-03 00:11:22 - mcp_proxy_adapter - INFO - 🔍 AppFactory: FastAPI app created
+2026-03-03 00:11:22 - mcp_proxy_adapter - INFO - Registered builtin command: help
+2026-03-03 00:11:22 - mcp_proxy_adapter - INFO - Registered builtin command: health
+2026-03-03 00:11:22 - mcp_proxy_adapter - INFO - Registered builtin command: config
+2026-03-03 00:11:22 - mcp_proxy_adapter - INFO - Registered builtin command: reload
+2026-03-03 00:11:22 - mcp_proxy_adapter - INFO - Registered builtin command: settings
+2026-03-03 00:11:22 - mcp_proxy_adapter - INFO - Registered builtin command: load
+2026-03-03 00:11:22 - mcp_proxy_adapter - INFO - Registered builtin command: unload
+2026-03-03 00:11:22 - mcp_proxy_adapter - INFO - Registered builtin command: plugins
+2026-03-03 00:11:22 - mcp_proxy_adapter - INFO - Registered builtin command: transport_management
+2026-03-03 00:11:22 - mcp_proxy_adapter - INFO - Registered builtin command: proxy_registration
+2026-03-03 00:11:22 - mcp_proxy_adapter - INFO - Registered builtin command: echo
+2026-03-03 00:11:22 - mcp_proxy_adapter - INFO - Registered builtin command: roletest
+2026-03-03 00:11:23 - mcp_proxy_adapter - INFO - Registered builtin command: queue_add_job
+2026-03-03 00:11:23 - mcp_proxy_adapter - INFO - Registered builtin command: queue_start_job
+2026-03-03 00:11:23 - mcp_proxy_adapter - INFO - Registered builtin command: queue_stop_job
+2026-03-03 00:11:23 - mcp_proxy_adapter - INFO - Registered builtin command: queue_delete_job
+2026-03-03 00:11:23 - mcp_proxy_adapter - INFO - Registered builtin command: queue_get_job_status
+2026-03-03 00:11:23 - mcp_proxy_adapter - INFO - Registered builtin command: queue_get_job_logs
+2026-03-03 00:11:23 - mcp_proxy_adapter - INFO - Registered builtin command: queue_list_jobs
+2026-03-03 00:11:23 - mcp_proxy_adapter - INFO - Registered builtin command: queue_health
+2026-03-03 00:11:23 - mcp_proxy_adapter - INFO - Registered builtin command: queue_add_job
+2026-03-03 00:11:23 - mcp_proxy_adapter - INFO - Registered builtin command: queue_start_job
+2026-03-03 00:11:23 - mcp_proxy_adapter - INFO - Registered builtin command: queue_stop_job
+2026-03-03 00:11:23 - mcp_proxy_adapter - INFO - Registered builtin command: queue_delete_job
+2026-03-03 00:11:23 - mcp_proxy_adapter - INFO - Registered builtin command: queue_get_job_status
+2026-03-03 00:11:23 - mcp_proxy_adapter - INFO - Registered builtin command: queue_list_jobs
+2026-03-03 00:11:23 - mcp_proxy_adapter - INFO - Registered builtin command: queue_health
+2026-03-03 00:11:23 - mcp_proxy_adapter - INFO - Auto-registered 7 queue management commands
+2026-03-03 00:11:23 - mcp_proxy_adapter - INFO - Registered 19 built-in framework commands
+2026-03-03 00:11:23 - mcp_proxy_adapter - INFO - ✅ Built-in commands registered
+2026-03-03 00:11:23 - mcp_proxy_adapter - INFO - ✅ App metadata stored: OLLAMA Workstation Adapter v1.0.0
+2026-03-03 00:11:23 - mcp_proxy_adapter - INFO - Registered custom command: ollama_chat
+2026-03-03 00:11:23 - mcp_proxy_adapter - INFO - Registered custom command: server_status
+2026-03-03 00:11:23 - mcp_proxy_adapter - INFO - Registered custom command: session_init
+2026-03-03 00:11:23 - mcp_proxy_adapter - INFO - Registered custom command: session_update
+2026-03-03 00:11:23 - mcp_proxy_adapter - INFO - Registered custom command: add_command_to_session
+2026-03-03 00:11:23 - mcp_proxy_adapter - INFO - Registered custom command: direct_chat
+2026-03-03 00:11:23 - mcp_proxy_adapter - INFO - Registered custom command: remove_command_from_session
+2026-03-03 00:11:23 - mcp_proxy_adapter - INFO - Registered custom command: get_model_context
+2026-03-03 00:11:23 - mcp_proxy_adapter - INFO - Registered custom command: get_model_state
+2026-03-03 00:11:23 - mcp_proxy_adapter - INFO - Registered custom command: invoke_tool
+2026-03-03 00:11:23 - mcp_proxy_adapter - INFO - Registered custom command: set_default_model
+2026-03-03 00:11:23 - mcp_proxy_adapter - INFO - Server SSL validated via mcp_security_framework
+2026-03-03 00:11:23 - mcp_proxy_adapter - INFO - ================================================================================
+2026-03-03 00:11:23 - mcp_proxy_adapter - INFO - 🚀 LIFESPAN STARTUP CALLED
+2026-03-03 00:11:23 - mcp_proxy_adapter - INFO - ================================================================================
+2026-03-03 00:11:23 - mcp_proxy_adapter - INFO - Starting MCP Proxy Adapter
+2026-03-03 00:11:23 - mcp_proxy_adapter - INFO - ✅ Added application paths to PYTHONPATH for spawn mode: {'/app/config'}
+2026-03-03 00:11:23 - mcp_proxy_adapter - INFO - 🔍 lifespan function: current_config parameter value: {'server': {'host': '0.0.0.0', 'port': 8017, 'protocol': 'mtls', 'servername': 'database-server', 'ssl': {'cert': '/app/certs/server.crt', 'key': '/app/certs/server.key', 'ca': '/app/certs/ca.crt', 'crl': None, 'dnscheck': False, 'check_hostname': None}, 'rules': None, 'log_dir': '/app/logs', 'debug': False, 'log_level': 'INFO', 'advertised_host': 'database-server'}, 'client': {'enabled': False, 'protocol': 'http', 'ssl': None}, 'registration': {'enabled': True, 'protocol': 'mtls', 'register_url': 'https://mcp-proxy:3004/register', 'unregister_url': 'https://mcp-proxy:3004/unregister', 'heartbeat_interval': 30, 'ssl': {'cert': '/app/certs/client.crt', 'key': '/app/certs/client.key', 'ca': '/app/certs/ca.crt', 'crl': None, 'dnscheck': None, 'check_hostname': None}, 'server_id': 'database-server', 'server_name': None, 'instance_uuid': '233b0e5e-1116-4026-8d02-8d1a13a8bb27', 'auto_on_startup': True, 'auto_on_shutdown': True, 'heartbeat': {'url': 'https://mcp-proxy:3004/proxy/heartbeat', 'interval': 30}}, 'server_validation': {'enabled': False, 'protocol': 'http', 'ssl': None, 'timeout': 10, 'use_token': False, 'use_roles': False, 'tokens': {}, 'roles': {}, 'auth_header': 'X-API-Key', 'roles_header': 'X-Roles', 'health_path': '/health', 'check_hostname': False}, 'auth': {'use_token': False, 'use_roles': False, 'tokens': {}, 'roles': {}}, 'queue_manager': {'enabled': True, 'in_memory': True, 'registry_path': None, 'shutdown_timeout': 30.0, 'max_concurrent_jobs': 10, 'max_queue_size': None, 'per_job_type_limits': None, 'completed_job_retention_seconds': 21600, 'default_poll_interval': 0.0, 'default_max_wait_time': None}, 'transport': {'verify_client': True}, 'ollama_workstation': {'mcp_proxy_url': 'https://mcp-proxy:3004', 'ollama': {'base_url': 'http://127.0.0.1:11434', 'model_server_url': 'http://127.0.0.1:11434', 'model': 'llama3.2', 'models': [], 'timeout': 120, 'container_name': '', 'container_image': ''}, 'max_tool_rounds': 10, 'allowed_commands': [], 'forbidden_commands': [], 'commands_policy': 'allow_by_default', 'command_discovery_interval_sec': 0, 'session_store_type': 'memory', 'redis_host': 'localhost', 'redis_port': 6379, 'redis_key_prefix': 'message', 'max_context_tokens': 4096, 'last_n_messages': 10, 'min_semantic_tokens': 256, 'min_documentation_tokens': 0, 'relevance_slot_mode': 'fixed_order', 'standards_file_path': '', 'rules_file_path': '', 'max_model_call_depth': 1, 'model_calling_tool_allow_list': [], 'command_execution_timeout_seconds': 120, 'model_providers': {'ollama': {'url': 'http://127.0.0.1:11434'}}}}
+2026-03-03 00:11:23 - mcp_proxy_adapter - INFO - 🔍 lifespan function: current_config is None: False
+2026-03-03 00:11:23 - mcp_proxy_adapter - INFO - 🔍 Lifespan: current_config is not None
+2026-03-03 00:11:23 - mcp_proxy_adapter - INFO - 🔍 Lifespan: current_config type: <class 'dict'>
+2026-03-03 00:11:23 - mcp_proxy_adapter - INFO - 🔍 Lifespan: current_config keys: ['server', 'client', 'registration', 'server_validation', 'auth', 'queue_manager', 'transport', 'ollama_workstation']
+2026-03-03 00:11:23 - mcp_proxy_adapter - INFO - 🔍 Lifespan: current_config['registration'] exists: True
+2026-03-03 00:11:23 - mcp_proxy_adapter - INFO - 🔍 Lifespan: registration section type: <class 'dict'>
+2026-03-03 00:11:23 - mcp_proxy_adapter - INFO - 🔍 Lifespan: registration section: {'enabled': True, 'protocol': 'mtls', 'register_url': 'https://mcp-proxy:3004/register', 'unregister_url': 'https://mcp-proxy:3004/unregister', 'heartbeat_interval': 30, 'ssl': {'cert': '/app/certs/client.crt', 'key': '/app/certs/client.key', 'ca': '/app/certs/ca.crt', 'crl': None, 'dnscheck': None, 'check_hostname': None}, 'server_id': 'database-server', 'server_name': None, 'instance_uuid': '233b0e5e-1116-4026-8d02-8d1a13a8bb27', 'auto_on_startup': True, 'auto_on_shutdown': True, 'heartbeat': {'url': 'https://mcp-proxy:3004/proxy/heartbeat', 'interval': 30}}
+2026-03-03 00:11:23 - mcp_proxy_adapter - INFO - 🔍 SimpleConfigModel: cfg type: <class 'mcp_proxy_adapter.core.config.config.Config'>
+2026-03-03 00:11:23 - mcp_proxy_adapter - INFO - 🔍 SimpleConfigModel: hasattr(cfg, 'model'): True
+2026-03-03 00:11:23 - mcp_proxy_adapter - INFO - 🔍 SimpleConfigModel: cfg.model type: <class 'mcp_proxy_adapter.core.config.simple_config.SimpleConfigModel'>
+2026-03-03 00:11:23 - mcp_proxy_adapter - INFO - 🔍 SimpleConfigModel: hasattr(cfg.model, 'registration'): True
+2026-03-03 00:11:23 - mcp_proxy_adapter - INFO - 🔍 SimpleConfigModel: reg_model type: <class 'mcp_proxy_adapter.core.config.simple_config.RegistrationConfig'>
+2026-03-03 00:11:23 - mcp_proxy_adapter - INFO - 🔍 SimpleConfigModel: reg_model.enabled: True, reg_model.auto_on_startup: True
+2026-03-03 00:11:23 - mcp_proxy_adapter - INFO - 🔍 Registration enabled check (SimpleConfigModel): True
+2026-03-03 00:11:23 - mcp_proxy_adapter - INFO - 🔍 FINAL registration_enabled: True
+2026-03-03 00:11:23 - mcp_proxy_adapter - INFO - ✅ Registration enabled, starting heartbeat task
+2026-03-03 00:11:23 - mcp_proxy_adapter - INFO - 🔍 start_heartbeat called with config keys: ['server', 'client', 'registration', 'server_validation', 'auth', 'queue_manager', 'transport', 'ollama_workstation']
+2026-03-03 00:11:23 - mcp_proxy_adapter - INFO - 🔍 Registration context prepared: True
+2026-03-03 00:11:23 - mcp_proxy_adapter - INFO - ✅ Registration context available
+2026-03-03 00:11:23 - mcp_proxy_adapter - INFO - ✅ Context applied: server_name=database-server, proxy_url=https://mcp-proxy:3004
+2026-03-03 00:11:23 - mcp_proxy_adapter - INFO - 💓 Starting heartbeat task (interval: 30s)
+2026-03-03 00:11:23 - mcp_proxy_adapter - INFO - ✅ Queue manager integration started (in-memory mode)
+2026-03-03 00:11:23 - mcp_proxy_adapter - INFO - ✅ Queue manager initialized
+2026-03-03 00:11:23 - mcp_proxy_adapter - INFO - Job push: registry and poll loop started
+2026-03-03 00:11:23 - mcp_proxy_adapter - INFO - 📡 Attempting proxy registration before heartbeat
+2026-03-03 00:11:23 - mcp_proxy_adapter - INFO - 🔐 Registration SSL config: cert=True, verify=/app/certs/ca.crt
+2026-03-03 00:11:23 - mcp_proxy_adapter - INFO - 📡 Connecting to proxy: https://mcp-proxy:3004
+2026-03-03 00:11:23 - mcp_proxy_adapter - INFO -    Endpoint: /register, Server: database-server -> https://database-server:8017
+2026-03-03 00:11:23 - mcp_proxy_adapter - INFO - 🔍 [REG_MANAGER] Metadata: {'protocol': 'mtls', 'host': '0.0.0.0', 'port': 8017, 'uuid': '233b0e5e-1116-4026-8d02-8d1a13a8bb27'}
+2026-03-03 00:11:23 - mcp_proxy_adapter - INFO - 🔍 [REG_MANAGER] UUID in metadata: 233b0e5e-1116-4026-8d02-8d1a13a8bb27
+2026-03-03 00:11:23 - mcp_proxy_adapter - INFO - 🔍 [REG_MANAGER] Calling client.register_with_proxy...
+2026-03-03 00:11:23 - mcp_proxy_adapter.client.jsonrpc_client.proxy_api - INFO - 🔍 [REGISTRATION] Starting registration process
+2026-03-03 00:11:23 - mcp_proxy_adapter.client.jsonrpc_client.proxy_api - INFO - 🔍 [REGISTRATION] Register URL: https://mcp-proxy:3004/register
+2026-03-03 00:11:23 - mcp_proxy_adapter.client.jsonrpc_client.proxy_api - INFO - 🔍 [REGISTRATION] Base URL: https://mcp-proxy:3004
+2026-03-03 00:11:23 - mcp_proxy_adapter.client.jsonrpc_client.proxy_api - INFO - 🔍 [REGISTRATION] Server name: database-server, Server URL: https://database-server:8017
+2026-03-03 00:11:23 - mcp_proxy_adapter.client.jsonrpc_client.proxy_api - INFO - 🔍 [REGISTRATION] Payload: {
+  "server_id": "database-server",
+  "server_url": "https://database-server:8017",
+  "capabilities": [
+    "jsonrpc",
+    "health"
+  ],
+  "metadata": {
+    "protocol": "mtls",
+    "host": "0.0.0.0",
+    "port": 8017
+  },
+  "uuid": "233b0e5e-1116-4026-8d02-8d1a13a8bb27"
+}
+2026-03-03 00:11:23 - mcp_proxy_adapter.client.jsonrpc_client.proxy_api - INFO - 🔍 [REGISTRATION] Cert: True, Verify: /app/certs/ca.crt
+2026-03-03 00:11:23 - mcp_proxy_adapter.client.jsonrpc_client.proxy_api - INFO - 🔍 [REGISTRATION] Use configured client: False
+2026-03-03 00:11:23 - mcp_proxy_adapter - INFO - 🔍 OpenAPI Generator: Found 33 commands: ['add_command_to_session', 'config', 'direct_chat', 'echo', 'get_model_context', 'get_model_state', 'health', 'help', 'invoke_tool', 'job_status', 'load', 'long_task', 'ollama_chat', 'plugins', 'proxy_registration', 'queue_add_job', 'queue_delete_job', 'queue_get_job_logs', 'queue_get_job_status', 'queue_health', 'queue_list_jobs', 'queue_start_job', 'queue_stop_job', 'reload', 'remove_command_from_session', 'roletest', 'server_status', 'session_init', 'session_update', 'set_default_model', 'settings', 'transport_management', 'unload']
+2026-03-03 00:11:23 - mcp_proxy_adapter.client.jsonrpc_client.proxy_api - INFO - 🔍 [REGISTRATION] Response status: 200
+2026-03-03 00:11:23 - mcp_proxy_adapter.client.jsonrpc_client.proxy_api - INFO - 🔍 [REGISTRATION] Response headers: {'content-length': '294', 'content-type': 'application/json', 'date': 'Tue, 03 Mar 2026 00:11:23 GMT', 'server': 'hypercorn-h11'}
+2026-03-03 00:11:23 - mcp_proxy_adapter.client.jsonrpc_client.proxy_api - INFO - 🔍 [REGISTRATION] Response body: {"success":true,"server_key":"database-server_1","server_url":"https://database-server:8017","capabilities":["jsonrpc","health"],"metadata":{"protocol":"mtls","host":"0.0.0.0","port":8017,"uuid":"233b0e5e-1116-4026-8d02-8d1a13a8bb27"},"message":"Server database-server registered successfully"}
+2026-03-03 00:11:23 - mcp_proxy_adapter - INFO - 🔍 [REG_MANAGER] Registration response received: {'success': True, 'server_key': 'database-server_1', 'server_url': 'https://database-server:8017', 'capabilities': ['jsonrpc', 'health'], 'metadata': {'protocol': 'mtls', 'host': '0.0.0.0', 'port': 8017, 'uuid': '233b0e5e-1116-4026-8d02-8d1a13a8bb27'}, 'message': 'Server database-server registered successfully'}
+2026-03-03 00:11:23 - mcp_proxy_adapter - INFO - ✅ Successfully registered with proxy as database-server -> https://database-server:8017
+2026-03-03 00:11:23 - mcp_proxy_adapter - INFO - 💓 Sending heartbeat with registration payload to https://mcp-proxy:3004/proxy/heartbeat
+2026-03-03 00:11:23 - mcp_proxy_adapter - INFO - 💓 Heartbeat/registration acknowledged by proxy
+2026-03-03 00:11:53 - mcp_proxy_adapter - INFO - 💓 Sending heartbeat with registration payload to https://mcp-proxy:3004/proxy/heartbeat
+2026-03-03 00:11:54 - mcp_proxy_adapter - INFO - 💓 Heartbeat/registration acknowledged by proxy
+2026-03-03 00:12:24 - mcp_proxy_adapter - INFO - 💓 Sending heartbeat with registration payload to https://mcp-proxy:3004/proxy/heartbeat
+2026-03-03 00:12:24 - mcp_proxy_adapter - INFO - 💓 Heartbeat/registration acknowledged by proxy
+2026-03-03 00:12:54 - mcp_proxy_adapter - INFO - 💓 Sending heartbeat with registration payload to https://mcp-proxy:3004/proxy/heartbeat
+2026-03-03 00:12:54 - mcp_proxy_adapter - INFO - 💓 Heartbeat/registration acknowledged by proxy
+2026-03-03 00:13:24 - mcp_proxy_adapter - INFO - 💓 Sending heartbeat with registration payload to https://mcp-proxy:3004/proxy/heartbeat
+2026-03-03 00:13:24 - mcp_proxy_adapter - INFO - 💓 Heartbeat/registration acknowledged by proxy
+2026-03-03 00:13:54 - mcp_proxy_adapter - INFO - 💓 Sending heartbeat with registration payload to https://mcp-proxy:3004/proxy/heartbeat
+2026-03-03 00:13:54 - mcp_proxy_adapter - INFO - 💓 Heartbeat/registration acknowledged by proxy
+2026-03-03 00:14:24 - mcp_proxy_adapter - INFO - 💓 Sending heartbeat with registration payload to https://mcp-proxy:3004/proxy/heartbeat
+2026-03-03 00:14:24 - mcp_proxy_adapter - INFO - 💓 Heartbeat/registration acknowledged by proxy

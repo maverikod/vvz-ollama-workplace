@@ -1,9 +1,4 @@
-"""
-CLI for model workspace client config: generate, validate, show-schema, test-connection.
-
-Client startup/init path must call validator before first network operation.
-On validation errors at startup/init: return error and raise exception.
-test-connection runs validation first then performs a real WS handshake in safe mode.
+"""Model workspace client config CLI.
 
 Author: Vasiliy Zdanovskiy
 email: vasilyvz@gmail.com
@@ -162,34 +157,22 @@ def _cmd_validate(args: argparse.Namespace) -> int:
 
 
 def _get_schema_doc() -> dict:
-    """Return JSON-serializable schema description of client config."""
+    """Return minimal JSON-serializable schema description."""
     return {
-        "description": (
-            "Model workspace client adapter config "
-            "(adapter JSON with model_workspace_client and client sections)."
-        ),
-        "root": "JSON object",
+        "description": "Adapter JSON with model_workspace_client and client sections.",
         "sections": {
             "model_workspace_client": {
                 "required": True,
                 "fields": {
-                    "ws_endpoint": "string, required, ws:// or wss:// URL",
-                    "client_cert_file": "string, required for wss",
-                    "client_key_file": "string, required for wss",
-                    "ca_cert_file": "string, required for wss",
-                    "connect_timeout_seconds": "integer, >= 1",
-                    "request_timeout_seconds": "integer, >= 1",
-                    "retry_max_attempts": "integer, >= 0",
-                    "retry_backoff_seconds": "number, >= 0",
-                    "observability": "object, optional (log_level, metrics_enabled)",
+                    "ws_endpoint": "required, ws:// or wss:// URL",
+                    "client_cert_file": "required for wss",
+                    "client_key_file": "required for wss",
+                    "ca_cert_file": "required for wss",
                 },
             },
             "client": {
                 "required_for_wss": True,
-                "description": (
-                    "When ws_endpoint is wss://, client.enabled=true and "
-                    "client.protocol=mtls with client.ssl (cert, key, ca) required."
-                ),
+                "description": "client.enabled=true, protocol=mtls, ssl cert/key/ca",
                 "fields": {
                     "enabled": "boolean",
                     "protocol": "mtls",
@@ -227,12 +210,9 @@ def _ws_handshake_safe(
     client_key_file: str | None,
     ca_cert_file: str | None,
     timeout_seconds: int,
+    check_hostname: bool = True,
 ) -> tuple[bool, str]:
-    """
-    Real WebSocket HTTP upgrade handshake in safe mode (connect, handshake, close).
-
-    Uses stdlib only: socket + ssl. Returns (success, message).
-    """
+    """Run one safe WS HTTP-upgrade handshake; return (success, message)."""
     parsed = urlparse(ws_endpoint)
     scheme = (parsed.scheme or "ws").lower()
     host = parsed.hostname or "localhost"
@@ -256,9 +236,12 @@ def _ws_handshake_safe(
             ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
             ctx.load_verify_locations(ca_cert_file)
             ctx.load_cert_chain(certfile=client_cert_file, keyfile=client_key_file)
+            ctx.check_hostname = bool(check_hostname)
+            ctx.verify_mode = ssl.CERT_REQUIRED
             sock = socket.create_connection((host, port), timeout=timeout_seconds)
             try:
-                sock = ctx.wrap_socket(sock, server_hostname=host)
+                server_hostname = host if check_hostname else None
+                sock = ctx.wrap_socket(sock, server_hostname=server_hostname)
             except ssl.SSLError as e:
                 sock.close()
                 return (False, f"TLS handshake failed: {e}")
@@ -318,11 +301,7 @@ def _parse_test_connection_args(
 
 
 def _cmd_test_connection(args: argparse.Namespace) -> int:
-    """
-    Validate config then perform real WS handshake in safe mode.
-
-    Client startup path: validator runs before first network operation.
-    """
+    """Validate config then perform a real WS handshake in safe mode."""
     config_path = Path(args.config)
     try:
         validate_config(config_path)
@@ -335,11 +314,23 @@ def _cmd_test_connection(args: argparse.Namespace) -> int:
     with open(config_path, encoding="utf-8") as f:
         app_config = json.load(f)
     mwc = app_config.get("model_workspace_client") or {}
+    client_ssl = (
+        ((app_config.get("client") or {}).get("ssl") or {})
+        if isinstance(app_config.get("client"), dict)
+        else {}
+    )
     ws_endpoint = (mwc.get("ws_endpoint") or "").strip()
     if not ws_endpoint:
         if not getattr(args, "quiet", False):
             print("model_workspace_client.ws_endpoint is missing", file=sys.stderr)
         return EXIT_CONFIG_ERROR
+
+    check_hostname = True
+    if isinstance(client_ssl, dict):
+        if client_ssl.get("check_hostname") is False:
+            check_hostname = False
+        elif client_ssl.get("dnscheck") is False:
+            check_hostname = False
 
     timeout = int(mwc.get("connect_timeout_seconds", 30))
     ok, msg = _ws_handshake_safe(
@@ -348,6 +339,7 @@ def _cmd_test_connection(args: argparse.Namespace) -> int:
         mwc.get("client_key_file"),
         mwc.get("ca_cert_file"),
         timeout,
+        check_hostname=check_hostname,
     )
     if not ok:
         if not getattr(args, "quiet", False):
@@ -393,8 +385,7 @@ def main() -> int:
     _parse_test_connection_args(test_conn)
     test_conn.set_defaults(run=_cmd_test_connection)
 
-    args = top.parse_args()
-    return int(args.run(args))
+    return int((args := top.parse_args()).run(args))
 
 
 if __name__ == "__main__":

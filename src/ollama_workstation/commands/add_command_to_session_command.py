@@ -28,25 +28,40 @@ class AddCommandToSessionCommand(Command):
     """
 
     name = "add_command_to_session"
-    descr = "Add command to session. Rejected if forbidden by config."
+    descr = (
+        "Add command_id to session allowed and remove from forbidden. Fails if "
+        "command_id is in config forbidden_commands. Needs session_id and command_id."
+    )
 
     @classmethod
     def get_schema(cls) -> Dict[str, Any]:
+        """Return JSON Schema for parameters: session_id, command_id."""
         return {
             "type": "object",
             "properties": {
-                "session_id": {"type": "string"},
-                "command_id": {"type": "string"},
+                "session_id": {
+                    "type": "string",
+                    "description": "Session UUID4 from session_init.",
+                },
+                "command_id": {
+                    "type": "string",
+                    "description": (
+                        "Command name to allow (e.g. echo, ollama_chat, or a command "
+                        "from another server in the proxy)."
+                    ),
+                },
             },
             "required": ["session_id", "command_id"],
         }
 
     @classmethod
     def get_result_schema(cls) -> Dict[str, Any]:
+        """Return JSON Schema for success result with ok boolean."""
         return {"type": "object", "properties": {"ok": {"type": "boolean"}}}
 
     @classmethod
     def get_error_schema(cls) -> Dict[str, Any]:
+        """Return JSON Schema for error result with message."""
         return {
             "type": "object",
             "properties": {"message": {"type": "string"}},
@@ -54,6 +69,7 @@ class AddCommandToSessionCommand(Command):
 
     @classmethod
     def get_metadata(cls) -> Dict[str, Any]:
+        """Return command metadata: name, description, schemas."""
         return {
             "name": cls.name,
             "description": (cls.descr or "").strip(),
@@ -85,8 +101,7 @@ class AddCommandToSessionCommand(Command):
                     forbidden = cpc.forbidden_commands
                     if command_id in forbidden:
                         logger.error(
-                            "add_command_to_session: command %s forbidden "
-                            "by config",
+                            "add_command_to_session: command %s forbidden " "by config",
                             command_id,
                         )
                         msg = (
@@ -107,9 +122,7 @@ class AddCommandToSessionCommand(Command):
             new_allowed = list(session.allowed_commands)
             if command_id not in new_allowed:
                 new_allowed.append(command_id)
-            new_forbidden = [
-                c for c in session.forbidden_commands if c != command_id
-            ]
+            new_forbidden = [c for c in session.forbidden_commands if c != command_id]
             store.update(
                 session_id,
                 {

@@ -5,6 +5,11 @@ secrets.env
 # Local config with API keys — never commit
 config/adapter_config.local.json
 config/model_workspace_server_config.json
+# Generated config (may contain API keys from env)
+config/adapter_config.generated.json
+config/*_config.generated.json
+# Runtime logs (may contain API key fragments)
+logs/
 __pycache__/
 *.egg-info/
 
@@ -16,6 +21,7 @@ docker/data/
 docker/certs/
 
 # mTLS generated (keep generate_certs.sh and README)
-mtls_certificates/*.crt
-mtls_certificates/*.key
-mtls_certificates/*.srl
+mtls_certificates/
+
+docker/data-db/blobs/
+docker/data-mws/blobs/

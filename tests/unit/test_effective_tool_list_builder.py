@@ -39,8 +39,8 @@ def test_build_effective_tool_list_config_forbidden_excluded() -> None:
     safe = SafeNameTranslator()
     tools, reg = build_effective_tool_list(session, policy, discovered, alias_reg, safe)
     assert len(tools) == 1
-    assert tools[0][0] == "ok_srv"
-    reg.resolve("ok_srv")
+    assert tools[0][0] == "ok"
+    reg.resolve("ok")
 
 
 def test_build_effective_tool_list_alias_used() -> None:
@@ -59,12 +59,17 @@ def test_build_effective_tool_list_alias_used() -> None:
     safe = SafeNameTranslator()
     tools, reg = build_effective_tool_list(session, policy, discovered, alias_reg, safe)
     assert len(tools) == 1
-    assert tools[0][0] == "tool_echo"
-    assert reg.resolve("tool_echo") == ("echo", "srv")
+    assert tools[0][0] == "echo"
+    assert reg.resolve("echo") == ("echo", "srv")
 
 
 def test_builder_class_build() -> None:
     """EffectiveToolListBuilder.build same shape as build_effective_tool_list."""
+    policy = CommandsPolicyConfig(
+        allowed_commands=(),
+        forbidden_commands=(),
+        commands_policy=COMMANDS_POLICY_ALLOW_BY_DEFAULT,
+    )
     session = Session.create(session_id="s1", model="m1")
     discovered = [
         ("a.b", CommandSchema("a", "A", {}), True),
@@ -73,10 +78,10 @@ def test_builder_class_build() -> None:
         alias_registry=CommandAliasRegistry(),
         safe_name_translator=SafeNameTranslator(),
     )
-    tools, reg = builder.build(session, None, discovered)
+    tools, reg = builder.build(session, policy, discovered)
     assert len(tools) == 1
-    assert tools[0][0] == "a_b"
-    assert reg.resolve("a_b") == ("a", "b")
+    assert tools[0][0] == "a"
+    assert reg.resolve("a") == ("a", "b")
 
 
 def test_vectorization_added_when_available() -> None:
@@ -96,9 +101,9 @@ def test_vectorization_added_when_available() -> None:
     safe = SafeNameTranslator()
     tools, reg = build_effective_tool_list(session, policy, discovered, alias_reg, safe)
     display_names = [t[0] for t in tools]
-    assert "echo_srv" in display_names
-    assert "embed_execute_embedding_service" in display_names
-    resolved = reg.resolve("embed_execute_embedding_service")
+    assert "echo" in display_names
+    assert "embed_execute" in display_names
+    resolved = reg.resolve("embed_execute")
     assert resolved == ("embed_execute", "embedding-service")
 
 

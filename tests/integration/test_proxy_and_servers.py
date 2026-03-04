@@ -4,7 +4,7 @@ Integration tests: real proxy and services, no mocks.
 Step 17 (Real Integration No Mocks): integration only on real services (proxy,
 workstation, db, ollama, real tool server). Validates both pair contracts
 (model-workspace + database). Uses real proxy endpoint with mTLS registration
-and certs from mtls_certificates (e.g. https://172.28.0.2:3004).
+and certs from mtls_certificates.
 
 - Tests pass only with real service topology; when required service is absent
   they fail or skip with a clear message.
@@ -18,6 +18,7 @@ email: vasilyvz@gmail.com
 from __future__ import annotations
 
 import os
+import socket
 import sys
 from pathlib import Path
 
@@ -85,12 +86,59 @@ def _get_proxy_config():
         return None
 
 
+def _proxy_base_url_for_contracts() -> str:
+    """
+    Resolve proxy base URL for contract validation payloads.
+
+    Uses MCP_PROXY_URL when available; otherwise uses a neutral local default.
+    """
+    env_url = os.environ.get("MCP_PROXY_URL", "").strip()
+    if env_url:
+        return env_url.rstrip("/")
+    return "https://localhost:3004"
+
+
+def _is_tcp_port_open(host: str, port: int) -> bool:
+    """Check whether TCP port is reachable from current runtime."""
+    try:
+        with socket.create_connection((host, port), timeout=1.0):
+            return True
+    except OSError:
+        return False
+
+
+def _normalize_embed_url_for_current_runtime(url: str) -> str:
+    """
+    Normalize resolved embed URL for host runtime when DNS names are container-only.
+
+    If proxy returns a container hostname (for example `embedding-service`) that is
+    not resolvable from the current host runtime, but the same port is reachable on
+    localhost, rewrite the URL host to localhost.
+    """
+    parsed = parse_server_url(url)
+    host = str(parsed.get("host") or "").strip()
+    port = int(parsed.get("port") or 0)
+    protocol = str(parsed.get("protocol") or "https").strip() or "https"
+    if not host or not port:
+        return url.rstrip("/")
+    try:
+        socket.getaddrinfo(host, port)
+        return url.rstrip("/")
+    except OSError:
+        if _is_tcp_port_open("localhost", port):
+            return f"{protocol}://localhost:{port}"
+        return url.rstrip("/")
+
+
 @pytest.fixture(scope="module")
 def proxy_config():
-    """Config with proxy URL and mTLS when from adapter config; skip if unavailable."""
+    """Config with proxy URL and mTLS; fail if unavailable for real integration."""
     cfg = _get_proxy_config()
     if cfg is None or not (getattr(cfg, "mcp_proxy_url", "") or "").strip():
-        pytest.skip("Integration: set MCP_PROXY_URL or ADAPTER_CONFIG_PATH with proxy")
+        pytest.fail(
+            "Integration requires real proxy topology: set MCP_PROXY_URL "
+            "or ADAPTER_CONFIG_PATH with proxy config."
+        )
     return cfg
 
 
@@ -105,7 +153,7 @@ def test_registration_validation_rejects_invalid_mtls_paths() -> None:
     When paths mention mtls_certificates but ca points outside ca/, or
     cert/key outside client/, validation fails.
     """
-    base = "https://172.28.0.2:3004"
+    base = _proxy_base_url_for_contracts()
     config = {
         "ollama_workstation": {"mcp_proxy_url": base},
         "registration": {
@@ -137,7 +185,7 @@ def test_registration_validation_accepts_valid_mtls_paths() -> None:
     """
     Registration contract: valid mTLS cert paths (under ca/, client/, server/) pass.
     """
-    base = "https://172.28.0.2:3004"
+    base = _proxy_base_url_for_contracts()
     config = {
         "ollama_workstation": {"mcp_proxy_url": base},
         "registration": {
@@ -176,18 +224,20 @@ def test_model_workspace_contract_config_valid() -> None:
     client_cert = certs / "client" / "test-server.crt"
     client_key = certs / "client" / "test-server.key"
     if not (ca.is_file() and client_cert.is_file() and client_key.is_file()):
-        pytest.skip(
-            "Integration: mtls_certificates (ca, client cert/key) not found for "
-            "model_workspace contract check"
+        pytest.fail(
+            "Integration requires real mTLS certificates for model_workspace "
+            "contract check: expected files under mtls_certificates/."
         )
     try:
         from model_workspace_client.config_validator import validate_config_dict
     except ImportError:
-        pytest.skip("Integration: model_workspace_client not installed")
+        pytest.fail("Integration requires model_workspace_client package installed.")
 
     app_config = {
         "model_workspace_client": {
-            "ws_endpoint": "wss://172.28.0.2:443",
+            "ws_endpoint": os.environ.get(
+                "MODEL_WORKSPACE_WS_ENDPOINT", "wss://localhost:443"
+            ),
             "client_cert_file": str(client_cert),
             "client_key_file": str(client_key),
             "ca_cert_file": str(ca),
@@ -220,18 +270,18 @@ def test_database_contract_config_valid() -> None:
     client_cert = certs / "client" / "test-server.crt"
     client_key = certs / "client" / "test-server.key"
     if not (ca.is_file() and client_cert.is_file() and client_key.is_file()):
-        pytest.skip(
-            "Integration: mtls_certificates (ca, client cert/key) not found for "
-            "database contract check"
+        pytest.fail(
+            "Integration requires real mTLS certificates for database "
+            "contract check: expected files under mtls_certificates/."
         )
     try:
         from database_client.config_validator import validate_config_dict
     except ImportError:
-        pytest.skip("Integration: database_client not installed")
+        pytest.fail("Integration requires database_client package installed.")
 
     app_config = {
         "database_client": {
-            "base_url": "https://172.28.0.2:8443",
+            "base_url": os.environ.get("DATABASE_BASE_URL", "https://localhost:8443"),
             "client_cert_file": str(client_cert),
             "client_key_file": str(client_key),
             "ca_cert_file": str(ca),
@@ -267,7 +317,12 @@ async def test_proxy_list_servers_returns_network_data(proxy_config) -> None:
     try:
         raw = await client.list_servers(page=1, page_size=50)
     except ProxyClientError as e:
-        pytest.skip("Integration: required service (proxy) absent: %s" % e.message)
+        pytest.fail(
+            "Integration requires real proxy service; list_servers failed: %s"
+            % e.message
+        )
+    finally:
+        await client.close()
     assert isinstance(raw, dict), "list_servers must return dict"
     servers = extract_servers_list(raw)
     assert isinstance(servers, list), "servers must be list"
@@ -281,13 +336,23 @@ async def test_resolve_server_url_from_proxy(proxy_config) -> None:
     try:
         raw = await client.list_servers()
     except ProxyClientError as e:
-        pytest.skip("Integration: required service (proxy) absent: %s" % e.message)
+        pytest.fail(
+            "Integration requires real proxy service; list_servers failed: %s"
+            % e.message
+        )
+    finally:
+        await client.close()
     servers = extract_servers_list(raw)
     if not servers:
-        pytest.skip("Integration: no servers in proxy list")
+        pytest.fail(
+            "Integration requires registered real servers in proxy list, "
+            "but list_servers returned empty."
+        )
     server_id = servers[0].get("server_id") or servers[0].get("id") or ""
     if not server_id:
-        pytest.skip("Integration: first server has no server_id")
+        pytest.fail(
+            "Integration requires valid proxy server records with server_id/id."
+        )
     url = await get_server_url(client.list_servers, server_id)
     assert url is not None, "get_server_url must return URL for known server_id"
     parsed = parse_server_url(url)
@@ -308,18 +373,27 @@ async def test_direct_embed_using_resolved_url(proxy_config) -> None:
     try:
         url = await get_server_url(client.list_servers, server_id)
     except ProxyClientError as e:
-        pytest.skip("Integration: required service (proxy) absent: %s" % e.message)
+        pytest.fail(
+            "Integration requires real proxy service; resolving embedding "
+            "server failed: %s" % e.message
+        )
+    finally:
+        await client.close()
     if not url:
-        pytest.skip("Integration: embedding server_id=%s not in proxy list" % server_id)
-    config_dict = server_url_to_embed_config_dict(url, proxy_config)
+        pytest.fail(
+            "Integration requires embedding server to be registered in proxy; "
+            "server_id=%s not found." % server_id
+        )
+    effective_url = _normalize_embed_url_for_current_runtime(url)
+    config_dict = server_url_to_embed_config_dict(effective_url, proxy_config)
     assert "server" in config_dict
-    assert config_dict["server"].get("base_url") == url.rstrip("/")
+    assert config_dict["server"].get("base_url") == effective_url.rstrip("/")
     try:
         from embed_client import EmbeddingServiceAsyncClient
 
         embed_client = EmbeddingServiceAsyncClient(config_dict=config_dict)
         result = await embed_client.embed(["short test"], use_push=True, timeout=30.0)
     except Exception as e:
-        pytest.skip("Integration: embed client failed: %s" % e)
+        pytest.fail("Integration requires real embedding service call: %s" % e)
     assert isinstance(result, dict)
     assert "results" in result or "embeddings" in result or "result" in result

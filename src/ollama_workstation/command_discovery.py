@@ -1,6 +1,8 @@
 """
-Discover commands from proxy: list_servers, per-server schemas, flat list.
-Startup + optional periodic refresh; mark unavailable when server down; step 03.
+Discover commands: list_servers from proxy; schemas from proxy response or server.
+
+When proxy list_servers (e.g. GET /list) returns commands per server, we use them.
+Otherwise we fetch from each server (GET server_url/commands). Step 03.
 
 Author: Vasiliy Zdanovskiy
 email: vasilyvz@gmail.com
@@ -11,10 +13,16 @@ from __future__ import annotations
 import logging
 from typing import Any, Dict, List, Optional, Tuple
 
+import httpx
+
 from .command_schema import CommandSchema
 from .proxy_client import ProxyClient, ProxyClientError
+from .server_resolver import extract_servers_list
 
 logger = logging.getLogger(__name__)
+
+# Timeout for direct server fetches (GET server_url/commands).
+DIRECT_SERVER_TIMEOUT_SEC = 15.0
 
 # Command id format: command_name.server_id (e.g. echo.ollama-adapter)
 COMMAND_ID_SEP = "."
@@ -30,7 +38,24 @@ def parse_command_id(command_id: str) -> Tuple[str, str]:
     idx = command_id.rfind(COMMAND_ID_SEP)
     if idx < 0:
         return (command_id, "")
-    return (command_id[:idx], command_id[idx + 1:])
+    return (command_id[:idx], command_id[idx + 1 :])
+
+
+def _commands_dict_to_list(commands_dict: Dict[str, Any]) -> List[Dict[str, Any]]:
+    """
+    Convert proxy-style commands dict to list for _parse_command.
+    Proxy /list returns commands: { "echo": { "summary": "...", "parameters": {} } }.
+    """
+    out: List[Dict[str, Any]] = []
+    for name, info in commands_dict.items():
+        if not name or not isinstance(info, dict):
+            continue
+        desc = (info.get("summary") or info.get("description") or "").strip()
+        params = info.get("parameters") or info.get("params") or {}
+        if not isinstance(params, dict):
+            params = {}
+        out.append({"name": name, "description": desc, "parameters": params})
+    return out
 
 
 class CommandDiscovery:
@@ -48,7 +73,7 @@ class CommandDiscovery:
         Initialize discovery.
 
         Args:
-            proxy_client: Client for list_servers and help.
+            proxy_client: Client for list_servers only (schemas fetched from servers).
             discovery_interval_sec: 0 = no periodic refresh; >0 = interval in seconds.
         """
         self._proxy = proxy_client
@@ -58,7 +83,7 @@ class CommandDiscovery:
 
     async def refresh(self) -> None:
         """
-        Fetch list_servers and per-server commands; update cache.
+        Fetch list_servers from proxy; per-server commands from each server directly.
         On server failure: mark that server's commands unavailable, keep in list.
         """
         try:
@@ -66,9 +91,8 @@ class CommandDiscovery:
         except ProxyClientError as e:
             logger.warning("Command discovery: list_servers failed: %s", e.message)
             return
-        servers = raw.get("servers") or raw.get("items") or []
-        if not isinstance(servers, list):
-            logger.warning("Command discovery: servers not a list")
+        servers = extract_servers_list(raw)
+        if not servers:
             return
         new_cache: List[Tuple[str, CommandSchema, bool]] = []
         suffix = COMMAND_ID_SEP
@@ -78,10 +102,19 @@ class CommandDiscovery:
             server_id = (srv.get("server_id") or srv.get("id") or "").strip()
             if not server_id:
                 continue
-            commands = srv.get("commands")
-            if not isinstance(commands, list):
-                help_commands = await self._fetch_commands_via_help(server_id)
-                commands = help_commands if isinstance(help_commands, list) else []
+            server_url = (srv.get("server_url") or srv.get("url") or "").strip()
+            if not server_url:
+                logger.warning(
+                    "Command discovery: server %s has no server_url, skipping",
+                    server_id,
+                )
+                continue
+            # Prefer commands from proxy (e.g. GET /list); else fetch from server.
+            commands_raw = srv.get("commands")
+            if isinstance(commands_raw, dict):
+                commands = _commands_dict_to_list(commands_raw)
+            else:
+                commands = await self._fetch_commands_from_server(server_url)
             start_len = len(new_cache)
             try:
                 for cmd in commands or []:
@@ -132,13 +165,27 @@ class CommandDiscovery:
         cid = make_command_id(name, server_id)
         return (cid, schema)
 
-    async def _fetch_commands_via_help(self, server_id: str) -> List[Dict[str, Any]]:
-        """Call proxy help(server_id) and return list of command dicts if any."""
+    async def _fetch_commands_from_server(
+        self, server_url: str
+    ) -> List[Dict[str, Any]]:
+        """
+        Fetch command list directly from server (GET server_url/commands).
+        Proxy is not used; only list_servers goes to the proxy.
+        """
+        base = server_url.rstrip("/")
+        url = f"{base}/commands"
         try:
-            out = await self._proxy.help(server_id=server_id)
-        except ProxyClientError:
+            async with httpx.AsyncClient(
+                timeout=DIRECT_SERVER_TIMEOUT_SEC,
+                verify=False,
+            ) as client:
+                resp = await client.get(url)
+                resp.raise_for_status()
+                data = resp.json()
+        except Exception as e:  # noqa: BLE001
+            logger.warning("Command discovery: direct fetch %s failed: %s", url, str(e))
             return []
-        commands = out.get("commands") or out.get("tools") or []
+        commands = data.get("commands") or data.get("tools") or data
         if isinstance(commands, list):
             return commands
         return []

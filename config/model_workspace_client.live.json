@@ -1,0 +1,103 @@
+{
+  "server": {
+    "host": "0.0.0.0",
+    "port": 8016,
+    "protocol": "mtls",
+    "servername": "localhost",
+    "ssl": {
+      "cert": "/home/vasilyvz/projects/ollama/mtls_certificates/server/test-server.crt",
+      "key": "/home/vasilyvz/projects/ollama/mtls_certificates/server/test-server.key",
+      "ca": "/home/vasilyvz/projects/ollama/mtls_certificates/ca/ca.crt",
+      "crl": null,
+      "dnscheck": false,
+      "check_hostname": null
+    },
+    "rules": null,
+    "log_dir": "./logs",
+    "debug": false,
+    "log_level": "INFO",
+    "advertised_host": null
+  },
+  "client": {
+    "enabled": true,
+    "protocol": "mtls",
+    "ssl": {
+      "cert": "/home/vasilyvz/projects/ollama/mtls_certificates/client/mcp-proxy.crt",
+      "key": "/home/vasilyvz/projects/ollama/mtls_certificates/client/mcp-proxy.key",
+      "ca": "/home/vasilyvz/projects/ollama/mtls_certificates/ca/ca.crt",
+      "crl": null,
+      "dnscheck": false,
+      "check_hostname": null
+    }
+  },
+  "registration": {
+    "enabled": true,
+    "protocol": "mtls",
+    "register_url": "https://127.0.0.1:8016/register",
+    "unregister_url": "https://127.0.0.1:8016/unregister",
+    "heartbeat_interval": 30,
+    "ssl": {
+      "cert": "/home/vasilyvz/projects/ollama/mtls_certificates/client/mcp-proxy.crt",
+      "key": "/home/vasilyvz/projects/ollama/mtls_certificates/client/mcp-proxy.key",
+      "ca": "/home/vasilyvz/projects/ollama/mtls_certificates/ca/ca.crt",
+      "crl": null,
+      "dnscheck": false,
+      "check_hostname": null
+    },
+    "server_id": "model-workspace-client",
+    "server_name": "Model Workspace Client",
+    "instance_uuid": "6351568e-74ab-490e-a3c8-cd05a644fd00",
+    "auto_on_startup": true,
+    "auto_on_shutdown": true,
+    "heartbeat": {
+      "url": "https://127.0.0.1:8016/proxy/heartbeat",
+      "interval": 30
+    }
+  },
+  "server_validation": {
+    "enabled": false,
+    "protocol": "http",
+    "ssl": null,
+    "timeout": 10,
+    "use_token": false,
+    "use_roles": false,
+    "tokens": {},
+    "roles": {},
+    "auth_header": "X-API-Key",
+    "roles_header": "X-Roles",
+    "health_path": "/health",
+    "check_hostname": false
+  },
+  "auth": {
+    "use_token": false,
+    "use_roles": false,
+    "tokens": {},
+    "roles": {}
+  },
+  "queue_manager": {
+    "enabled": true,
+    "in_memory": true,
+    "registry_path": null,
+    "shutdown_timeout": 30.0,
+    "max_concurrent_jobs": 10,
+    "max_queue_size": null,
+    "per_job_type_limits": null,
+    "completed_job_retention_seconds": 21600,
+    "default_poll_interval": 0.0,
+    "default_max_wait_time": null
+  },
+  "model_workspace_client": {
+    "ws_endpoint": "wss://127.0.0.1:8016/ws",
+    "client_cert_file": "/home/vasilyvz/projects/ollama/mtls_certificates/client/mcp-proxy.crt",
+    "client_key_file": "/home/vasilyvz/projects/ollama/mtls_certificates/client/mcp-proxy.key",
+    "ca_cert_file": "/home/vasilyvz/projects/ollama/mtls_certificates/ca/ca.crt",
+    "connect_timeout_seconds": 30,
+    "request_timeout_seconds": 120,
+    "retry_max_attempts": 3,
+    "retry_backoff_seconds": 2.0,
+    "observability": {
+      "log_level": "INFO",
+      "metrics_enabled": false
+    }
+  }
+}

@@ -2,8 +2,9 @@
 SessionStore interface and implementations: in-memory, Redis; step 05.
 
 Sessions table (Redis): key {prefix}:{session_id}, hash with model,
-allowed_commands, forbidden_commands, standards, session_rules, created_at
-(arrays stored as JSON). Standards and session_rules are persisted per plan §3.5.2.
+allowed_commands, forbidden_commands, standards, session_rules, created_at,
+minimize_context (arrays stored as JSON; minimize_context as "true"/"false").
+Standards and session_rules are persisted per plan §3.5.2.
 
 Author: Vasiliy Zdanovskiy
 email: vasilyvz@gmail.com
@@ -24,6 +25,7 @@ _SESSION_FIELD_FORBIDDEN = "forbidden_commands"
 _SESSION_FIELD_STANDARDS = "standards"
 _SESSION_FIELD_SESSION_RULES = "session_rules"
 _SESSION_FIELD_CREATED_AT = "created_at"
+_SESSION_FIELD_MINIMIZE_CONTEXT = "minimize_context"
 
 
 def _decode_val(val: Any) -> Optional[str]:
@@ -47,6 +49,14 @@ def _parse_list_json(val: Any) -> List[str]:
         return []
     except (TypeError, ValueError):
         return []
+
+
+def _parse_bool(val: Any, default: bool = False) -> bool:
+    """Parse bool from Redis response (e.g. 'true', '1')."""
+    s = _decode_val(val)
+    if s is None or not s.strip():
+        return default
+    return s.strip().lower() in ("1", "true", "yes")
 
 
 class SessionStore(ABC):
@@ -93,6 +103,7 @@ class InMemorySessionStore(SessionStore):
             session_rules=attrs.get("session_rules"),
             created_at=attrs.get("created_at"),
             session_id=attrs.get("id"),
+            minimize_context=bool(attrs.get("minimize_context", False)),
         )
         self._sessions[session.id] = session
         return session
@@ -121,6 +132,11 @@ class InMemorySessionStore(SessionStore):
                 tuple(session_rules) if session_rules is not None else s.session_rules
             ),
             created_at=s.created_at,
+            minimize_context=(
+                bool(attrs["minimize_context"])
+                if "minimize_context" in attrs
+                else s.minimize_context
+            ),
         )
         self._sessions[sid] = new_s
         return new_s
@@ -130,7 +146,8 @@ class RedisSessionStore(SessionStore):
     """
     SessionStore backed by Redis. Key {key_prefix}:{session_id}, hash fields:
     model, allowed_commands, forbidden_commands, standards, session_rules,
-    created_at (arrays as JSON). Standards and session_rules persisted.
+    created_at, minimize_context (arrays as JSON; minimize_context "true"/"false").
+    Standards and session_rules persisted.
     """
 
     def __init__(self, redis_client: Any, key_prefix: str = "session") -> None:
@@ -157,6 +174,7 @@ class RedisSessionStore(SessionStore):
         standards = _parse_list_json(raw.get(_SESSION_FIELD_STANDARDS))
         session_rules = _parse_list_json(raw.get(_SESSION_FIELD_SESSION_RULES))
         created_at = _decode_val(raw.get(_SESSION_FIELD_CREATED_AT))
+        minimize_context = _parse_bool(raw.get(_SESSION_FIELD_MINIMIZE_CONTEXT))
         return Session(
             id=session_id.strip(),
             model=model,
@@ -165,6 +183,7 @@ class RedisSessionStore(SessionStore):
             standards=tuple(standards),
             session_rules=tuple(session_rules),
             created_at=created_at,
+            minimize_context=minimize_context,
         )
 
     def create(self, attrs: Dict[str, Any]) -> Session:
@@ -177,6 +196,7 @@ class RedisSessionStore(SessionStore):
             session_rules=attrs.get("session_rules"),
             created_at=attrs.get("created_at"),
             session_id=attrs.get("id"),
+            minimize_context=bool(attrs.get("minimize_context", False)),
         )
         key = self._key(session.id)
         mapping = {
@@ -186,6 +206,9 @@ class RedisSessionStore(SessionStore):
             _SESSION_FIELD_STANDARDS: json.dumps(list(session.standards)),
             _SESSION_FIELD_SESSION_RULES: json.dumps(list(session.session_rules)),
             _SESSION_FIELD_CREATED_AT: session.created_at or "",
+            _SESSION_FIELD_MINIMIZE_CONTEXT: (
+                "true" if session.minimize_context else "false"
+            ),
         }
         self._redis.hset(key, mapping=mapping)
         return session
@@ -199,6 +222,7 @@ class RedisSessionStore(SessionStore):
         forbidden = attrs.get("forbidden_commands")
         standards = attrs.get("standards")
         session_rules = attrs.get("session_rules")
+        minimize_ctx = attrs.get("minimize_context")
         new_s = Session(
             id=existing.id,
             model=attrs.get("model") if "model" in attrs else existing.model,
@@ -217,6 +241,11 @@ class RedisSessionStore(SessionStore):
                 else existing.session_rules
             ),
             created_at=existing.created_at,
+            minimize_context=(
+                bool(minimize_ctx)
+                if minimize_ctx is not None
+                else existing.minimize_context
+            ),
         )
         key = self._key(session_id)
         mapping = {
@@ -226,6 +255,9 @@ class RedisSessionStore(SessionStore):
             _SESSION_FIELD_STANDARDS: json.dumps(list(new_s.standards)),
             _SESSION_FIELD_SESSION_RULES: json.dumps(list(new_s.session_rules)),
             _SESSION_FIELD_CREATED_AT: new_s.created_at or "",
+            _SESSION_FIELD_MINIMIZE_CONTEXT: (
+                "true" if new_s.minimize_context else "false"
+            ),
         }
         self._redis.hset(key, mapping=mapping)
         return new_s
