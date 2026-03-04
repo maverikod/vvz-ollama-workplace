@@ -22,7 +22,7 @@ from .tools import HELP_REFERENCE_TEXT
 from .effective_tool_list_builder import EffectiveToolListBuilder
 from .ollama_representation import OllamaRepresentation, register_ollama_models
 from .model_loading_state import get_active_model, is_model_ready
-from .model_provider_resolver import resolve_model_endpoint
+from .model_provider_resolver import resolve_model_endpoint_from_provider_clients
 from .commercial_chat_client import chat_completion as commercial_chat_completion
 from .proxy_client import ProxyClient, ProxyClientError
 from .provider_registry import get_default_client
@@ -278,7 +278,16 @@ async def run_chat_flow(
             If None, a default is used (OllamaRepresentation).
     """
     use_model = model or get_active_model() or config.ollama_model
-    endpoint = resolve_model_endpoint(use_model, config)
+    if not config.provider_clients_data:
+        raise ValueError(
+            "provider_clients_data is required; "
+            "invalid or missing config blocks startup."
+        )
+    endpoint = resolve_model_endpoint_from_provider_clients(
+        config.provider_clients_data,
+        use_model,
+        default_model=config.ollama_model or "llama3.2",
+    )
     if representation is None:
         from .ollama_representation import OllamaRepresentation
 

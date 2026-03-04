@@ -37,6 +37,20 @@ def config() -> WorkstationConfig:
 
 
 @pytest.mark.asyncio
+async def test_chat_flow_requires_provider_clients_data_no_legacy_fallback() -> None:
+    """run_chat_flow raises when provider_clients_data is None (no legacy resolver)."""
+    config_no_pc = WorkstationConfig(
+        mcp_proxy_url="http://localhost:3004",
+        ollama_base_url="http://localhost:11434",
+        ollama_model="llama3.1",
+        commands_policy_config=_DEFAULT_POLICY,
+        provider_clients_data=None,
+    )
+    with pytest.raises(ValueError, match="provider_clients_data is required"):
+        await run_chat_flow(config_no_pc, [{"role": "user", "content": "Hi"}])
+
+
+@pytest.mark.asyncio
 async def test_chat_flow_no_tool_calls(config: WorkstationConfig) -> None:
     messages = [{"role": "user", "content": "Hello"}]
     mock_response = {

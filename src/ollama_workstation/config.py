@@ -19,10 +19,6 @@ from ollama_workstation.commands_policy_config import (
     COMMANDS_POLICY_VALUES,
     CommandsPolicyConfig,
 )
-from ollama_workstation.provider_client_config_generator import (
-    generate_provider_clients_section,
-    get_default_ollama_provider_section,
-)
 from ollama_workstation.provider_client_config_validator import (
     validate_provider_clients_or_raise,
 )
@@ -304,45 +300,17 @@ def load_config(config_path: Optional[str] = None) -> WorkstationConfig:
         "OLLAMA_WORKSTATION_PROXY_TOKEN_HEADER"
     ) or _get("proxy_token_header")
 
-    def _opt_key(env_name: str, key: str) -> Optional[str]:
-        v = os.environ.get(env_name) or _get(key)
-        if v is None:
-            return None
-        s = str(v).strip()
-        return s if s else None
-
-    google_api_key = _opt_key("OLLAMA_WORKSTATION_GOOGLE_API_KEY", "google_api_key")
-    anthropic_api_key = _opt_key(
-        "OLLAMA_WORKSTATION_ANTHROPIC_API_KEY", "anthropic_api_key"
-    )
-    openai_api_key = _opt_key("OLLAMA_WORKSTATION_OPENAI_API_KEY", "openai_api_key")
-    xai_api_key = _opt_key("OLLAMA_WORKSTATION_XAI_API_KEY", "xai_api_key")
-    deepseek_api_key = _opt_key(
-        "OLLAMA_WORKSTATION_DEEPSEEK_API_KEY", "deepseek_api_key"
-    )
-    ollama_api_key = _opt_key("OLLAMA_WORKSTATION_OLLAMA_API_KEY", "ollama_api_key")
-    openrouter_api_key = _opt_key(
-        "OLLAMA_WORKSTATION_OPENROUTER_API_KEY", "openrouter_api_key"
-    )
+    # Legacy provider fields are not read for provider routing (model-workspace
+    # uses only provider_clients). No fallback; empty so runtime never uses legacy.
+    google_api_key: Optional[str] = None
+    anthropic_api_key: Optional[str] = None
+    openai_api_key: Optional[str] = None
+    xai_api_key: Optional[str] = None
+    deepseek_api_key: Optional[str] = None
+    ollama_api_key: Optional[str] = None
+    openrouter_api_key: Optional[str] = None
     model_providers: Dict[str, Dict[str, str]] = {}
-    mp_raw = ow.get("model_providers")
-    if isinstance(mp_raw, dict):
-        for prov, cfg in mp_raw.items():
-            if isinstance(prov, str) and isinstance(cfg, dict) and prov.strip():
-                p = prov.strip().lower()
-                url = (cfg.get("url") or "").strip().rstrip("/")
-                key = (cfg.get("api_key") or "").strip()
-                model_providers[p] = {}
-                if url:
-                    model_providers[p]["url"] = url
-                if key:
-                    model_providers[p]["api_key"] = key
     provider_urls: Dict[str, str] = {}
-    provider_urls_raw = ow.get("provider_urls")
-    if isinstance(provider_urls_raw, dict):
-        for k, v in provider_urls_raw.items():
-            if isinstance(k, str) and isinstance(v, str) and k.strip() and v.strip():
-                provider_urls[k.strip().lower()] = str(v).strip().rstrip("/")
     avail_prov_raw = os.environ.get("OLLAMA_WORKSTATION_AVAILABLE_PROVIDERS") or ow.get(
         "available_providers"
     )
@@ -407,24 +375,26 @@ def load_config(config_path: Optional[str] = None) -> WorkstationConfig:
     model_server_container_name = str(o.get("container_name") or "").strip()
     model_server_image = str(o.get("container_image") or "").strip()
 
-    # Provider clients: from file or generated from ollama section; validated at load.
+    # Provider clients: required from config; no autogeneration from legacy fields.
     provider_clients_raw = data.get("provider_clients") or ow.get("provider_clients")
-    if isinstance(provider_clients_raw, dict):
-        provider_clients_data = dict(provider_clients_raw)
-    else:
-        base_url = (model_server_url or ollama_base_url or "").strip().rstrip("/")
-        if not base_url:
-            base_url = "http://127.0.0.1:11434"
-        ollama_section = get_default_ollama_provider_section(
-            base_url=base_url,
-            request_timeout_seconds=max(30, int(ollama_timeout)),
+    if not isinstance(provider_clients_raw, dict):
+        raise ValueError(
+            "provider_clients is required; no autogeneration from legacy fields. "
+            "Add provider_clients.default_provider and provider_clients.providers."
         )
-        provider_clients_data = generate_provider_clients_section(
-            default_provider="ollama",
-            providers={"ollama": ollama_section},
-            validate=False,
-        )
+    provider_clients_data = dict(provider_clients_raw)
     validate_provider_clients_or_raise(provider_clients_data)
+    # Canonical source for ollama URL when default provider is ollama.
+    default_provider = (
+        (provider_clients_data.get("default_provider") or "").strip().lower()
+    )
+    providers_dict = provider_clients_data.get("providers") or {}
+    if default_provider == "ollama" and isinstance(providers_dict.get("ollama"), dict):
+        otr = providers_dict["ollama"].get("transport") or {}
+        base = (otr.get("base_url") or "").strip().rstrip("/")
+        if base:
+            ollama_base_url = base
+            model_server_url = base
 
     return WorkstationConfig(
         mcp_proxy_url=mcp_proxy_url,

@@ -1,11 +1,16 @@
 """
 Project-specific validation for adapter config
-(mTLS, ollama_workstation.ollama, commercial model API keys).
+(mTLS, ollama_workstation, provider_clients for model-workspace).
 Used by docker/run_adapter.py; kept in src for unit testing.
+Model-workspace: only provider_clients as provider source; legacy fields rejected.
 
 Author: Vasiliy Zdanovskiy
 email: vasilyvz@gmail.com
 """
+
+from ollama_workstation.provider_client_config_validator import (
+    validate_config_provider_clients,
+)
 
 # Model id prefix -> provider name (for model_providers lookup).
 MODEL_PREFIX_TO_PROVIDER: tuple[tuple[str, str], ...] = (
@@ -46,6 +51,19 @@ PROVIDER_TO_CONFIG_KEY: dict[str, str] = {
 
 VALID_PROVIDER_NAMES: frozenset[str] = frozenset(
     {"ollama", "google", "anthropic", "openai", "xai", "grok", "deepseek", "openrouter"}
+)
+
+# Legacy provider fields forbidden for model-workspace (provider_clients only).
+LEGACY_FLAT_API_KEYS: frozenset[str] = frozenset(
+    {
+        "google_api_key",
+        "anthropic_api_key",
+        "openai_api_key",
+        "xai_api_key",
+        "deepseek_api_key",
+        "openrouter_api_key",
+        "ollama_api_key",
+    }
 )
 
 # Commercial providers that require URL and API key at startup when runtime-allowed.
@@ -333,31 +351,39 @@ def validate_project_config(app_config: dict) -> list[str]:
             )
         return errors
 
+    # Model-workspace: provider_clients only; no legacy provider fields.
     ow = app_config.get("ollama_workstation") or {}
+    pc = app_config.get("provider_clients")
+    if not pc or not isinstance(pc, dict):
+        errors.append(
+            "provider_clients is required for model-workspace; "
+            "no autogeneration from legacy fields."
+        )
+    else:
+        pc_errors = validate_config_provider_clients(app_config)
+        for path, msg in pc_errors:
+            errors.append("%s: %s" % (path, msg))
+    if ow.get("model_providers") is not None:
+        errors.append(
+            "ollama_workstation.model_providers is forbidden for model-workspace; "
+            "use provider_clients only."
+        )
+    if ow.get("provider_urls") is not None:
+        errors.append(
+            "ollama_workstation.provider_urls is forbidden for model-workspace; "
+            "use provider_clients only."
+        )
+    for leg_key in LEGACY_FLAT_API_KEYS:
+        if ow.get(leg_key) is not None:
+            errors.append(
+                "ollama_workstation.%s is forbidden for model-workspace; "
+                "use provider_clients only." % leg_key
+            )
+
     oo = _get_ollama_from_ow(ow)
     if oo is None:
         errors.append("ollama_workstation.ollama is required and must be an object")
     else:
-        base_url = oo["ollama_base_url"]
-        model_server_url = oo["model_server_url"]
-        if not base_url and not model_server_url:
-            errors.append(
-                "ollama_workstation.ollama must set base_url or model_server_url"
-            )
-        if model_server_url and not model_server_url.startswith(
-            ("http://", "https://")
-        ):
-            errors.append(
-                "ollama_workstation.ollama.model_server_url must be http(s) URL"
-            )
-        errors.extend(
-            validate_model_providers(
-                ow,
-                oo["ollama_model"] or None,
-                oo["ollama_models"] or None,
-                app_config=app_config,
-            )
-        )
         raw_om = (ow.get("ollama") or {}).get("models")
         om = oo["ollama_models"]
         if raw_om is not None and not isinstance(raw_om, list):
@@ -498,40 +524,4 @@ def validate_project_config(app_config: dict) -> list[str]:
         ow.get("redis_key_prefix"), str
     ):
         errors.append("ollama_workstation.redis_key_prefix must be a string")
-    mp = ow.get("model_providers")
-    if mp is not None:
-        if not isinstance(mp, dict):
-            errors.append("ollama_workstation.model_providers must be a dict")
-        else:
-            for prov, cfg in mp.items():
-                if not isinstance(prov, str) or not prov.strip():
-                    continue
-                if not isinstance(cfg, dict):
-                    errors.append(
-                        "ollama_workstation.model_providers.%s must be "
-                        "{url, api_key}" % prov
-                    )
-                else:
-                    u = (cfg.get("url") or "").strip()
-                    k = (cfg.get("api_key") or "").strip()
-                    if prov != "ollama" and u and not k:
-                        errors.append(
-                            "ollama_workstation.model_providers.%s: api_key "
-                            "required when url set (mandatory for selected model)"
-                            % prov
-                        )
-    for key in (
-        "ollama_api_key",
-        "google_api_key",
-        "anthropic_api_key",
-        "openai_api_key",
-        "xai_api_key",
-        "deepseek_api_key",
-        "openrouter_api_key",
-    ):
-        val = ow.get(key)
-        if val is not None and not isinstance(val, str):
-            errors.append("ollama_workstation.%s must be a string" % key)
-        elif isinstance(val, str) and not val.strip():
-            errors.append("ollama_workstation.%s must be non-empty when set" % key)
     return errors

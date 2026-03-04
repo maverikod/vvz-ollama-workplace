@@ -21,7 +21,7 @@ from mcp_proxy_adapter.commands.result import SuccessResult, ErrorResult
 
 from ..config import load_config
 from ..model_loading_state import get_active_model
-from ..model_provider_resolver import resolve_model_endpoint
+from ..model_provider_resolver import resolve_model_endpoint_from_provider_clients
 from ..commercial_chat_client import chat_completion as commercial_chat_completion
 from ..provider_registry import get_default_client
 
@@ -140,16 +140,20 @@ class DirectChatCommand(Command):
                 message="model not set (param, active_model, or config)",
                 code=-32603,
             )
-        endpoint = resolve_model_endpoint(model, config)
+        if not config.provider_clients_data:
+            return ErrorResult(
+                message="provider_clients_data is required; invalid or missing config.",
+                code=-32603,
+            )
+        endpoint = resolve_model_endpoint_from_provider_clients(
+            config.provider_clients_data,
+            model,
+            default_model=config.ollama_model or "llama3.2",
+        )
         timeout = max(30.0, float(config.ollama_timeout or 60))
         t0 = time.perf_counter()
         try:
             if endpoint.is_ollama:
-                if not getattr(config, "provider_clients_data", None):
-                    return ErrorResult(
-                        message="provider_clients_data missing; cannot use Ollama.",
-                        code=-32603,
-                    )
                 provider_client = get_default_client(config.provider_clients_data)
                 body = {
                     "model": model,
