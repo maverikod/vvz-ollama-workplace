@@ -42,17 +42,19 @@ The adapter is configured with `registration.enabled: true` and `auto_on_startup
 
 No extra steps are needed: start the container and ensure the proxy is reachable at `mcp-proxy:3004` on the same Docker network (or set `MCP_PROXY_HOST` / `MCP_PROXY_PORT`).
 
-## Build and run (recommended: script in `docker/`)
+## Build and run: per-subproject `docker/`
 
-From the project root:
+Each subproject has its own **docker/** with scripts to form the image and create the container:
 
-```bash
-./docker/build_and_run.sh
-```
+| Subproject       | Build image              | Run container              | Container name           |
+|------------------|--------------------------|----------------------------|--------------------------|
+| **redis_adapter**   | `./docker/build_image.sh` (from redis_adapter/)   | `./docker/run_container.sh` | redis-adapter            |
+| **ollama_adapter**  | `./docker/build_image.sh` (from ollama_adapter/)  | `./docker/run_container.sh` | ollama-adapter            |
+| **model_workspace** | `./model_workspace/docker/build_image.sh` (from repo root) | `./model_workspace/docker/run_container.sh` | model-workspace-server |
 
-The script builds the image from `docker/Dockerfile`, stops the old container, runs a new one with **restart=always** on network **smart-assistant** with user **1000:1000**, and mounts: **config**, **logs**, **cache**, **data** (OLLAMA models), **redis_data** (Redis persistence), **certs**. Override via env: `NETWORK_NAME=smart-assistant` (default), `IMAGE_NAME`, `CONTAINER_NAME`.
+**Full stack order:** Create network `smart-assistant`, then build and run: 1) redis-adapter, 2) ollama-adapter, 3) model-workspace-server. Each script mounts config, logs, certs (from repo `mtls_certificates/` when present). See each subproject’s **docker/README.md**.
 
-**Server test pipeline (in project):** After the container is running, run `./docker/test_server.sh` to wait for the adapter and run JSON-RPC smoke tests. To run this automatically after build and run, use `RUN_SERVER_TESTS=1 ./docker/build_and_run.sh`. Full pipeline from root: `./scripts/build_run_and_test_server.sh`.
+**Legacy (single image):** From the project root, `./docker/build_and_run.sh` still builds one image (Redis + OLLAMA + adapter) for backward compatibility. Prefer the per-subproject scripts above for the target three-container layout (SPEC §4).
 
 To use an existing MCP proxy on another container, put both on the same network and set the proxy host (e.g. service name):
 

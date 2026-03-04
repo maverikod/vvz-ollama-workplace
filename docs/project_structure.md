@@ -42,9 +42,11 @@ ollama/
 
 ---
 
-## 3. Root docs — what lives where
+## 3. Root docs — integration (сопряжение) only
 
-- **docs/** — common documentation: standards, project structure, stack (container_usage), registration troubleshooting, provider client standards. Plans (e.g. refactoring SPEC) in `docs/plans/`.
+Root **docs/** contains **only** documents about **coupling/integration** of the three subprojects. See [docs/README.md](README.md) for the list.
+
+- **docs/** — project_structure, container_usage (stack), registration_troubleshooting, standards/ (provider client API and config), plans/ (SPEC). Optional: RULES.md, standards.md, ollama_setup.md.
 - **model_workspace/docs/** — only model workspace: ТЗ, techspec, design, context_formation, deployment (deployment links to root for stack/registration).
 - **ollama_adapter/docs/** — only Ollama adapter: ТЗ, subproject README; SPEC in root.
 - **redis_adapter/docs/** — only Redis adapter: ТЗ, subproject README; SPEC in root.
@@ -56,6 +58,7 @@ ollama/
 Each subproject has the same pattern:
 
 - **docs/** — ТЗ.md, README.md, reports/, plans/
+- **docker/** — scripts to **build the image** and **create/run the container** for this subproject (see each subproject’s `docker/README.md` or scripts; full stack in root [container_usage.md](container_usage.md)).
 - **src/<package>/** — application code (one class per file; max 350–400 lines per file)
 - **tests/** — unit/, integration/
 - **config/** — example/schema config
