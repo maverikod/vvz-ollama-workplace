@@ -40,7 +40,7 @@ ENV_MAX_TOOL_ROUNDS = "OLLAMA_WORKSTATION_MAX_TOOL_ROUNDS"
 @dataclass
 class WorkstationConfig:
     """
-    Configuration for the OLLAMA workstation.
+    Configuration for the Agent Workstation.
 
     Required: mcp_proxy_url, ollama_base_url, ollama_model.
     Optional: ollama_timeout, max_tool_rounds, and TLS/API key fields if needed.

@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "ollama-model-database-client"
 version = "0.1.0"
-description = "Database client package for Ollama workstation."
+description = "Database client package for Agent Workstation."
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [

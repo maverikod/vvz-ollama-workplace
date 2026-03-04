@@ -2,7 +2,7 @@
 alwaysApply: true
 ---
 
-Recommended layout and conventions for the OLLAMA workstation project. Align new code and config with this structure.
+Recommended layout and conventions for the Agent Workstation project. Align new code and config with this structure.
 
 ---
 

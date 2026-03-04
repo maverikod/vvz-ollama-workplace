@@ -1,4 +1,4 @@
-# Project standards (OLLAMA workstation)
+# Project standards (Agent Workstation)
 
 **Author:** Vasiliy Zdanovskiy  
 **Email:** vasilyvz@gmail.com  

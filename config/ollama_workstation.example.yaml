@@ -1,4 +1,4 @@
-# OLLAMA workstation example configuration
+# Agent Workstation example configuration
 # Copy to e.g. ollama_workstation.yaml and set values. Environment variables override.
 #
 # Required:

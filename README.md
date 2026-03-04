@@ -1,9 +1,9 @@
-# OLLAMA workstation — monorepo
+# Agent Workstation — monorepo
 
 **Author:** Vasiliy Zdanovskiy  
 **email:** vasilyvz@gmail.com
 
-Monorepo for the OLLAMA workstation: servers (Ollama+adapter, Redis+adapter, model workspace) and **provider clients** (Ollama, Redis, others). All clients are **based on the adapter client** (mcp-proxy-adapter) and hide provider-specific format and API.
+Monorepo for the Agent Workstation: servers (Ollama+adapter, Redis+adapter, model workspace) and **provider clients** (Ollama, Redis, others). All clients are **based on the adapter client** (mcp-proxy-adapter) and hide provider-specific format and API.
 
 ---
 

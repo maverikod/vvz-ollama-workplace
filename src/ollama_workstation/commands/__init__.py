@@ -1,5 +1,5 @@
 """
-OLLAMA workstation adapter commands.
+Agent Workstation adapter commands.
 
 Author: Vasiliy Zdanovskiy
 email: vasilyvz@gmail.com

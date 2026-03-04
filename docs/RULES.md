@@ -1,4 +1,4 @@
-# Project rules (OLLAMA workstation)
+# Project rules (Agent Workstation)
 
 **Author:** Vasiliy Zdanovskiy  
 **Email:** vasilyvz@gmail.com  
@@ -40,7 +40,7 @@ Rules derived from [standards.md](standards.md) and [project_structure.md](proje
 
 ---
 
-## 5. OLLAMA tools (workstation)
+## 5. Agent Workstation tools
 
 - Tools exposed to OLLAMA MUST use the format: `{ "type": "function", "function": { "name", "description", "parameters" } }` with JSON Schema for `parameters`.
 - **Mandatory tools:** `list_servers`, `call_server`, `help`. Use parameter names aligned with the MCP Proxy API: `server_id`, `copy_number`, `command`, `params`; `page`, `page_size`, `filter_enabled` where applicable.

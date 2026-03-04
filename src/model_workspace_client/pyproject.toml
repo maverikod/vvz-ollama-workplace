@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "model-workspace-client"
 version = "0.1.0"
-description = "Model workspace client package for Ollama workstation."
+description = "Model workspace client package for Agent Workstation."
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [

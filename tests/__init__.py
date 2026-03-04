@@ -1,1 +1,1 @@
-# Tests for OLLAMA workstation
+# Tests for Agent Workstation

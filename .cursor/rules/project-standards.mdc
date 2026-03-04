@@ -1,9 +1,9 @@
 ---
-description: Project rules for OLLAMA workstation (from docs/standards and project_structure)
+description: Project rules for Agent Workstation (from docs/standards and project_structure)
 alwaysApply: true
 ---
 
-# Project rules (OLLAMA workstation)
+# Project rules (Agent Workstation)
 
 Full rules: **docs/RULES.md**. Summary:
 

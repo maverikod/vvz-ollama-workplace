@@ -365,7 +365,7 @@ def _cmd_validate(args: argparse.Namespace) -> int:
 def main() -> int:
     top = argparse.ArgumentParser(
         prog="config-cli",
-        description="Generate or validate OLLAMA workstation adapter config (JSON).",
+        description="Generate or validate Agent Workstation adapter config (JSON).",
     )
     sub = top.add_subparsers(dest="command", required=True, help="Subcommand")
 

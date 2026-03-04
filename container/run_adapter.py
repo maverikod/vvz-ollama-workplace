@@ -24,7 +24,7 @@ from mcp_proxy_adapter.commands.command_registry import (
 
 
 def register_commands() -> None:
-    """Register OLLAMA workstation command with adapter registry."""
+    """Register Agent Workstation command with adapter registry."""
     from ollama_workstation.registration import register_ollama_workstation
 
     register_ollama_workstation(registry)
