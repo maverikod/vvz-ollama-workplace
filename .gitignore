@@ -27,4 +27,8 @@ docker/data-db/blobs/
 docker/data-mws/blobs/
 
 projectid
+# CST/Tree runtime artifacts (never commit)
 .cst/
+.tree/
+.trees/
+*.tree
