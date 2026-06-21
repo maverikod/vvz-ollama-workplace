@@ -26,8 +26,8 @@
   "registration": {
     "enabled": true,
     "protocol": "mtls",
-    "register_url": "https://172.28.0.2:3004/register",
-    "unregister_url": "https://172.28.0.2:3004/unregister",
+    "register_url": "https://localhost:3004/register",
+    "unregister_url": "https://localhost:3004/unregister",
     "heartbeat_interval": 30,
     "ssl": {
       "cert": "mtls_certificates/client/chunk-retriever.crt",
@@ -43,7 +43,7 @@
     "auto_on_startup": true,
     "auto_on_shutdown": true,
     "heartbeat": {
-      "url": "https://172.28.0.2:3004/proxy/heartbeat",
+      "url": "https://localhost:3004/proxy/heartbeat",
       "interval": 30
     }
   },

@@ -25,3 +25,5 @@ mtls_certificates/
 
 docker/data-db/blobs/
 docker/data-mws/blobs/
+
+.cst/

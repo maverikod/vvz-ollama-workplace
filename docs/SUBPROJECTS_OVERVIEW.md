@@ -73,6 +73,7 @@ Containers: **ollama-adapter**, **redis-adapter**, **model-workspace-server** (s
 | Model workspace ТЗ | model_workspace/docs/ТЗ.md |
 | Ollama adapter ТЗ | ollama_adapter/docs/ТЗ.md |
 | Redis adapter ТЗ | redis_adapter/docs/ТЗ.md |
+| Redis adapter — high-level database API (ТЗ) | [redis_adapter/docs/SPEC_HIGH_LEVEL_DATABASE_API.md](redis_adapter/docs/SPEC_HIGH_LEVEL_DATABASE_API.md) |
 | Ollama provider client ТЗ | ollama_provider_client/docs/ТЗ.md |
 | Redis provider client ТЗ | redis_provider_client/docs/ТЗ.md |
 | Provider client API (normative) | [docs/standards/provider_client_standard.md](standards/provider_client_standard.md) |

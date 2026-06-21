@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """
-Dumb script: read config JSON, for each model get url+key from model_providers
-by provider name, send one request to that URL. No resolver, no load_config.
-If local Ollama returns CUDA OOM, restarts Ollama in CPU mode and retries.
+Read config JSON, for each model get url+key from model_providers by provider name,
+send one request to that URL. No resolver, no load_config.
+On local Ollama 500 (e.g. CUDA OOM), logs a message; does not start or restart Ollama.
 
 Usage: ADAPTER_CONFIG_PATH=<path> python scripts/check_provider_endpoints.py
 
@@ -12,9 +12,7 @@ email: vasilyvz@gmail.com
 
 import json
 import os
-import subprocess
 import sys
-import time
 from pathlib import Path
 
 try:
@@ -51,42 +49,6 @@ def _is_local_ollama(url: str) -> bool:
     return u.startswith("127.0.0.1") or u.startswith("localhost")
 
 
-def _restart_ollama_cpu(base_url: str, timeout_sec: float = 60.0) -> bool:
-    """Kill existing Ollama, start with OLLAMA_LLM_LIBRARY=cpu, wait for ready."""
-    print("Restarting local Ollama in CPU mode...", file=sys.stderr)
-    subprocess.run(
-        ["pkill", "-f", "ollama serve"],
-        capture_output=True,
-        timeout=5,
-    )
-    time.sleep(3)
-    env = os.environ.copy()
-    env["OLLAMA_NUM_GPU"] = "0"  # force CPU-only (recommended by Ollama)
-    env["OLLAMA_LLM_LIBRARY"] = "cpu"
-    env["CUDA_VISIBLE_DEVICES"] = ""  # hide GPU from process
-    # Use shell so runner subprocesses inherit env (ollama serve spawns runners)
-    proc = subprocess.Popen(
-        "exec ollama serve",
-        shell=True,
-        env=env,
-        stdout=subprocess.DEVNULL,
-        stderr=subprocess.DEVNULL,
-        start_new_session=True,
-    )
-    deadline = time.monotonic() + timeout_sec
-    while time.monotonic() < deadline:
-        try:
-            r = httpx.get(base_url.rstrip("/") + "/api/tags", timeout=2.0)
-            if r.status_code == 200:
-                print("Ollama running in CPU mode.", file=sys.stderr)
-                return True
-        except Exception:
-            pass
-        time.sleep(1)
-    proc.terminate()
-    return False
-
-
 def main() -> int:
     config_path = os.environ.get(
         "ADAPTER_CONFIG_PATH", "config/adapter_config.generated.json"
@@ -114,7 +76,6 @@ def main() -> int:
     print("-" * 60)
 
     failed = 0
-    ollama_restarted = False
     for model in models:
         if not isinstance(model, str) or not model.strip():
             continue
@@ -158,25 +119,15 @@ def main() -> int:
             r = httpx.post(chat_url, json=body, headers=headers, timeout=timeout)
             if prov == "ollama" and r.status_code == 500:
                 err_snippet = (r.text or "")[:200]
-                if (
-                    _is_local_ollama(url)
-                    and not ollama_restarted
-                    and (
-                        "cuda" in err_snippet.lower()
-                        or "out of memory" in err_snippet.lower()
-                    )
+                if _is_local_ollama(url) and (
+                    "cuda" in err_snippet.lower()
+                    or "out of memory" in err_snippet.lower()
                 ):
-                    if _restart_ollama_cpu(url):
-                        ollama_restarted = True
-                        r = httpx.post(
-                            chat_url, json=body, headers=headers, timeout=timeout
-                        )
-                    else:
-                        print(
-                            "  Stop Ollama, then run: "
-                            "OLLAMA_NUM_GPU=0 ./scripts/start_ollama_cpu.sh",
-                            file=sys.stderr,
-                        )
+                    print(
+                        "  [Ollama] Local Ollama returned 500 (CUDA/OOM). "
+                        "Use ollama-adapter container or run Ollama in CPU mode.",
+                        file=sys.stderr,
+                    )
             if r.status_code == 200:
                 out = r.json()
                 if prov == "ollama":

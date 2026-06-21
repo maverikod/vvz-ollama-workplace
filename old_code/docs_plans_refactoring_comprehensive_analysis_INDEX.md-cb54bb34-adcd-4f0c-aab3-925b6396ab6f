@@ -1,0 +1,51 @@
+# Refactoring Plan — Comprehensive Analysis Results
+
+**Source:** `comprehensive_analysis` run 2026-05-01  
+**Scope:** `src/ollama_workstation/`, `src/model_workspace_client/`, `src/model_workspace_server/`, `scripts/`  
+**Tool:** code-analysis-server
+
+---
+
+## Issue Summary
+
+| Category | Count | Severity |
+|----------|-------|----------|
+| Long files (>400 lines) | 5 | 🔴 High |
+| NOT IMPLEMENTED / STUB | 9 | 🔴 High |
+| Code duplicates | 6 groups | 🟡 Medium |
+| Flake8 E402 | 15 (1 script) | 🟢 Low |
+| Mypy errors | 0 | ✅ Clean |
+
+---
+
+## Steps — 1 file = 1 step
+
+| Step | File | Issues | Category | Depends on |
+|------|------|--------|----------|------------|
+| [STEP-01](step-01_chat_flow.md) | `chat_flow.py` | 609 lines, `run_chat_flow` 349 lines | Long file | — |
+| [STEP-02](step-02_config.md) | `config.py` | 477 lines, `load_config` 244 lines, dup `_parse_number/_parse_int` | Long file + Dup | — |
+| [STEP-03](step-03_ollama_chat_command.md) | `commands/ollama_chat_command.py` | 476 lines, `_execute_session_mode` 232 lines, 3 dup schema methods | Long file + Dup | STEP-01 |
+| [STEP-04](step-04_get_model_context_command.md) | `commands/get_model_context_command.py` | 415 lines, placeholder param | Long file + Placeholder | — |
+| [STEP-05](step-05_docker_config_validation.md) | `docker_config_validation.py` | 527 lines, `validate_project_config` 211 lines | Long file | STEP-02 |
+| [STEP-06](step-06_commercial_chat_client.md) | `commercial_chat_client.py` | 2× NOT IMPLEMENTED | Not implemented | — |
+| [STEP-07](step-07_provider_registry.md) | `provider_registry.py` | 3× NOT IMPLEMENTED | Not implemented | STEP-06 |
+| [STEP-08](step-08_provider_client_base.md) | `provider_client_base.py` | 3 dup abstract methods (chat/embed/normalize_response) | Dup | STEP-06, STEP-07 |
+| [STEP-09](step-09_ollama_provider_client.md) | `ollama_provider_client.py` | dup normalize_response/_normalize_embed_response | Dup | STEP-08 |
+| [STEP-10](step-10_documentation_slot_builder.md) | `documentation_slot_builder.py` | 2× STUB in build() | Stub | — |
+| [STEP-11](step-11_model_workspace_client_config_cli.md) | `model_workspace_client/config_cli.py` | dup `_parse_validate_args`/`_parse_test_connection_args` | Dup | — |
+| [STEP-12](step-12_scripts_verify_context_formation.md) | `scripts/verify_context_formation.py` | 15× E402 (noqa fix) | Flake8 | — |
+
+---
+
+## Parallel Execution Map
+
+See [PARALLEL_MAP.md](PARALLEL_MAP.md)
+
+---
+
+## Legend
+
+- 🔴 **High** — blocks functionality or violates 400-line rule
+- 🟡 **Medium** — code quality / maintainability
+- 🟢 **Low** — style / linting
+- ✅ **Clean** — no issues

@@ -35,7 +35,7 @@ In the **root** `docs/` only documents that concern **coupling/integration** of 
 
 - **model_workspace/docs/** — ТЗ, techspec, design, context_formation, deployment (uses provider clients; Ollama = one provider).
 - **ollama_adapter/docs/** — ТЗ, README (server).
-- **redis_adapter/docs/** — ТЗ, README (server).
+- **redis_adapter/docs/** — ТЗ, README (server); [SPEC_HIGH_LEVEL_DATABASE_API.md](../redis_adapter/docs/SPEC_HIGH_LEVEL_DATABASE_API.md) — high-level database API (sessions, messages) and client on adapter+WebSocket.
 - **ollama_provider_client/docs/** — ТЗ, README (provider client for Ollama).
 - **redis_provider_client/docs/** — ТЗ, README (provider client for Redis storage).
 
