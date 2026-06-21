@@ -1,4 +1,4 @@
-Model rules (OLLAMA workstation)
+Model rules (Agent Workstation)
 
 Author: Vasiliy Zdanovskiy
 email: vasilyvz@gmail.com

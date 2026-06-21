@@ -1,13 +1,15 @@
-# OLLAMA + Redis + Adapter container
+# Stack: OLLAMA + Redis + Adapter containers
 
 **Author:** Vasiliy Zdanovskiy  
 **Email:** vasilyvz@gmail.com  
 
-The image includes **Redis** and the **project server** (OLLAMA + MCP adapter). Bases, configs, logs, and models are **mounted from the host**. The run script uses user **1000:1000**, **restart=always**, and connects the container to the **smart-assistant** network.
+This document describes running the **full stack** per [SPEC §4](plans/refactoring_adapter_structure/SPEC.md): containers **redis-adapter** (Redis + adapter server), **ollama-adapter** (Ollama + adapter server), and **model-workspace-server** (model workspace app only). The model workspace has **no** Redis or Ollama inside; it uses **clients** to redis-adapter and ollama-adapter (WebSocket via proxy).
 
-## Use OLLAMA only from the container
+**Legacy / single image:** Some setups use one image that includes Redis, OLLAMA, and the project server (MCP adapter). Bases, configs, logs, and models are mounted from the host. The run script uses user **1000:1000**, **restart=always**, and connects the container to the **smart-assistant** network.
 
-When running the OLLAMA + adapter stack in Docker, **stop the local OLLAMA** so that only the container’s OLLAMA is used (the adapter inside the container talks to `http://127.0.0.1:11434`).
+## Use OLLAMA only from the stack
+
+When running the OLLAMA + adapter stack in Docker, **stop the local OLLAMA** so that only the stack’s OLLAMA is used (the adapter inside the container talks to `http://127.0.0.1:11434` or to the ollama_adapter service).
 
 Stop local OLLAMA:
 
@@ -15,22 +17,21 @@ Stop local OLLAMA:
 # If running as a service
 sudo systemctl stop ollama
 
-# If started manually, find and stop the process
+# If started manually
 pkill -f "ollama serve"
-# or: kill $(pgrep -f "ollama serve")
 ```
 
-Then run the container; OLLAMA will start inside the container and the adapter will use it.
+Then run the container(s); OLLAMA will start inside the stack and the adapter will use it.
 
 If **ollama_chat** returns 404, the requested model is usually not pulled. Either pull it once (e.g. `docker exec <container> ollama pull llama3.2`) or set `OLLAMA_PULL_MODEL=1` when running the container so the default model is pulled on first start (slow on first run).
 
-**Empty message or timeout:** If the model reply is empty or the request stops after ~60s, increase `ollama_timeout` in `ollama_workstation` config (e.g. 120). Cold model or long context can exceed 60s. In container logs, a `500` on `POST /api/chat` after ~1m usually means OLLAMA hit an internal timeout or error; retry or increase timeouts.
+**Empty message or timeout:** If the model reply is empty or the request stops after ~60s, increase `ollama_timeout` in the workstation config (e.g. 120). Cold model or long context can exceed 60s. In container logs, a `500` on `POST /api/chat` after ~1m usually means OLLAMA hit an internal timeout or error; retry or increase timeouts.
 
-**SERVER_UNAVAILABLE from proxy:** Often means the adapter raised an error before returning. Check adapter logs (`docker logs <container>`). If you see `Command timed out after 120.00s` (or similar), the command (e.g. `ollama_chat`) exceeded the adapter’s execution timeout. Increase `ollama_workstation.command_execution_timeout_seconds` in the adapter config (e.g. 300) and restart the container; also ensure `ollama_timeout` is high enough for slow or cold model responses.
+**SERVER_UNAVAILABLE from proxy:** Often means the adapter raised an error before returning. Check adapter logs (`docker logs <container>`). If you see `Command timed out after 120.00s` (or similar), the command (e.g. `ollama_chat`) exceeded the adapter’s execution timeout. Increase the command timeout in the adapter config (e.g. 300) and restart the container; also ensure `ollama_timeout` is high enough for slow or cold model responses.
 
-**No cold start:** The adapter runs model loading and **warm-up** (pull missing models, then one minimal chat per model) **before** starting the HTTP server. So the first `ollama_chat` is served when the model is already loaded. See `run_adapter.py` and `model_loader.warm_up_models`.
+**No cold start:** The adapter may run model loading and **warm-up** (pull missing models, then one minimal chat per model) **before** starting the HTTP server. So the first `ollama_chat` is served when the model is already loaded.
 
-**Keep model in memory:** The entrypoint sets `OLLAMA_KEEP_ALIVE=-1` by default (never unload). So the model is not reset between requests. Override with env when running (e.g. `-e OLLAMA_KEEP_ALIVE=30m` for 30 minutes idle).
+**Keep model in memory:** The entrypoint may set `OLLAMA_KEEP_ALIVE=-1` by default (never unload). Override with env when running (e.g. `-e OLLAMA_KEEP_ALIVE=30m` for 30 minutes idle).
 
 ## Auto-registration with MCP proxy
 
@@ -41,17 +42,19 @@ The adapter is configured with `registration.enabled: true` and `auto_on_startup
 
 No extra steps are needed: start the container and ensure the proxy is reachable at `mcp-proxy:3004` on the same Docker network (or set `MCP_PROXY_HOST` / `MCP_PROXY_PORT`).
 
-## Build and run (recommended: script in `docker/`)
+## Build and run: per-subproject `docker/`
 
-From the project root:
+Each subproject has its own **docker/** with scripts to form the image and create the container:
 
-```bash
-./docker/build_and_run.sh
-```
+| Subproject       | Build image              | Run container              | Container name           |
+|------------------|--------------------------|----------------------------|--------------------------|
+| **redis_adapter**   | `./docker/build_image.sh` (from redis_adapter/)   | `./docker/run_container.sh` | redis-adapter            |
+| **ollama_adapter**  | `./docker/build_image.sh` (from ollama_adapter/)  | `./docker/run_container.sh` | ollama-adapter            |
+| **model_workspace** | `./model_workspace/docker/build_image.sh` (from repo root) | `./model_workspace/docker/run_container.sh` | model-workspace-server |
 
-The script builds the image from `docker/Dockerfile`, stops the old container, runs a new one with **restart=always** on network **smart-assistant** with user **1000:1000**, and mounts: **config**, **logs**, **cache**, **data** (OLLAMA models), **redis_data** (Redis persistence), **certs**. Override via env: `NETWORK_NAME=smart-assistant` (default), `IMAGE_NAME`, `CONTAINER_NAME`.
+**Full stack order:** Create network `smart-assistant`, then build and run: 1) redis-adapter, 2) ollama-adapter, 3) model-workspace-server. Each script mounts config, logs, certs (from repo `mtls_certificates/` when present). See each subproject’s **docker/README.md**.
 
-**Server test pipeline (in project):** After the container is running, run `./docker/test_server.sh` to wait for the adapter and run JSON-RPC smoke tests (server_status, session_init). To run this automatically after build and run, use `RUN_SERVER_TESTS=1 ./docker/build_and_run.sh`. Full pipeline from root (unit tests → build → run → server tests): `./scripts/build_run_and_test_server.sh` (uses `docker/build_and_run.sh` and `docker/test_server.sh`).
+**Legacy (single image):** From the project root, `./docker/build_and_run.sh` still builds one image (Redis + OLLAMA + adapter) for backward compatibility. Prefer the per-subproject scripts above for the target three-container layout (SPEC §4).
 
 To use an existing MCP proxy on another container, put both on the same network and set the proxy host (e.g. service name):
 
@@ -65,7 +68,7 @@ Ensure the MCP proxy is on the **smart-assistant** network and reachable at `mcp
 
 ## mTLS certificates (so the proxy accepts the adapter)
 
-The proxy uses mTLS and only accepts clients with a certificate it trusts. Use the **mtls_certificates** folder:
+The proxy uses mTLS and only accepts clients with a certificate it trusts. Use the **mtls_certificates** folder (in repository root):
 
 1. **Generate certs** (CN = container name from `docker/run.conf`, e.g. `ollama-adapter`):
    ```bash
@@ -101,7 +104,7 @@ To run the Redis verification pipeline against the test container’s Redis: `RE
 
 ## Commercial models (cheapest options)
 
-For Google, Anthropic, and OpenAI the project defines the **cheapest** (lowest-cost) model id per provider. Set the corresponding API key and use these model ids in `ollama_model` / `ollama_models` or in session:
+For Google, Anthropic, and OpenAI the project defines the **cheapest** (lowest-cost) model id per provider. Set the corresponding API key and use these model ids in config or in session:
 
 | Provider   | Cheapest model id              | Config key          |
 |-----------|--------------------------------|---------------------|
@@ -111,7 +114,7 @@ For Google, Anthropic, and OpenAI the project defines the **cheapest** (lowest-c
 | xAI Grok  | `grok-2`                       | `xai_api_key`      |
 | DeepSeek  | `deepseek-chat`                | `deepseek_api_key`  |
 
-Constants: `ollama_workstation.provider_models.CHEAPEST_MODEL_BY_PROVIDER`, `get_cheapest_model(provider)`. In config set `available_providers` (e.g. `["ollama", "google"]`) and the required key; use the model id in sessions or as default `ollama_model`.
+In config set `available_providers` (e.g. `["ollama", "google"]`) and the required key; use the model id in sessions or as default model.
 
 ## Local config with API keys (gitignored)
 
@@ -121,12 +124,12 @@ To keep API keys out of the repo, use a **local** config file that is gitignored
    ```bash
    cp config/adapter_config.local.json.example config/adapter_config.local.json
    ```
-2. **Edit** `config/adapter_config.local.json`: replace `YOUR_GOOGLE_API_KEY`, `YOUR_ANTHROPIC_API_KEY`, etc., with your real keys.
+2. **Edit** `config/adapter_config.local.json`: replace placeholders with your real keys.
 3. **Run** with that config:
    ```bash
    export ADAPTER_CONFIG_PATH=config/adapter_config.local.json
    # then start the adapter / container as usual
    ```
-   In Docker, pass the path when generating or mounting config, e.g. ensure the container receives config from a volume that contains your `adapter_config.local.json` and set `ADAPTER_CONFIG_PATH=/app/config/adapter_config.local.json`.
+   In Docker, pass the path when generating or mounting config so the container receives config from a volume that contains your `adapter_config.local.json`.
 
-The file **`config/adapter_config.local.json`** is listed in `.gitignore` and must **never** be committed. Only `config/adapter_config.local.json.example` (with placeholders) is in the repo.
+The file **`config/adapter_config.local.json`** is listed in `.gitignore` and must **never** be committed. Only the example with placeholders is in the repo.

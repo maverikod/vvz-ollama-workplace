@@ -39,7 +39,7 @@
     },
     "server_id": "model-workspace-server",
     "server_name": "OLLAMA Workstation",
-    "instance_uuid": "8ae69c34-89a5-45ff-bb9c-de3fd792f0e5",
+    "instance_uuid": "f85b4250-8a46-45c7-abc9-affd34d65854",
     "auto_on_startup": true,
     "auto_on_shutdown": true,
     "heartbeat": {
@@ -82,22 +82,6 @@
   "transport": {
     "verify_client": true
   },
-  "provider_clients": {
-    "default_provider": "ollama",
-    "providers": {
-      "ollama": {
-        "transport": {
-          "base_url": "http://127.0.0.1:11434",
-          "protocol": "http",
-          "request_timeout_seconds": 120
-        },
-        "auth": {},
-        "tls": {},
-        "features": {},
-        "limits": {}
-      }
-    }
-  },
   "ollama_workstation": {
     "mcp_proxy_url": "https://mcp-proxy:3004",
     "ollama": {
@@ -127,6 +111,11 @@
     "rules_file_path": "",
     "max_model_call_depth": 1,
     "model_calling_tool_allow_list": [],
-    "command_execution_timeout_seconds": 120
+    "command_execution_timeout_seconds": 120,
+    "model_providers": {
+      "ollama": {
+        "url": "http://127.0.0.1:11434"
+      }
+    }
   }
 }

@@ -1,9 +1,9 @@
-# Project standards (OLLAMA workstation)
+# Project standards (Agent Workstation)
 
 **Author:** Vasiliy Zdanovskiy  
 **Email:** vasilyvz@gmail.com  
 
-Standards derived from the technical specification and project rules. Apply these when implementing the OLLAMA interface for MCP-Proxy-Adapter.
+Standards derived from the technical specification and project rules. Apply these when implementing the model workspace and its integration with the proxy and adapter clients. **Target architecture:** [docs/plans/refactoring_adapter_structure/SPEC.md](plans/refactoring_adapter_structure/SPEC.md) (three subprojects; workspace uses client to ollama-adapter and client to redis-adapter).
 
 ---
 

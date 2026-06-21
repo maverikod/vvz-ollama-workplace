@@ -27,3 +27,4 @@ docker/data-db/blobs/
 docker/data-mws/blobs/
 
 projectid
+.cst/

@@ -1,5 +1,5 @@
 #!/bin/sh
-# Pull images and start separate Redis + Ollama containers.
+# Pull images and start Redis container (no Ollama container).
 # Run from project root: ./scripts/start_infra_containers.sh
 # Author: Vasiliy Zdanovskiy
 # email: vasilyvz@gmail.com
@@ -11,9 +11,8 @@ PROJECT_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 cd "${PROJECT_ROOT}"
 
 if [ "${PULL_IMAGES:-0}" = "1" ]; then
-  echo "Pulling Redis and Ollama images..."
+  echo "Pulling Redis image..."
   docker pull "${REDIS_IMAGE:-redis:7-alpine}"
-  docker pull "${OLLAMA_IMAGE:-ollama/ollama}"
 else
   echo "Skipping docker pull (set PULL_IMAGES=1 to force image refresh)."
 fi
@@ -21,7 +20,4 @@ fi
 echo "Starting Redis container..."
 "${SCRIPT_DIR}/start_redis_container.sh"
 
-echo "Starting Ollama container..."
-"${SCRIPT_DIR}/start_ollama_container.sh"
-
-echo "Infra is ready: separate containers redis + ollama."
+echo "Infra is ready: Redis container. Ollama is provided by ollama-adapter container."

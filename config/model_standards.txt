@@ -1,4 +1,4 @@
-Model role and standards (OLLAMA workstation)
+Model role and standards (Agent Workstation)
 
 Author: Vasiliy Zdanovskiy
 email: vasilyvz@gmail.com

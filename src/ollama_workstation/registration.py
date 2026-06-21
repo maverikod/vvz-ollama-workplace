@@ -1,5 +1,5 @@
 """
-Register OLLAMA workstation command with the adapter registry.
+Register Agent Workstation command with the adapter registry.
 
 Author: Vasiliy Zdanovskiy
 email: vasilyvz@gmail.com
@@ -207,7 +207,7 @@ def register_ollama_server(registry: Any) -> None:
 
 def register_ollama_workstation(registry: Any) -> None:
     """
-    Register OLLAMA workstation commands with the given adapter registry.
+    Register Agent Workstation commands with the given adapter registry.
 
     Call this from the main app or a custom-commands hook so that
     ollama_chat, server_status, and session commands are available.

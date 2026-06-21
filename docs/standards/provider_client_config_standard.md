@@ -5,9 +5,9 @@ email: vasilyvz@gmail.com
 
 # Provider Client Configuration Standard
 
-Normative document for the provider client configuration structure and validation rules. Steps 05 (schema), 06 (validator), and 07 (generator) must be implemented by following this document alone.
+Normative document for the provider client configuration structure and validation rules. Schema, validator, and generator must be implemented by following this document.
 
-References: [CLIENT_UNIFICATION_TZ.md](../plans/provider_client_unification/CLIENT_UNIFICATION_TZ.md) (Configuration Standard), [SCOPE_FREEZE.md](../plans/provider_client_unification/atomic/SCOPE_FREEZE.md).
+Context: [refactoring SPEC](../plans/refactoring_adapter_structure/SPEC.md) — model workspace uses provider clients (e.g. ollama_adapter); config structure is defined here.
 
 ---
 
@@ -82,14 +82,14 @@ Validation must run **before runtime**. Invalid or conflicting configuration mus
 - **V10** Validation must reject **incomplete** provider client settings: e.g. active provider section missing, required `transport` missing, or required auth/TLS missing for the chosen protocol/endpoint.
 - **V11** Validation must reject **conflicting** settings: e.g. protocol says "HTTPS" but TLS is disabled or missing; auth type does not match protocol; duplicate or mutually exclusive options set together.
 
-**Normative:** No runtime use of provider client config is allowed until validation passes. The validator (step 06) implements these rules; the schema (step 05) defines the structure so that the validator can enforce V1–V11.
+**Normative:** No runtime use of provider client config is allowed until validation passes. The validator implements these rules; the schema defines the structure so that the validator can enforce V1–V11.
 
 ---
 
 ## 4. Relation to schema, validator, and generator
 
-- **Schema (step 05):** Must define the structure of `provider_clients` and of each `provider_clients.providers.<name>` entry (transport, auth, tls, features, limits) so that valid configs are representable and invalid ones can be detected.
-- **Validator (step 06):** Must enforce V1–V11 and run before runtime; must reject incomplete or conflicting provider client settings.
-- **Generator (step 07):** Must produce only valid `provider_clients` sections that pass the validator (and thus satisfy this standard).
+- **Schema:** Must define the structure of `provider_clients` and of each `provider_clients.providers.<name>` entry (transport, auth, tls, features, limits) so that valid configs are representable and invalid ones can be detected.
+- **Validator:** Must enforce V1–V11 and run before runtime; must reject incomplete or conflicting provider client settings.
+- **Generator:** Must produce only valid `provider_clients` sections that pass the validator (and thus satisfy this standard).
 
 This document is the single normative source for the config structure and validation rules for provider clients.

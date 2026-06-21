@@ -5,9 +5,9 @@ email: vasilyvz@gmail.com
 
 # Provider Client Standard (Normative)
 
-This document is the **single source of truth** for the abstract base class and all concrete provider clients. Implementations (abstract base class in step 04 and concrete clients) MUST follow this standard.
+This document is the **single source of truth** for the abstract base class and all concrete provider clients. Implementations (abstract base class and concrete clients) MUST follow this standard.
 
-References: [CLIENT_UNIFICATION_TZ.md](../plans/provider_client_unification/CLIENT_UNIFICATION_TZ.md), [SCOPE_FREEZE.md](../plans/provider_client_unification/atomic/SCOPE_FREEZE.md).
+Context: [refactoring SPEC](../plans/refactoring_adapter_structure/SPEC.md) — model workspace uses **provider client** packages (ollama_provider_client, redis_provider_client). For the model workspace, **Ollama server is just a separate provider**; this standard is the contract for all such clients.
 
 ---
 
@@ -40,7 +40,7 @@ References: [CLIENT_UNIFICATION_TZ.md](../plans/provider_client_unification/CLIE
 
 ## 3. Required methods
 
-Every provider client MUST implement the following methods. Signatures and semantics are normative; the abstract base class (step 04) MUST declare them accordingly.
+Every provider client MUST implement the following methods. Signatures and semantics are normative; the abstract base class MUST declare them accordingly.
 
 | Method | Purpose | Contract |
 |--------|---------|----------|
@@ -60,7 +60,7 @@ Every provider client MUST implement the following methods. Signatures and seman
 - If the provider **does not support embeddings**:
   - The client MUST set **`supports_embeddings = False`** (or equivalent capability flag) so the workstation can avoid calling `embed` when not needed.
   - The client MUST implement **`embed(request)`** so that when called, it raises a **single, well-defined error** (e.g. `CapabilityNotSupportedError`, or a documented subtype of `ValidationError` from the shared error module), **without performing any network call**.
-- The workstation SHOULD check `supports_embeddings` before calling `embed`. If the workstation calls `embed` on a client that reported `supports_embeddings = False`, the client’s raising the defined error is acceptable and considered correct behaviour.
+- The workstation SHOULD check `supports_embeddings` before calling `embed`. If the workstation calls `embed` on a client that reported `supports_embeddings = False`, the client's raising the defined error is acceptable and considered correct behaviour.
 - **Not allowed:** implementing only a capability flag without implementing the `embed` method. The method MUST always be present; unsupported embeddings are expressed by the flag plus the defined error on call.
 
 ---
@@ -81,7 +81,7 @@ The workstation uses these flags to decide whether to call streaming APIs, pass 
 
 ## 6. Error categories
 
-Provider clients MUST normalize all failures into the following categories. The shared error module (step 03) MUST define these types; clients use them in `map_error`, `validate_config`, and internally in `chat` / `embed` / `healthcheck`.
+Provider clients MUST normalize all failures into the following categories. The shared error module MUST define these types; clients use them in `map_error`, `validate_config`, and internally in `chat` / `embed` / `healthcheck`.
 
 | Error | When to use |
 |-------|-------------|
@@ -91,7 +91,7 @@ Provider clients MUST normalize all failures into the following categories. The 
 | **RateLimitError** | Provider returned rate limit (e.g. 429) or quota exceeded. |
 | **ProviderProtocolError** | Provider returned an unexpected or malformed response; protocol violation; unsupported response shape. |
 | **ValidationError** | Invalid request parameters, invalid config, or client-side validation failure. |
-| **CapabilityNotSupportedError** | The requested capability (e.g. embeddings) is not supported by this client/provider. MUST be used by `embed()` when `supports_embeddings = False` (see § 4). May be a subtype of `ValidationError` or a standalone class as defined in step 03. |
+| **CapabilityNotSupportedError** | The requested capability (e.g. embeddings) is not supported by this client/provider. MUST be used by `embed()` when `supports_embeddings = False` (see § 4). May be a subtype of `ValidationError` or a standalone class. |
 
 All exceptions that escape from client methods (except internal programming errors) MUST be one of the above. The workstation MUST NOT be required to handle provider-specific exception types.
 
@@ -99,7 +99,7 @@ All exceptions that escape from client methods (except internal programming erro
 
 ## 7. Timeout and retry rules
 
-- **Timeout**: Every client MUST support a configurable timeout for chat and embed requests (and optionally healthcheck). The timeout MUST be applied consistently; no unbounded waits. Default and max values MAY be defined in the config standard (step 02).
+- **Timeout**: Every client MUST support a configurable timeout for chat and embed requests (and optionally healthcheck). The timeout MUST be applied consistently; no unbounded waits. Default and max values MAY be defined in the config standard.
 - **Retry**: Retry behaviour (if any) MUST be deterministic and configurable. Recommended: retry only on transient failures (e.g. `TransportError`, `TimeoutError`, or specific `RateLimitError` with Retry-After). MUST NOT retry on `AuthError` or `ValidationError`. Retry count and backoff MUST be bounded and documented.
 - **Logging**: On retry, log at most one summary per request (e.g. "retry attempt N of M") without secrets. Do not log request/response bodies that may contain tokens or PII.
 
@@ -120,5 +120,3 @@ All exceptions that escape from client methods (except internal programming erro
 - [ ] When embeddings are unsupported: `supports_embeddings = False` and `embed()` raises the defined error without network call.
 - [ ] Map all failures to the standard error categories (§ 6).
 - [ ] Apply configurable timeout and bounded retry; no secrets in logs.
-
-Step 04 (abstract base class) can be implemented by following this document alone.

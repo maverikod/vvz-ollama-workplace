@@ -1,5 +1,5 @@
 """
-OLLAMA workstation: chat with OLLAMA using MCP Proxy tools.
+Agent Workstation: chat with OLLAMA using MCP Proxy tools.
 
 Author: Vasiliy Zdanovskiy
 email: vasilyvz@gmail.com
