@@ -30,7 +30,7 @@ So: **registration.ssl.ca** = CA that signed the **proxy's** server cert (to ver
 - Proxy is running and listening on port **3004** (e.g. inside its own container).
 - Adapter and proxy are on the **same Docker network** (e.g. **smart-assistant**).  
   - From the adapter container:  
-    `docker exec -it ollama-adapter sh -c "getent hosts mcp-proxy || echo 'mcp-proxy not resolved'"`  
+    `docker exec -it mwps-adapter sh -c "getent hosts mcp-proxy || echo 'mcp-proxy not resolved'"`  
   - If the name does not resolve or you get "Connection refused", fix the network or proxy hostname/port.
 - If the proxy runs on the host, use the host's IP or a network alias the container can resolve, and set `MCP_PROXY_HOST` accordingly (not `mcp-proxy` unless that name resolves inside the container).
 

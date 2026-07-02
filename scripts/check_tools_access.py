@@ -19,7 +19,7 @@ import os
 import sys
 from pathlib import Path
 
-# Add project root and src so ollama_workstation is importable
+# Add project root and src so mwps is importable
 _root = Path(__file__).resolve().parents[1]
 if str(_root) not in sys.path:
     sys.path.insert(0, str(_root))
@@ -27,25 +27,25 @@ _src = _root / "src"
 if str(_src) not in sys.path:
     sys.path.insert(0, str(_src))
 
-from ollama_workstation.chat_flow import run_chat_flow  # noqa: E402
-from ollama_workstation.command_alias_registry import CommandAliasRegistry  # noqa: E402
-from ollama_workstation.command_discovery import CommandDiscovery  # noqa: E402
-from ollama_workstation.config import load_config, WorkstationConfig  # noqa: E402
-from ollama_workstation.effective_tool_list_builder import (  # noqa: E402
+from mwps.chat_flow import run_chat_flow  # noqa: E402
+from mwps.command_alias_registry import CommandAliasRegistry  # noqa: E402
+from mwps.command_discovery import CommandDiscovery  # noqa: E402
+from mwps.config import load_config, WorkstationConfig  # noqa: E402
+from mwps.effective_tool_list_builder import (  # noqa: E402
     EffectiveToolListBuilder,
 )
-from ollama_workstation.ollama_representation import (  # noqa: E402
-    OllamaRepresentation,
-    register_ollama_models,
+from mwps.mwps_representation import (  # noqa: E402
+    MwpsRepresentation,
+    register_mwps_models,
 )
-from ollama_workstation.proxy_client import ProxyClient  # noqa: E402
-from ollama_workstation.representation_registry import (  # noqa: E402
+from mwps.proxy_client import ProxyClient  # noqa: E402
+from mwps.representation_registry import (  # noqa: E402
     RepresentationRegistry,
 )
-from ollama_workstation.safe_name_translator import SafeNameTranslator  # noqa: E402
-from ollama_workstation.session_entity import Session  # noqa: E402
-from ollama_workstation.tools import MODEL_HELP_TOOL  # noqa: E402
-from ollama_workstation.tool_call_registry import ToolCallRegistry  # noqa: E402
+from mwps.safe_name_translator import SafeNameTranslator  # noqa: E402
+from mwps.session_entity import Session  # noqa: E402
+from mwps.tools import MODEL_HELP_TOOL  # noqa: E402
+from mwps.tool_call_registry import ToolCallRegistry  # noqa: E402
 
 TOOL_PROMPT = (
     "Call the echo tool with message 'ping' and reply with the result. "
@@ -84,7 +84,7 @@ async def _build_tools(config: WorkstationConfig) -> tuple[list, ToolCallRegistr
         CommandAliasRegistry(),
         SafeNameTranslator(),
     )
-    default_model = getattr(config, "ollama_model", None) or "llama3.2"
+    default_model = getattr(config, "mwps_model", None) or "llama3.2"
     session = Session.create(model=default_model)
     _tool_list, tool_registry = builder.build(
         session,
@@ -138,14 +138,14 @@ async def main_async() -> int:
         print("Config not found: %s" % config_path, file=sys.stderr)
         return 1
     config = load_config(str(config_path))
-    models = list(getattr(config, "ollama_models", None) or ())
-    if not models and getattr(config, "ollama_model", None):
-        models = [config.ollama_model]
+    models = list(getattr(config, "mwps_models", None) or ())
+    if not models and getattr(config, "mwps_model", None):
+        models = [config.mwps_model]
     if not models:
-        print("No models in config (ollama_models / ollama_model).", file=sys.stderr)
+        print("No models in config (mwps_models / mwps_model).", file=sys.stderr)
         return 1
-    rep_registry = RepresentationRegistry(default=OllamaRepresentation())
-    register_ollama_models(rep_registry, models)
+    rep_registry = RepresentationRegistry(default=MwpsRepresentation())
+    register_mwps_models(rep_registry, models)
     print("Config: %s" % config_path, file=sys.stderr)
     print("Models: %s" % ", ".join(models), file=sys.stderr)
     print("Prompt: %s" % TOOL_PROMPT[:80] + "...", file=sys.stderr)

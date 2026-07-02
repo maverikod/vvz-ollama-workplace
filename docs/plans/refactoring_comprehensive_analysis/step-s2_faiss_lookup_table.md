@@ -29,7 +29,7 @@ Lookup table (Redis hash)
 `EmbedProxyClient` (Path A, SVO chunker) stores chunks in Redis but
 does NOT maintain a `faiss_id_map` hash. FAISS index is built separately
 (via `rebuild_faiss` in code-analysis-server) without a stable
-vector_id↔uuid mapping accessible to ollama.
+vector_id↔uuid mapping accessible to mwps.
 
 ## Task
 

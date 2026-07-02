@@ -1,6 +1,6 @@
 # STEP-I1 — OpenAIProviderClient (new file)
 
-**File:** `src/ollama_workstation/openai_provider_client.py` (new)
+**File:** `src/mwps/openai_provider_client.py` (new)
 **Provider:** `openai` — also base for xAI, DeepSeek
 **Severity:** 🔴 High
 **Depends on:** STEP-08 (BaseProviderClient is proper ABC)

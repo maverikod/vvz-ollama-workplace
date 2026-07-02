@@ -33,16 +33,16 @@ python -m build --sdist --wheel \
   --outdir "${PROJECT_ROOT}/dist/model-workspace-client" \
   "${PROJECT_ROOT}/src/model_workspace_client"
 
-echo "=== Build: ollama-model-database-client ==="
-rm -rf "${PROJECT_ROOT}/dist/ollama-model-database-client"
+echo "=== Build: mwps-model-database-client ==="
+rm -rf "${PROJECT_ROOT}/dist/mwps-model-database-client"
 python -m build --sdist --wheel \
-  --outdir "${PROJECT_ROOT}/dist/ollama-model-database-client" \
+  --outdir "${PROJECT_ROOT}/dist/mwps-model-database-client" \
   "${PROJECT_ROOT}/src/database_client"
 
 echo "=== Twine metadata check ==="
 twine check \
   "${PROJECT_ROOT}/dist/model-workspace-client/"* \
-  "${PROJECT_ROOT}/dist/ollama-model-database-client/"*
+  "${PROJECT_ROOT}/dist/mwps-model-database-client/"*
 
 UPLOAD_FLAGS=""
 if [ "${SKIP_EXISTING}" = "1" ]; then
@@ -53,15 +53,15 @@ echo "=== Upload to repository: ${REPOSITORY} ==="
 if [ -n "${UPLOAD_FLAGS}" ]; then
   twine upload --repository "${REPOSITORY}" ${UPLOAD_FLAGS} \
     "${PROJECT_ROOT}/dist/model-workspace-client/"* \
-    "${PROJECT_ROOT}/dist/ollama-model-database-client/"*
+    "${PROJECT_ROOT}/dist/mwps-model-database-client/"*
 else
   twine upload --repository "${REPOSITORY}" \
     "${PROJECT_ROOT}/dist/model-workspace-client/"* \
-    "${PROJECT_ROOT}/dist/ollama-model-database-client/"*
+    "${PROJECT_ROOT}/dist/mwps-model-database-client/"*
 fi
 
 echo "=== Publish completed ==="
 echo "Repository: ${REPOSITORY}"
 echo "Artifacts:"
 echo "  - dist/model-workspace-client/"
-echo "  - dist/ollama-model-database-client/"
+echo "  - dist/mwps-model-database-client/"

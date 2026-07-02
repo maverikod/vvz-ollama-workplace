@@ -1,0 +1,27 @@
+meta:
+  title: Codex Editing Standard
+  version: '1.0'
+  locale: en
+  description: >
+    Governs file edits and project conventions for Codex in Agent Workstation.
+  scope:
+    covers: [source edits, documentation edits, config edits, generated prompt files]
+    excludes: [terminal execution, deployment, release publishing]
+
+rules:
+  - Keep edits scoped to the user's task.
+  - Preserve user changes and never revert unrelated work.
+  - Use English for code, comments, docstrings, tests, and durable repository artifacts unless the user asks otherwise.
+  - Use the author header required by project rules when adding files that follow the project's header convention.
+  - Keep imports at the top of Python files except deliberate lazy loading.
+  - Avoid `pass` in production code; use abstract `NotImplemented` patterns only where appropriate.
+  - Keep files near the project target of 350-400 lines; split large files when the task naturally requires it.
+  - Do not edit generated `code_analysis/` files by hand.
+  - Do not hardcode URLs, credentials, or secrets.
+
+procedure:
+  - Read the surrounding implementation before editing.
+  - Match existing project style and abstractions.
+  - Add or update focused tests when behavior changes.
+  - Update docs only when they are part of the requested or affected behavior.
+

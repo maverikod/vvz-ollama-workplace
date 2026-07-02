@@ -7,13 +7,13 @@ email: vasilyvz@gmail.com
 
 This document is the **single source of truth** for the abstract base class and all concrete provider clients. Implementations (abstract base class and concrete clients) MUST follow this standard.
 
-Context: [refactoring SPEC](../plans/refactoring_adapter_structure/SPEC.md) — model workspace uses **provider client** packages (ollama_provider_client, redis_provider_client). For the model workspace, **Ollama server is just a separate provider**; this standard is the contract for all such clients.
+Context: [refactoring SPEC](../plans/refactoring_adapter_structure/SPEC.md) — model workspace uses **provider client** packages (mwps_provider_client, redis_provider_client). For the model workspace, **Model Workplace Server server is just a separate provider**; this standard is the contract for all such clients.
 
 ---
 
 ## 1. Purpose and scope
 
-- **Provider client**: a component that communicates with a single model provider (e.g. Ollama, OpenAI) on behalf of the workstation. Transport, protocol, and auth details are internal to the client.
+- **Provider client**: a component that communicates with a single model provider (e.g. Model Workplace Server, OpenAI) on behalf of the workstation. Transport, protocol, and auth details are internal to the client.
 - **Workstation**: uses only the uniform API defined below; it is provider-agnostic.
 - All provider clients MUST implement the mandatory behaviour, required methods, capability flags, and error mapping defined in this document. No partial stubs in production code.
 

@@ -19,7 +19,7 @@ WAVE 1 (parallel, no deps)
 └── STEP-12  scripts/verify_context    🟢 flake8
 
 WAVE 2 (after deps complete)
-├── STEP-03  ollama_chat_command       🔴 split + dup     ← needs STEP-01
+├── STEP-03  mwps_chat_command       🔴 split + dup     ← needs STEP-01
 ├── STEP-05  docker_config_validation  🔴 split          ← needs STEP-02
 └── STEP-07  provider_registry         🔴 NOT IMPL       ← needs STEP-06
 
@@ -27,7 +27,7 @@ WAVE 3
 └── STEP-08  provider_client_base      🟡 dup (ABC)       ← needs STEP-06, STEP-07
 
 WAVE 4
-└── STEP-09  ollama_provider_client    🟡 dup normalize   ← needs STEP-08
+└── STEP-09  mwps_provider_client    🟡 dup normalize   ← needs STEP-08
 ```
 
 ---
@@ -50,7 +50,7 @@ WAVE 4
 
 | Step | File | Issue | Waits for |
 |------|------|-------|----------|
-| STEP-03 | `ollama_chat_command.py` | Split + move schemas | STEP-01 |
+| STEP-03 | `mwps_chat_command.py` | Split + move schemas | STEP-01 |
 | STEP-05 | `docker_config_validation.py` | Split monolith | STEP-02 |
 | STEP-07 | `provider_registry.py` | Implement 3 NOT IMPL | STEP-06 |
 
@@ -64,7 +64,7 @@ WAVE 4
 
 | Step | File | Issue | Waits for |
 |------|------|-------|----------|
-| STEP-09 | `ollama_provider_client.py` | Eliminate dup normalize | STEP-08 |
+| STEP-09 | `mwps_provider_client.py` | Eliminate dup normalize | STEP-08 |
 
 ---
 

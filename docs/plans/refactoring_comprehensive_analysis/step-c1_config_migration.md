@@ -1,6 +1,6 @@
 # STEP-C1 — Config migration: WorkstationConfig → provider_clients structure
 
-**File:** `src/ollama_workstation/config.py`, `WorkstationConfig`
+**File:** `src/mwps/config.py`, `WorkstationConfig`
 **Severity:** 🔴 High
 **Depends on:** STEP-08 (provider clients ready to receive typed config)
 **Blocks:** STEP-02 (config.py split happens after migration)
@@ -9,13 +9,13 @@
 
 ## Current state
 
-`WorkstationConfig` (dataclass) has flat Ollama-specific fields:
-- `ollama_url: str`
-- `ollama_model: str`
-- `ollama_embed_model: str`
+`WorkstationConfig` (dataclass) has flat Model Workplace Server-specific fields:
+- `mwps_url: str`
+- `mwps_model: str`
+- `mwps_embed_model: str`
 - `request_timeout: int`
 
-These are read by `provider_registry._build_ollama()` and
+These are read by `provider_registry._build_mwps()` and
 `docker_config_validation.py`.
 
 ## Target state
@@ -69,14 +69,14 @@ class ProviderClientsConfig:
 provider_clients: ProviderClientsConfig
 ```
 
-And loses: `ollama_url`, `ollama_model`, `ollama_embed_model`,
+And loses: `mwps_url`, `mwps_model`, `mwps_embed_model`,
 `request_timeout`.
 
 ## Migration tasks
 
 ### C1a. Add ProviderSectionConfig dataclasses
 
-New file `src/ollama_workstation/provider_config.py` with all dataclasses
+New file `src/mwps/provider_config.py` with all dataclasses
 above. Keeps `config.py` focused on loading logic.
 
 ### C1b. Update load_config()
@@ -112,18 +112,18 @@ Other providers validated only if their section is present.
 
 ### C1e. Update docker_config_validation
 
-Replace `config.ollama_url`, `config.ollama_model` reads with
-`config.provider_clients.providers["ollama"].transport.base_url`, etc.
+Replace `config.mwps_url`, `config.mwps_model` reads with
+`config.provider_clients.providers["mwps"].transport.base_url`, etc.
 
 ### C1f. Config YAML migration
 
-Document breaking change: old flat `ollama_url` key no longer works.
+Document breaking change: old flat `mwps_url` key no longer works.
 Provide migration example in `docs/` showing old → new structure.
 
 ## Acceptance criteria
 
-- [ ] `WorkstationConfig` has no `ollama_url`, `ollama_model`, `ollama_embed_model`
-- [ ] `provider_clients.providers.ollama` section parsed and typed
+- [ ] `WorkstationConfig` has no `mwps_url`, `mwps_model`, `mwps_embed_model`
+- [ ] `provider_clients.providers.mwps` section parsed and typed
 - [ ] Env-var `${VAR}` interpolated in `auth.api_key` at load time
 - [ ] `validate_config()` catches missing active provider section (V4)
 - [ ] `validate_config()` catches missing api_key for commercial providers (V6)

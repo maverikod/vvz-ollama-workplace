@@ -11,15 +11,15 @@ from pathlib import Path
 import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "src"))
-from ollama_workstation.context_builder import (  # noqa: E402
+from mwps.context_builder import (  # noqa: E402
     ContextBuilder,
     ContextBuilderError,
 )
-from ollama_workstation.message_store import MessageStore  # noqa: E402
-from ollama_workstation.representation_registry import (  # noqa: E402
+from mwps.message_store import MessageStore  # noqa: E402
+from mwps.representation_registry import (  # noqa: E402
     RepresentationRegistry,
 )
-from ollama_workstation.session_store import InMemorySessionStore  # noqa: E402
+from mwps.session_store import InMemorySessionStore  # noqa: E402
 
 
 class StubMessageStore(MessageStore):
@@ -67,9 +67,9 @@ async def test_build_returns_trimmed_and_serialized() -> None:
     session_store = InMemorySessionStore()
     session_store.create({"id": "s1", "model": "llama3.2"})
     reg = RepresentationRegistry()
-    from ollama_workstation.ollama_representation import OllamaRepresentation
+    from mwps.mwps_representation import MwpsRepresentation
 
-    reg.register("llama3.2", OllamaRepresentation())
+    reg.register("llama3.2", MwpsRepresentation())
     msg_store = StubMessageStore(
         [
             {"source": "user", "body": "Hi", "created_at": "2025-01-01T00:00:00Z"},
@@ -96,9 +96,9 @@ async def test_build_includes_standards_and_session_rules() -> None:
         }
     )
     reg = RepresentationRegistry()
-    from ollama_workstation.ollama_representation import OllamaRepresentation
+    from mwps.mwps_representation import MwpsRepresentation
 
-    reg.register("llama3.2", OllamaRepresentation())
+    reg.register("llama3.2", MwpsRepresentation())
     msg_store = StubMessageStore([])
     builder = ContextBuilder(session_store, reg, msg_store)
     trimmed, serialized = await builder.build(
@@ -136,9 +136,9 @@ async def test_build_prepends_file_standards_and_rules(tmp_path: Path) -> None:
         }
     )
     reg = RepresentationRegistry()
-    from ollama_workstation.ollama_representation import OllamaRepresentation
+    from mwps.mwps_representation import MwpsRepresentation
 
-    reg.register("llama3.2", OllamaRepresentation())
+    reg.register("llama3.2", MwpsRepresentation())
     msg_store = StubMessageStore([])
     builder = ContextBuilder(
         session_store,

@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """
 Generate adapter_config with same settings as working config, plus all commercial
-providers and OLLAMA container. Reads config/adapter_config.json, overlays
-ollama_workstation with full model_providers and container, writes to output path.
+providers and MWPS container. Reads config/adapter_config.json, overlays
+mwps with full model_providers and container, writes to output path.
 
 Author: Vasiliy Zdanovskiy
 email: vasilyvz@gmail.com
@@ -14,11 +14,11 @@ import sys
 from pathlib import Path
 
 # Same structure as working config; add all providers and container.
-OLLAMA_WORKSTATION_FULL = {
-    "ollama_base_url": "http://127.0.0.1:11434",
+MWPS_FULL = {
+    "mwps_base_url": "http://127.0.0.1:11434",
     "model_server_url": "http://127.0.0.1:11434",
-    "ollama_model": "llama3.2",
-    "ollama_models": [
+    "mwps_model": "llama3.2",
+    "mwps_models": [
         "llama3.2",
         "gemini-2.0-flash",
         "gpt-4o-mini",
@@ -27,7 +27,7 @@ OLLAMA_WORKSTATION_FULL = {
         "deepseek-chat",
     ],
     "available_providers": [
-        "ollama",
+        "mwps",
         "google",
         "anthropic",
         "openai",
@@ -36,7 +36,7 @@ OLLAMA_WORKSTATION_FULL = {
         "openrouter",
     ],
     "model_providers": {
-        "ollama": {"url": "http://127.0.0.1:11434"},
+        "mwps": {"url": "http://127.0.0.1:11434"},
         "google": {
             "url": "https://generativelanguage.googleapis.com/v1beta",
             "api_key": "YOUR_GOOGLE_API_KEY",
@@ -62,9 +62,9 @@ OLLAMA_WORKSTATION_FULL = {
             "api_key": "YOUR_OPENROUTER_API_KEY",
         },
     },
-    "model_server_container_name": "ollama",
-    "model_server_image": "ollama/ollama",
-    "ollama_timeout": 120,
+    "model_server_container_name": "mwps",
+    "model_server_image": "mwps/mwps",
+    "mwps_timeout": 120,
     "max_tool_rounds": 10,
     "allowed_commands": [],
     "forbidden_commands": [],
@@ -102,22 +102,22 @@ def main() -> int:
         return 1
 
     data = json.loads(input_path.read_text(encoding="utf-8"))
-    existing_proxy_url = data.get("ollama_workstation", {}).get(
+    existing_proxy_url = data.get("mwps", {}).get(
         "mcp_proxy_url"
     ) or data.get("registration", {}).get("register_url", "").replace("/register", "")
     resolved_proxy_url = os.getenv("MCP_PROXY_URL", existing_proxy_url)
     if not resolved_proxy_url:
         print(
             "MCP proxy URL is not set. "
-            "Define ollama_workstation.mcp_proxy_url in input config "
+            "Define mwps.mcp_proxy_url in input config "
             "or export MCP_PROXY_URL.",
             file=sys.stderr,
         )
         return 1
 
-    full_ollama_workstation = dict(OLLAMA_WORKSTATION_FULL)
-    full_ollama_workstation["mcp_proxy_url"] = resolved_proxy_url
-    data["ollama_workstation"] = full_ollama_workstation
+    full_mwps = dict(MWPS_FULL)
+    full_mwps["mcp_proxy_url"] = resolved_proxy_url
+    data["mwps"] = full_mwps
 
     output_path.parent.mkdir(parents=True, exist_ok=True)
     output_path.write_text(

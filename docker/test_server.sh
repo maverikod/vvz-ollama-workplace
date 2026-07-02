@@ -14,7 +14,7 @@ cd "${PROJECT_ROOT}"
 if [ -f "${SCRIPT_DIR}/run.conf" ]; then
   . "${SCRIPT_DIR}/run.conf"
 fi
-CONTAINER_NAME="${CONTAINER_NAME:-ollama-adapter}"
+CONTAINER_NAME="${CONTAINER_NAME:-mwps-adapter}"
 
 ADAPTER_HOST="${ADAPTER_HOST:-localhost}"
 ADAPTER_PORT="${ADAPTER_PORT:-8015}"

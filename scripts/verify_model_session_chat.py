@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 """
-E2E: session_init -> ollama_chat(session_id, content) against real adapter; model runs.
-Requires: container with new adapter (session_id/content) + OLLAMA, client certs.
+E2E: session_init -> mwps_chat(session_id, content) against real adapter; model runs.
+Requires: container with new adapter (session_id/content) + MWPS, client certs.
 Env: ADAPTER_URL (default https://localhost:8016), CERTS_DIR (mtls_certificates),
 VERIFY_CLIENT_TIMEOUT (default 180). Adapter: command_execution_timeout_seconds (120),
-ollama_timeout (60 in config; increase for slow/cold model).
+mwps_timeout (60 in config; increase for slow/cold model).
 Author: Vasiliy Zdanovskiy
 email: vasilyvz@gmail.com
 """
@@ -45,7 +45,7 @@ def _jsonrpc(method: str, params: dict, id: int = 1) -> dict:
 
 
 def main() -> int:
-    print("E2E: session_init -> ollama_chat(session_id, content) with real model")
+    print("E2E: session_init -> mwps_chat(session_id, content) with real model")
     print("  ADAPTER_URL=%s client_timeout=%ss" % (ADAPTER_URL, CLIENT_TIMEOUT))
     if not os.path.isfile(os.path.join(CERTS_DIR, "client.crt")):
         print("  SKIP: client.crt not found in %s" % CERTS_DIR)
@@ -71,7 +71,7 @@ def main() -> int:
 
     try:
         r2 = _jsonrpc(
-            "ollama_chat",
+            "mwps_chat",
             {"session_id": session_id, "content": "Reply with exactly: OK"},
             id=2,
         )
@@ -79,39 +79,39 @@ def main() -> int:
         err_str = str(e).lower()
         if "timeout" in err_str or "timed out" in err_str:
             print(
-                "  FAIL: ollama_chat timeout (increase VERIFY_CLIENT_TIMEOUT and/or "
-                "ollama_timeout in adapter config). %s" % e
+                "  FAIL: mwps_chat timeout (increase VERIFY_CLIENT_TIMEOUT and/or "
+                "mwps_timeout in adapter config). %s" % e
             )
         else:
-            print("  FAIL: ollama_chat: %s" % e)
+            print("  FAIL: mwps_chat: %s" % e)
         return 1
     err = r2.get("error")
     if err:
-        print("  FAIL: ollama_chat error: %s" % err)
+        print("  FAIL: mwps_chat error: %s" % err)
         return 1
     res2 = r2.get("result")
     if not res2:
-        print("  FAIL: ollama_chat no result: %s" % r2)
+        print("  FAIL: mwps_chat no result: %s" % r2)
         return 1
     data2 = res2.get("data") if isinstance(res2, dict) else res2
     if isinstance(res2, dict) and res2.get("success") is False:
         err = res2.get("error") or {}
-        print("  FAIL: ollama_chat error: %s" % err.get("message", res2))
+        print("  FAIL: mwps_chat error: %s" % err.get("message", res2))
         print(
             "  (Adapter may be old build without session_id/content; use test container.)"
         )
         return 1
     msg = (data2.get("message") or "").strip() if data2 else ""
     if not msg:
-        print("  FAIL: ollama_chat returned empty message.")
+        print("  FAIL: mwps_chat returned empty message.")
         print("  Full response (for diagnosis): %s" % json.dumps(r2)[:800])
         print(
-            "  Tips: (1) Timeout: increase ollama_timeout in adapter config (e.g. 120) "
+            "  Tips: (1) Timeout: increase mwps_timeout in adapter config (e.g. 120) "
             "and VERIFY_CLIENT_TIMEOUT (e.g. 300)."
         )
         print(
             "  (2) Empty from model: check container logs for '500' on POST /api/chat "
-            "(OLLAMA error) or 'model_reply content_len=0' (OLLAMA returned empty)."
+            "(MWPS error) or 'model_reply content_len=0' (MWPS returned empty)."
         )
         return 1
     print("  model reply: %s" % (msg[:80] + "..." if len(msg) > 80 else msg))

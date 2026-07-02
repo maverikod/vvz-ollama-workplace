@@ -1,6 +1,6 @@
 # STEP-06 — commercial_chat_client.py: implement NOT IMPLEMENTED
 
-**File:** `src/ollama_workstation/commercial_chat_client.py`  
+**File:** `src/mwps/commercial_chat_client.py`  
 **Size:** 132 lines  
 **Issues:** 2× NOT IMPLEMENTED in `chat_completion` (lines 66, 73) — function partially implemented  
 **Severity:** 🔴 High (blocks functionality)  
@@ -13,8 +13,8 @@
 
 | Function | Lines | Responsibility |
 |----------|-------|----------------|
-| `_ollama_to_openai_messages` | 23–45 (23) | Convert Ollama message format to OpenAI format |
-| `_openai_to_ollama_message` | 48–63 (16) | Convert OpenAI response to Ollama format |
+| `_mwps_to_openai_messages` | 23–45 (23) | Convert Model Workplace Server message format to OpenAI format |
+| `_openai_to_mwps_message` | 48–63 (16) | Convert OpenAI response to Model Workplace Server format |
 | `chat_completion` | 66–132 (67) | ⚠️ Send to OpenAI-compatible endpoint — NOT IMPLEMENTED |
 
 ## Problem
@@ -25,7 +25,7 @@ endpoint is not made. This means all commercial model providers (OpenAI, Anthrop
 are non-functional.
 
 Context from `provider_registry.py`: `commercial_chat_client.chat_completion` is called
-when the resolved provider is not `ollama`. This is the only code path for commercial models.
+when the resolved provider is not `mwps`. This is the only code path for commercial models.
 
 ## Task
 
@@ -40,13 +40,13 @@ async def chat_completion(
     tools: list[dict] | None = None,
     stream: bool = False,
     timeout: float = 120.0,
-) -> dict:  # Ollama-format response
+) -> dict:  # Model Workplace Server-format response
     """
     Send chat completion to OpenAI-compatible endpoint.
-    Converts Ollama messages to OpenAI format, calls POST /v1/chat/completions,
-    converts response back to Ollama format.
+    Converts Model Workplace Server messages to OpenAI format, calls POST /v1/chat/completions,
+    converts response back to Model Workplace Server format.
     """
-    openai_messages = _ollama_to_openai_messages(messages)
+    openai_messages = _mwps_to_openai_messages(messages)
     async with httpx.AsyncClient(timeout=timeout) as client:
         response = await client.post(
             f"{base_url}/v1/chat/completions",
@@ -54,7 +54,7 @@ async def chat_completion(
             json={"model": model, "messages": openai_messages, "tools": tools or [], "stream": stream},
         )
         response.raise_for_status()
-    return _openai_to_ollama_message(response.json())
+    return _openai_to_mwps_message(response.json())
 ```
 
 Handle errors: connection errors, 4xx/5xx, JSON parse failures.
@@ -64,5 +64,5 @@ Handle errors: connection errors, 4xx/5xx, JSON parse failures.
 - [ ] Both NOT IMPLEMENTED markers removed
 - [ ] `chat_completion` makes actual HTTP call to OpenAI-compatible API
 - [ ] Proper error handling: `httpx.HTTPError`, `KeyError`, timeout
-- [ ] Response converted to Ollama format via `_openai_to_ollama_message`
+- [ ] Response converted to Model Workplace Server format via `_openai_to_mwps_message`
 - [ ] `lint_code` + `type_check_code` pass

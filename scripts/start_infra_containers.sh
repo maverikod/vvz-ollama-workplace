@@ -1,5 +1,5 @@
 #!/bin/sh
-# Pull images and start Redis container (no Ollama container).
+# Pull images and start Redis container (no Model Workplace Server container).
 # Run from project root: ./scripts/start_infra_containers.sh
 # Author: Vasiliy Zdanovskiy
 # email: vasilyvz@gmail.com
@@ -20,4 +20,4 @@ fi
 echo "Starting Redis container..."
 "${SCRIPT_DIR}/start_redis_container.sh"
 
-echo "Infra is ready: Redis container. Ollama is provided by ollama-adapter container."
+echo "Infra is ready: Redis container. Model Workplace Server is provided by mwps-adapter container."

@@ -3,15 +3,15 @@
 **Author:** Vasiliy Zdanovskiy  
 **Email:** vasilyvz@gmail.com  
 
-Standards derived from the technical specification and project rules. Apply these when implementing the model workspace and its integration with the proxy and adapter clients. **Target architecture:** [docs/plans/refactoring_adapter_structure/SPEC.md](plans/refactoring_adapter_structure/SPEC.md) (three subprojects; workspace uses client to ollama-adapter and client to redis-adapter).
+Standards derived from the technical specification and project rules. Apply these when implementing the model workspace and its integration with the proxy and adapter clients. **Target architecture:** [docs/plans/refactoring_adapter_structure/SPEC.md](plans/refactoring_adapter_structure/SPEC.md) (three subprojects; workspace uses client to mwps-adapter and client to redis-adapter).
 
 ---
 
-## 1. Tool definitions (OLLAMA)
+## 1. Tool definitions (MWPS)
 
 ### 1.1 Format
 
-- Tools exposed to OLLAMA MUST use the OLLAMA-compatible format:
+- Tools exposed to MWPS MUST use the MWPS-compatible format:
   `{ "type": "function", "function": { "name", "description", "parameters" } }`.
 - `parameters` MUST be a JSON Schema object (e.g. `type`, `properties`, `required`).
 
@@ -36,14 +36,14 @@ Additional proxy tools (e.g. `health_check`, `network_check`) may be added later
 ### 2.1 Required settings
 
 - **mcp_proxy_url** — base URL of the MCP Proxy (e.g. `http://localhost:3004`).
-- **ollama_base_url** — base URL of OLLAMA (e.g. `http://localhost:11434`).
-- **ollama_model** — default model name (e.g. `qwen3`, `llama3.1`).
+- **mwps_base_url** — base URL of MWPS (e.g. `http://localhost:11434`).
+- **mwps_model** — default model name (e.g. `qwen3`, `llama3.1`).
 
 ### 2.2 Optional settings
 
-- **ollama_timeout** — timeout in seconds for OLLAMA requests.
+- **mwps_timeout** — timeout in seconds for MWPS requests.
 - **max_tool_rounds** — maximum tool-call rounds per chat (default e.g. 10).
-- API keys or TLS settings for proxy and/or OLLAMA if required by the environment.
+- API keys or TLS settings for proxy and/or MWPS if required by the environment.
 
 ### 2.3 Config source
 
@@ -52,8 +52,8 @@ Additional proxy tools (e.g. `health_check`, `network_check`) may be added later
 
 ### 2.4 Model context: which commands the model sees
 
-- **Only commands specified in config** may appear in the model context. The config section `ollama_workstation` defines:
-  - **allowed_commands** — list of command IDs (e.g. `echo.ollama-adapter`) permitted for the model.
+- **Only commands specified in config** may appear in the model context. The config section `mwps` defines:
+  - **allowed_commands** — list of command IDs (e.g. `echo.mwps-adapter`) permitted for the model.
   - **forbidden_commands** — list always excluded.
   - **commands_policy** — `deny_by_default` (only allowed_commands) or `allow_by_default` (all discovered minus forbidden; if allowed_commands is set, intersection is used).
 - When `allowed_commands` / `forbidden_commands` / `commands_policy` are absent, the default is **deny_by_default** with empty allowed (the model sees no tools until the config lists them).
@@ -123,5 +123,5 @@ Additional proxy tools (e.g. `health_check`, `network_check`) may be added later
 ## 10. Deliverables alignment
 
 - **Design:** Short document describing chosen option (Command vs standalone service), data flow, and config.
-- **Implementation:** Tool schemas in OLLAMA format; chat flow (request with tools → OLLAMA → tool_calls → proxy → tool results → repeat); Command or HTTP endpoint; config schema or example.
+- **Implementation:** Tool schemas in MWPS format; chat flow (request with tools → MWPS → tool_calls → proxy → tool results → repeat); Command or HTTP endpoint; config schema or example.
 - **Example:** Minimal script or request example: one user message to the workstation, model reply after possible tool use.

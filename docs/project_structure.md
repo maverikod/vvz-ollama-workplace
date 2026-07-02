@@ -10,7 +10,7 @@ Recommended layout and conventions. **Canonical plan:** [docs/plans/refactoring_
 ## 1. Root layout (SPEC §5)
 
 ```
-ollama/
+mwps/
 ├── docs/                    # Root documentation only (common, plans)
 │   ├── README.md            # Integration (сопряжение) docs only
 │   ├── project_structure.md # This file
@@ -21,16 +21,16 @@ ollama/
 │   └── plans/               # Plans, incl. refactoring SPEC
 ├── mtls_certificates/       # Shared mTLS certs for all adapters
 ├── model_workspace/         # Subproject: model-workspace-server app
-├── ollama_adapter/          # Subproject: Ollama adapter (server)
+├── mwps_adapter/          # Subproject: Model Workplace Server adapter (server)
 ├── redis_adapter/           # Subproject: Redis adapter (server)
-├── ollama_provider_client/  # Subproject: provider client for Ollama (for model_workspace)
+├── mwps_provider_client/  # Subproject: provider client for Model Workplace Server (for model_workspace)
 ├── redis_provider_client/   # Subproject: provider client for Redis (for model_workspace)
 ├── .gitignore
 └── README.md
 ```
 
 - **Root** contains only common docs and `mtls_certificates`. No application code in root.
-- **Subprojects (SPEC §5):** six categories — (1) ollama_adapter, (2) redis_adapter, (3) model_workspace, (4) ollama_provider_client, (5) redis_provider_client, (6) other provider clients (e.g. openai_provider_client). All **clients** are based on the adapter client and hide provider-specific format and API. See [SUBPROJECTS_OVERVIEW.md](SUBPROJECTS_OVERVIEW.md).
+- **Subprojects (SPEC §5):** six categories — (1) mwps_adapter, (2) redis_adapter, (3) model_workspace, (4) mwps_provider_client, (5) redis_provider_client, (6) other provider clients (e.g. openai_provider_client). All **clients** are based on the adapter client and hide provider-specific format and API. See [SUBPROJECTS_OVERVIEW.md](SUBPROJECTS_OVERVIEW.md).
 
 ---
 
@@ -39,8 +39,8 @@ ollama/
 | Container               | Contents                         | Role |
 |-------------------------|----------------------------------|------|
 | **redis-adapter**       | Redis + mcp-proxy-adapter server | Storage; access only via adapter (WebSocket). |
-| **ollama-adapter**      | Ollama + mcp-proxy-adapter server| Models; access only via adapter (WebSocket).   |
-| **model-workspace-server** | Model workspace app only     | Uses **provider clients** (ollama_provider_client, redis_provider_client). Ollama = one provider; no Redis or Ollama inside. |
+| **mwps-adapter**      | Model Workplace Server + mcp-proxy-adapter server| Models; access only via adapter (WebSocket).   |
+| **model-workspace-server** | Model workspace app only     | Uses **provider clients** (mwps_provider_client, redis_provider_client). Model Workplace Server = one provider; no Redis or Model Workplace Server inside. |
 
 ---
 
@@ -48,11 +48,11 @@ ollama/
 
 Root **docs/** contains **only** documents about **coupling/integration** of the three subprojects. See [docs/README.md](README.md) for the list.
 
-- **docs/** — project_structure, container_usage (stack), registration_troubleshooting, standards/ (provider client API and config), plans/ (SPEC). Optional: RULES.md, standards.md, ollama_setup.md.
+- **docs/** — project_structure, container_usage (stack), registration_troubleshooting, standards/ (provider client API and config), plans/ (SPEC). Optional: RULES.md, standards.md, mwps_setup.md.
 - **model_workspace/docs/** — only model workspace: ТЗ, techspec, design, context_formation, deployment.
-- **ollama_adapter/docs/** — only Ollama adapter (server): ТЗ, README.
+- **mwps_adapter/docs/** — only Model Workplace Server adapter (server): ТЗ, README.
 - **redis_adapter/docs/** — only Redis adapter (server): ТЗ, README.
-- **ollama_provider_client/docs/** — provider client for Ollama (for model_workspace; Ollama = one provider).
+- **mwps_provider_client/docs/** — provider client for Model Workplace Server (for model_workspace; Model Workplace Server = one provider).
 - **redis_provider_client/docs/** — provider client for Redis (storage) for model_workspace.
 
 ---
@@ -76,9 +76,9 @@ Code and doc rules (one class per file, headers, black/flake8/mypy, code_mapper)
 
 ## 5. References
 
-- **SPEC (Russian):** [docs/plans/refactoring_adapter_structure/SPEC.md](plans/refactoring_adapter_structure/SPEC.md) — target architecture, five subprojects, provider clients, Ollama = one provider.
+- **SPEC (Russian):** [docs/plans/refactoring_adapter_structure/SPEC.md](plans/refactoring_adapter_structure/SPEC.md) — target architecture, five subprojects, provider clients, Model Workplace Server = one provider.
 - **Model workspace ТЗ:** model_workspace/docs/ТЗ.md
-- **Ollama adapter ТЗ:** ollama_adapter/docs/ТЗ.md
+- **Model Workplace Server adapter ТЗ:** mwps_adapter/docs/ТЗ.md
 - **Redis adapter ТЗ:** redis_adapter/docs/ТЗ.md
-- **Ollama provider client ТЗ:** ollama_provider_client/docs/ТЗ.md
+- **Model Workplace Server provider client ТЗ:** mwps_provider_client/docs/ТЗ.md
 - **Redis provider client ТЗ:** redis_provider_client/docs/ТЗ.md

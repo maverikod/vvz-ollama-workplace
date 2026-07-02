@@ -10,38 +10,38 @@ from pathlib import Path
 from unittest.mock import AsyncMock, patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "src"))
-from ollama_workstation.command_discovery import (  # noqa: E402
+from mwps.command_discovery import (  # noqa: E402
     CommandDiscovery,
     _commands_dict_to_list,
     make_command_id,
     parse_command_id,
 )
-from ollama_workstation.command_schema import CommandSchema  # noqa: E402
-from ollama_workstation.config import WorkstationConfig  # noqa: E402
-from ollama_workstation.proxy_client import ProxyClient  # noqa: E402
+from mwps.command_schema import CommandSchema  # noqa: E402
+from mwps.config import WorkstationConfig  # noqa: E402
+from mwps.proxy_client import ProxyClient  # noqa: E402
 
 
 def test_make_command_id() -> None:
     """make_command_id builds name.server_id."""
-    assert make_command_id("echo", "ollama-adapter") == "echo.ollama-adapter"
+    assert make_command_id("echo", "mwps-adapter") == "echo.mwps-adapter"
 
 
 def test_parse_command_id() -> None:
     """parse_command_id splits on last dot."""
-    assert parse_command_id("echo.ollama-adapter") == ("echo", "ollama-adapter")
+    assert parse_command_id("echo.mwps-adapter") == ("echo", "mwps-adapter")
     assert parse_command_id("a.b.c") == ("a.b", "c")
 
 
 def _default_config() -> WorkstationConfig:
-    from ollama_workstation.commands_policy_config import (
+    from mwps.commands_policy_config import (
         COMMANDS_POLICY_DENY_BY_DEFAULT,
         CommandsPolicyConfig,
     )
 
     return WorkstationConfig(
         mcp_proxy_url="http://p",
-        ollama_base_url="http://o",
-        ollama_model="m",
+        mwps_base_url="http://o",
+        mwps_model="m",
         commands_policy_config=CommandsPolicyConfig(
             allowed_commands=(),
             forbidden_commands=(),

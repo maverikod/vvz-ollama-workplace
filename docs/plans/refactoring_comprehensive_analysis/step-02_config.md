@@ -1,6 +1,6 @@
 # STEP-02 — config.py: split + merge duplicate parsers
 
-**File:** `src/ollama_workstation/config.py`  
+**File:** `src/mwps/config.py`  
 **Size:** 477 lines (+77 over limit)  
 **Issues:** Long file; `load_config` 244 lines; dup `_parse_number`/`_parse_int`  
 **Severity:** 🔴 High + 🟡 Medium  

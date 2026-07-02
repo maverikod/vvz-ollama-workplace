@@ -1,4 +1,4 @@
-# ollama-model-database-client
+# mwps-model-database-client
 
 Author: Vasiliy Zdanovskiy  
 email: vasilyvz@gmail.com

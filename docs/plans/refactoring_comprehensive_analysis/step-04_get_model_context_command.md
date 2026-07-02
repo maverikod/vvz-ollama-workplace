@@ -1,6 +1,6 @@
 # STEP-04 — get_model_context_command.py: split + fix placeholder
 
-**File:** `src/ollama_workstation/commands/get_model_context_command.py`  
+**File:** `src/mwps/commands/get_model_context_command.py`  
 **Size:** 415 lines (+15 over limit)  
 **Issues:** Long file; PLACEHOLDER in parameter schema (line 93); `execute` 158 lines  
 **Severity:** 🔴 High + 🟡 Medium  
@@ -24,7 +24,7 @@
 
 **1. PLACEHOLDER in `get_schema`** (line 93)
 ```
-PLACEHOLDER: Optional user message text to append as the last message, as ollama_ch...
+PLACEHOLDER: Optional user message text to append as the last message, as mwps_ch...
 ```
 The parameter description is truncated/unfinished. Must be completed.
 
@@ -32,7 +32,7 @@ The parameter description is truncated/unfinished. Must be completed.
 
 **3. `execute` is 158 lines** covering:
 - Session load
-- Tool list construction (same pipeline as `OllamaChatCommand`)
+- Tool list construction (same pipeline as `MwpsChatCommand`)
 - Message serialization
 - Context assembly and return
 
@@ -40,7 +40,7 @@ The parameter description is truncated/unfinished. Must be completed.
 
 ### 4a. Fix PLACEHOLDER
 
-Complete the parameter description at line 93. Based on context with `ollama_chat_command`, the parameter is `append_user_message: Optional[str]` — an optional text appended as the final user message before context snapshot.
+Complete the parameter description at line 93. Based on context with `mwps_chat_command`, the parameter is `append_user_message: Optional[str]` — an optional text appended as the final user message before context snapshot.
 
 ### 4b. Extract schemas
 

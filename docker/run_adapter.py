@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Run MCP Proxy Adapter with OLLAMA: load config, register command, start server.
+Run MCP Proxy Adapter with MWPS: load config, register command, start server.
 
 Author: Vasiliy Zdanovskiy
 email: vasilyvz@gmail.com
@@ -26,23 +26,23 @@ from mcp_proxy_adapter.commands.command_registry import (
     registry,
 )
 
-from ollama_workstation.docker_config_validation import validate_project_config
-from ollama_workstation.model_loading_state import (
+from mwps.docker_config_validation import validate_project_config
+from mwps.model_loading_state import (
     set_loading,
     set_model_ready,
     set_ready,
 )
-from ollama_workstation.model_loader import run_model_loading, warm_up_models
-from ollama_workstation.ollama_client import start_readiness_ping_thread
+from mwps.model_loader import run_model_loading, warm_up_models
+from mwps.mwps_client import start_readiness_ping_thread
 
-# So that chat_flow, ollama_chat_command, proxy_client INFO appear in adapter logs.
-logging.getLogger("ollama_workstation").setLevel(logging.INFO)
+# So that chat_flow, mwps_chat_command, proxy_client INFO appear in adapter logs.
+logging.getLogger("mwps").setLevel(logging.INFO)
 
 # Server description for proxy catalog.
-OLLAMA_WORKSTATION_SERVER_DESCRIPTION = (
-    "OLLAMA Workstation: MCP adapter that runs chat with local OLLAMA and gives the "
+MWPS_SERVER_DESCRIPTION = (
+    "Model Workplace Server: MCP adapter that runs chat with local MWPS and gives the "
     "model access to MCP Proxy tools (list_servers, call_server, help). Use "
-    "ollama_chat to send messages and get replies; model can call any server. "
+    "mwps_chat to send messages and get replies; model can call any server. "
     "Session commands (session_init, session_update, add_command_to_session, "
     "remove_command_from_session) manage per-session allow/forbid lists. "
     "server_status reports adapter readiness or model loading."
@@ -56,7 +56,7 @@ DATABASE_SERVER_DESCRIPTION = (
 
 
 def register_commands() -> None:
-    """Register commands by server_id: ollama-server | workstation | database-server."""
+    """Register commands by server_id: mwps-server | workstation | database-server."""
     cfg = get_config()
     cfg_data = getattr(cfg, "config_data", None) or {}
     server_id = str((cfg_data.get("registration") or {}).get("server_id") or "").strip()
@@ -64,19 +64,19 @@ def register_commands() -> None:
         from database_server.commands import register_database_commands
 
         register_database_commands(registry)
-    elif server_id == "ollama-server":
-        from ollama_workstation.registration import register_ollama_server
+    elif server_id == "mwps-server":
+        from mwps.registration import register_mwps_server
 
-        register_ollama_server(registry)
+        register_mwps_server(registry)
     else:
-        from ollama_workstation.registration import register_ollama_workstation
+        from mwps.registration import register_mwps
 
-        register_ollama_workstation(registry)
+        register_mwps(registry)
 
 
 def main() -> int:
     """Load config, validate, create app, register commands, run hypercorn."""
-    parser = argparse.ArgumentParser(description="OLLAMA + MCP Adapter (mTLS)")
+    parser = argparse.ArgumentParser(description="MWPS + MCP Adapter (mTLS)")
     parser.add_argument(
         "--config",
         default="/app/config/adapter_config.json",
@@ -123,7 +123,7 @@ def main() -> int:
 
     # Patch sync command timeout (mcp_proxy_adapter uses 30s) for long-running chat.
     command_timeout = 120
-    ow = app_config.get("ollama_workstation") or {}
+    ow = app_config.get("mwps") or {}
     if isinstance(ow, dict):
         command_timeout = int(ow.get("command_execution_timeout_seconds", 120))
     if command_timeout != 30:
@@ -151,8 +151,8 @@ def main() -> int:
         app_title = "Database Server Adapter"
         app_description = DATABASE_SERVER_DESCRIPTION
     else:
-        app_title = "OLLAMA Workstation Adapter"
-        app_description = OLLAMA_WORKSTATION_SERVER_DESCRIPTION
+        app_title = "Model Workplace Server Adapter"
+        app_description = MWPS_SERVER_DESCRIPTION
 
     app = create_app(
         title=app_title,
@@ -164,8 +164,8 @@ def main() -> int:
 
     register_commands()
 
-    ow = app_config.get("ollama_workstation") or {}
-    oo = (ow.get("ollama") or {}) if isinstance(ow, dict) else {}
+    ow = app_config.get("mwps") or {}
+    oo = (ow.get("mwps") or {}) if isinstance(ow, dict) else {}
     model_list: list[str] = []
     model_server_url = ""
     if server_id != "database-server" and isinstance(ow, dict):

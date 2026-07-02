@@ -11,7 +11,7 @@ from pathlib import Path
 import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "src"))
-from ollama_workstation.command_schema import CommandSchema  # noqa: E402
+from mwps.command_schema import CommandSchema  # noqa: E402
 
 
 def test_schema_name_description_parameters() -> None:

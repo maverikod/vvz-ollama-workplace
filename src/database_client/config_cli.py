@@ -15,16 +15,6 @@ import sys
 from pathlib import Path
 from typing import Any
 
-from database_client.config_generator import (
-    _default_client_template,
-    _env_overlay,
-    generate_from_merged,
-)
-from database_client.config_validator import (
-    DatabaseClientConfigError,
-    validate_config,
-)
-
 
 def _get_database_client_schema() -> dict[str, Any]:
     """Return JSON schema for database_client config (adapter + database_client)."""
@@ -176,6 +166,12 @@ def _args_overlay_from_namespace(args: argparse.Namespace) -> dict[str, Any]:
 
 
 def _cmd_generate(args: argparse.Namespace) -> int:
+    from database_client.config_generator import (
+        _default_client_template,
+        _env_overlay,
+        generate_from_merged,
+    )
+
     certs_dir = Path(getattr(args, "certs_dir", "mtls_certificates")).resolve()
     tpl = _default_client_template(certs_dir)
     args_overlay = _args_overlay_from_namespace(args)
@@ -203,6 +199,11 @@ def _parse_validate_args(parser: argparse.ArgumentParser) -> argparse.ArgumentPa
 
 
 def _cmd_validate(args: argparse.Namespace) -> int:
+    from database_client.config_validator import (
+        DatabaseClientConfigError,
+        validate_config,
+    )
+
     config_path = Path(args.config)
     try:
         validate_config(config_path)
@@ -226,6 +227,8 @@ def _test_connection_impl(config_path: Path) -> tuple[bool, str]:
     Validate config then attempt HTTPS request with mTLS. Returns (success, message).
     Reports transport/auth failures clearly.
     """
+    from database_client.config_validator import validate_config
+
     validate_config(config_path)
     with open(config_path, encoding="utf-8") as f:
         app_config = json.load(f)

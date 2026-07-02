@@ -1,6 +1,6 @@
 # STEP-05 — docker_config_validation.py: split monolith
 
-**File:** `src/ollama_workstation/docker_config_validation.py`  
+**File:** `src/mwps/docker_config_validation.py`  
 **Size:** 527 lines (+127 over limit)  
 **Issues:** Long file; `validate_project_config` is 211 lines  
 **Severity:** 🔴 High  
@@ -14,7 +14,7 @@
 | Function | Lines | Responsibility |
 |----------|-------|----------------|
 | `get_runtime_allowed_providers` | 75–112 (38) | Filter provider list by runtime availability |
-| `_get_ollama_from_ow` | 115–134 (20) | Extract Ollama section from workstation config |
+| `_get_mwps_from_ow` | 115–134 (20) | Extract Model Workplace Server section from workstation config |
 | `get_provider_for_model` | 137–145 (9) | Map model name to provider |
 | `get_required_api_key_for_model` | 148–159 (12) | Return required API key env var for model |
 | `_collect_providers_in_use` | 162–199 (38) | Enumerate providers referenced by config |
@@ -37,9 +37,9 @@
 Split into a package `docker_config_validation/`:
 
 ```
-src/ollama_workstation/docker_config_validation/
+src/mwps/docker_config_validation/
     __init__.py                    # re-exports public API
-    _providers.py                  # get_runtime_allowed_providers, _get_ollama_from_ow,
+    _providers.py                  # get_runtime_allowed_providers, _get_mwps_from_ow,
                                    # get_provider_for_model, _collect_providers_in_use
     _api_keys.py                   # get_required_api_key_for_model, _collect_required_api_keys,
                                    # validate_commercial_model_keys

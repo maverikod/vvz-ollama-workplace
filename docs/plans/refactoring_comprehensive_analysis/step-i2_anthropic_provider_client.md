@@ -1,6 +1,6 @@
 # STEP-I2 — AnthropicProviderClient (new file)
 
-**File:** `src/ollama_workstation/anthropic_provider_client.py` (new)
+**File:** `src/mwps/anthropic_provider_client.py` (new)
 **Provider:** `anthropic`
 **Severity:** 🔴 High
 **Depends on:** STEP-08

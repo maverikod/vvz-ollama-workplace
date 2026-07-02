@@ -1,8 +1,8 @@
 # STEP-S1 — search command (new file)
 
-**File:** `src/ollama_workstation/commands/search_command.py` (new)
+**File:** `src/mwps/commands/search_command.py` (new)
 **Severity:** 🔴 High
-**Depends on:** STEP-I1 (embed via OpenAI-compat or Ollama), STEP-P1, STEP-S2
+**Depends on:** STEP-I1 (embed via OpenAI-compat or Model Workplace Server), STEP-P1, STEP-S2
 
 ---
 

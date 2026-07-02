@@ -1,6 +1,6 @@
 # STEP-08 — provider_client_base.py: eliminate duplicate abstract method bodies
 
-**File:** `src/ollama_workstation/provider_client_base.py`  
+**File:** `src/mwps/provider_client_base.py`  
 **Size:** 118 lines  
 **Issues:** `chat`, `embed`, `normalize_response` have similarity 1.0 — identical abstract stubs  
 **Severity:** 🟡 Medium  
@@ -52,7 +52,7 @@ class BaseProviderClient(ABC):
 
     @abstractmethod
     def normalize_response(self, raw: dict) -> dict:
-        """Normalize provider response to Ollama format."""
+        """Normalize provider response to Model Workplace Server format."""
 
     @abstractmethod
     async def validate_config(self) -> None: ...
@@ -71,6 +71,6 @@ Keep concrete defaults for `supports_stream`, `supports_tools`, `supports_embedd
 
 - [ ] `BaseProviderClient` uses `ABC` + `@abstractmethod`
 - [ ] No duplicate `raise NotImplementedError` bodies
-- [ ] `OllamaProviderClient` still passes `isinstance(client, BaseProviderClient)`
+- [ ] `MwpsProviderClient` still passes `isinstance(client, BaseProviderClient)`
 - [ ] `lint_code` + `type_check_code` pass
 - [ ] `mypy` does not report missing abstract implementations

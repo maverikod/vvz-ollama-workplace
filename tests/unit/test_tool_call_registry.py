@@ -11,16 +11,16 @@ from pathlib import Path
 import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "src"))
-from ollama_workstation.tool_call_registry import ToolCallRegistry  # noqa: E402
+from mwps.tool_call_registry import ToolCallRegistry  # noqa: E402
 
 
 def test_register_and_resolve() -> None:
     """Register display_name -> (command_name, server_id); resolve returns it."""
     reg = ToolCallRegistry()
-    reg.register("ollama_chat_ollama_adapter", "ollama_chat", "ollama-adapter")
-    assert reg.resolve("ollama_chat_ollama_adapter") == (
-        "ollama_chat",
-        "ollama-adapter",
+    reg.register("mwps_chat_mwps_adapter", "mwps_chat", "mwps-adapter")
+    assert reg.resolve("mwps_chat_mwps_adapter") == (
+        "mwps_chat",
+        "mwps-adapter",
     )
 
 

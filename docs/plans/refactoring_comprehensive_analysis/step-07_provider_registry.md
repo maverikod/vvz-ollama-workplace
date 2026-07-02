@@ -1,9 +1,9 @@
 # STEP-07 — provider_registry.py: implement NOT IMPLEMENTED
 
-**File:** `src/ollama_workstation/provider_registry.py`  
+**File:** `src/mwps/provider_registry.py`  
 **Size:** 190 lines  
-**Issues:** 3× NOT IMPLEMENTED — `get_client` raises for non-ollama providers; provider `ollama` unavailable via package  
-**Severity:** 🔴 High (blocks all non-ollama providers)  
+**Issues:** 3× NOT IMPLEMENTED — `get_client` raises for non-mwps providers; provider `mwps` unavailable via package  
+**Severity:** 🔴 High (blocks all non-mwps providers)  
 **Depends on:** STEP-06 (`commercial_chat_client` must be implemented first)  
 **Blocks:** STEP-08
 
@@ -13,7 +13,7 @@
 
 | Function | Lines | Responsibility |
 |----------|-------|----------------|
-| `_build_ollama` | 27–47 (21) | Construct `OllamaProviderClient` from config |
+| `_build_mwps` | 27–47 (21) | Construct `MwpsProviderClient` from config |
 | `get_client` | 57–113 (57) | Resolve provider name → client instance |
 | `get_default_client` | 116–143 (28) | Get client for config default model |
 | `get_client_from_app_config` | 146–181 (36) | Get client from full app config |
@@ -21,24 +21,24 @@
 
 ## Problems
 
-**NOT IMPLEMENTED #1** (line 38): Inside `_build_ollama` — `ollama_provider_client` package import fails — the package `ollama_provider_client` is not installed in venv.
+**NOT IMPLEMENTED #1** (line 38): Inside `_build_mwps` — `mwps_provider_client` package import fails — the package `mwps_provider_client` is not installed in venv.
 
-**NOT IMPLEMENTED #2** (line 57): `get_client` raises `NotImplementedError` for any provider other than `"ollama"`.
+**NOT IMPLEMENTED #2** (line 57): `get_client` raises `NotImplementedError` for any provider other than `"mwps"`.
 
-**NOT IMPLEMENTED #3** (line 63): The branch for provider `"ollama"` also hits `NotImplementedError` because `_build_ollama` fails.
+**NOT IMPLEMENTED #3** (line 63): The branch for provider `"mwps"` also hits `NotImplementedError` because `_build_mwps` fails.
 
 ## Task
 
-### 7a. Fix `_build_ollama`
+### 7a. Fix `_build_mwps`
 
-Replace import of unavailable `ollama_provider_client` package with direct use of `OllamaProviderClient` from `ollama_workstation.ollama_provider_client`:
+Replace import of unavailable `mwps_provider_client` package with direct use of `MwpsProviderClient` from `mwps.mwps_provider_client`:
 ```python
-from .ollama_provider_client import OllamaProviderClient
+from .mwps_provider_client import MwpsProviderClient
 
-def _build_ollama(config: WorkstationConfig) -> OllamaProviderClient:
-    return OllamaProviderClient(
-        base_url=config.model.ollama_url,
-        model=config.model.ollama_model,
+def _build_mwps(config: WorkstationConfig) -> MwpsProviderClient:
+    return MwpsProviderClient(
+        base_url=config.model.mwps_url,
+        model=config.model.mwps_model,
         timeout=config.model.request_timeout,
     )
 ```
@@ -64,7 +64,7 @@ Return actual list including commercial providers.
 ## Acceptance criteria
 
 - [ ] All 3 NOT IMPLEMENTED markers removed
-- [ ] `get_client("ollama", ...)` returns working `OllamaProviderClient`
+- [ ] `get_client("mwps", ...)` returns working `MwpsProviderClient`
 - [ ] `get_client("openai", ...)` returns working `CommercialProviderClient`
 - [ ] `list_supported_providers()` returns complete list
 - [ ] `lint_code` + `type_check_code` pass

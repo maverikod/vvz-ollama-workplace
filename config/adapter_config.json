@@ -5,15 +5,15 @@
     "protocol": "mtls",
     "servername": "localhost",
     "ssl": {
-      "cert": "/home/vasilyvz/projects/ollama/mtls_certificates/server/test-server.crt",
-      "key": "/home/vasilyvz/projects/ollama/mtls_certificates/server/test-server.key",
-      "ca": "/home/vasilyvz/projects/ollama/mtls_certificates/ca/ca.crt",
+      "cert": "/home/vasilyvz/projects/mwps/mtls_certificates/server/test-server.crt",
+      "key": "/home/vasilyvz/projects/mwps/mtls_certificates/server/test-server.key",
+      "ca": "/home/vasilyvz/projects/mwps/mtls_certificates/ca/ca.crt",
       "crl": null,
       "dnscheck": false,
       "check_hostname": null
     },
     "rules": null,
-    "log_dir": "/home/vasilyvz/projects/ollama/logs",
+    "log_dir": "/home/vasilyvz/projects/mwps/logs",
     "debug": false,
     "log_level": "INFO",
     "advertised_host": "localhost"
@@ -30,15 +30,15 @@
     "unregister_url": "https://localhost:3004/unregister",
     "heartbeat_interval": 30,
     "ssl": {
-      "cert": "/home/vasilyvz/projects/ollama/mtls_certificates/client/test-server.crt",
-      "key": "/home/vasilyvz/projects/ollama/mtls_certificates/client/test-server.key",
-      "ca": "/home/vasilyvz/projects/ollama/mtls_certificates/ca/ca.crt",
+      "cert": "/home/vasilyvz/projects/mwps/mtls_certificates/client/test-server.crt",
+      "key": "/home/vasilyvz/projects/mwps/mtls_certificates/client/test-server.key",
+      "ca": "/home/vasilyvz/projects/mwps/mtls_certificates/ca/ca.crt",
       "crl": null,
       "dnscheck": false,
       "check_hostname": null
     },
     "server_id": "localhost",
-    "server_name": "OLLAMA Workstation",
+    "server_name": "Model Workplace Server",
     "instance_uuid": "506299bb-81c4-472f-ac4a-bd20252d17f7",
     "auto_on_startup": true,
     "auto_on_shutdown": true,
@@ -82,14 +82,14 @@
   "transport": {
     "verify_client": true
   },
-  "ollama_workstation": {
+  "mwps": {
     "mcp_proxy_url": "https://localhost:3004",
-    "ollama_base_url": "http://127.0.0.1:11434",
-    "ollama_model": "llama3.2",
-    "ollama_models": [
+    "mwps_base_url": "http://127.0.0.1:11434",
+    "mwps_model": "llama3.2",
+    "mwps_models": [
       "llama3.2"
     ],
-    "ollama_timeout": 120,
+    "mwps_timeout": 120,
     "max_tool_rounds": 10,
     "allowed_commands": [],
     "forbidden_commands": [],

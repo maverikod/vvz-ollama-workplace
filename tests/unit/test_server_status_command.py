@@ -11,12 +11,12 @@ from pathlib import Path
 import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "src"))
-from ollama_workstation.commands import (  # noqa: E402
+from mwps.commands import (  # noqa: E402
     GetModelStateCommand,
     ServerStatusCommand,
     SetDefaultModelCommand,
 )
-from ollama_workstation.model_loading_state import (  # noqa: E402
+from mwps.model_loading_state import (  # noqa: E402
     get_active_model,
     get_state,
     set_active_model,

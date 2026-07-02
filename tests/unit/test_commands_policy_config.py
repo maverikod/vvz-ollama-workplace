@@ -11,7 +11,7 @@ from pathlib import Path
 import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "src"))
-from ollama_workstation.commands_policy_config import (  # noqa: E402
+from mwps.commands_policy_config import (  # noqa: E402
     COMMANDS_POLICY_ALLOW_BY_DEFAULT,
     COMMANDS_POLICY_DENY_BY_DEFAULT,
     CommandsPolicyConfig,

@@ -1,6 +1,6 @@
 # STEP-10 — documentation_slot_builder.py: implement STUB
 
-**File:** `src/ollama_workstation/documentation_slot_builder.py`  
+**File:** `src/mwps/documentation_slot_builder.py`  
 **Size:** 44 lines  
 **Issues:** 2× STUB in `build()` method (lines 25, 31) — returns placeholder content  
 **Severity:** 🔴 High (documentation context slot is non-functional)  
@@ -31,7 +31,7 @@ degrading model quality for documentation-heavy use cases.
 
 ### 10a. Understand `documentation_source`
 
-Read `src/ollama_workstation/documentation_source.py` to understand the API:
+Read `src/mwps/documentation_source.py` to understand the API:
 - What does `DocumentationSource` provide?
 - What query interface does it expose? (`get_canonical()`, `get_clarifications()`, etc.)
 - What is the return type of each method?

@@ -8,7 +8,7 @@ Steps:
   2. Create session with session_init (model + session_rules).
   3. Send command to model: "Vectorize the phrase: hello world".
   4. Verify with tools: get_model_context (what model receives), invoke_tool
-     list_servers (what it can call), ollama_chat (can it call tools).
+     list_servers (what it can call), mwps_chat (can it call tools).
 
 Env: ADAPTER_URL (default https://localhost:8016), CERTS_DIR (mtls_certificates),
      VERIFY_MODEL_TOOL_USE (default 1): set to 0 to allow step 6 to warn only.
@@ -210,19 +210,19 @@ def main() -> int:
                 % (content[:200] + "..." if len(content) > 200 else content)
             )
 
-    # 5. ollama_chat — give model the command to vectorize; check it can use tools
-    print("\n5. ollama_chat(session_id, content) — model command: vectorize phrase")
+    # 5. mwps_chat — give model the command to vectorize; check it can use tools
+    print("\n5. mwps_chat(session_id, content) — model command: vectorize phrase")
     r_chat = _jsonrpc(
-        "ollama_chat",
+        "mwps_chat",
         {"session_id": session_id, "content": user_content},
         req_id=4,
     )
     ok_chat, chat_data, err_chat = _result_data(r_chat)
     if not ok_chat:
-        print("  FAIL: ollama_chat: %s" % (err_chat or r_chat))
+        print("  FAIL: mwps_chat: %s" % (err_chat or r_chat))
         return 1
     if chat_data is None:
-        print("  FAIL: ollama_chat no data")
+        print("  FAIL: mwps_chat no data")
         return 1
     msg = (chat_data.get("message") or "").strip()
     history = chat_data.get("history") or []
@@ -239,15 +239,15 @@ def main() -> int:
 
     # 6. Ensure model actually uses tools: session with only echo allowed so the
     #    model is much more likely to call it (with 30+ tools it often replies in text).
-    print("\n6. ollama_chat — model MUST use echo tool")
+    print("\n6. mwps_chat — model MUST use echo tool")
     r2 = _jsonrpc(
         "session_init",
         {
             "model": "llama3.2",
             "session_rules": ECHO_SESSION_RULES,
             "allowed_commands": [
-                "echo.ollama-adapter-test",
-                "echo.ollama-adapter",
+                "echo.mwps-adapter-test",
+                "echo.mwps-adapter",
             ],
         },
         req_id=5,
@@ -261,16 +261,16 @@ def main() -> int:
         print("  FAIL: session_init (echo) no session_id")
         return 1
     r_echo = _jsonrpc(
-        "ollama_chat",
+        "mwps_chat",
         {"session_id": session_id2, "content": ECHO_PROMPT},
         req_id=6,
     )
     ok_echo, echo_data, err_echo = _result_data(r_echo)
     if not ok_echo:
-        print("  FAIL: ollama_chat (echo): %s" % (err_echo or r_echo))
+        print("  FAIL: mwps_chat (echo): %s" % (err_echo or r_echo))
         return 1
     if echo_data is None:
-        print("  FAIL: ollama_chat (echo) no data")
+        print("  FAIL: mwps_chat (echo) no data")
         return 1
     history_echo = echo_data.get("history") or []
     tool_used_echo = any(

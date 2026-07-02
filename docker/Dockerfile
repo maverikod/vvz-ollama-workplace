@@ -1,4 +1,4 @@
-# Image: REDIS + OLLAMA + MCP Proxy Adapter (ollama-workstation).
+# Image: REDIS + MWPS + MCP Proxy Adapter (mwps).
 # Bases, configs, logs, models mounted from host. Run with user 1000:1000.
 # Author: Vasiliy Zdanovskiy
 # email: vasilyvz@gmail.com
@@ -7,7 +7,7 @@
 FROM ubuntu:22.04
 
 ENV DEBIAN_FRONTEND=noninteractive
-ENV OLLAMA_HOST=0.0.0.0
+ENV MWPS_HOST=0.0.0.0
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \
@@ -20,7 +20,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     redis-server \
     && rm -rf /var/lib/apt/lists/*
 
-RUN curl -fsSL https://ollama.com/install.sh | sh
+RUN curl -fsSL https://mwps.com/install.sh | sh
 
 WORKDIR /app
 
@@ -35,7 +35,7 @@ RUN mkdir -p /app/certs /app/config /app/logs /app/data /app/cache /app/redis_da
 
 COPY docker/redis.conf /app/redis.conf
 COPY docker/entrypoint.sh /app/entrypoint.sh
-COPY docker/ensure_ollama_models.py /app/ensure_ollama_models.py
+COPY docker/ensure_mwps_models.py /app/ensure_mwps_models.py
 COPY docker/generate_config.py /app/generate_config.py
 COPY docker/run_adapter.py /app/run_adapter.py
 

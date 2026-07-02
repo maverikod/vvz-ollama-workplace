@@ -18,7 +18,7 @@ One abstract base class, concrete subclasses per provider family:
 
 ```
 BaseProviderClient (ABC)          # provider_client_base.py
-  ├── OllamaProviderClient        # ollama_provider_client.py
+  ├── MwpsProviderClient        # mwps_provider_client.py
   ├── OpenAIProviderClient        # openai_provider_client.py  (OpenAI-compatible REST)
   │     used also for: xai, deepseek (same API shape, different base_url + key)
   ├── AnthropicProviderClient     # anthropic_provider_client.py  (Messages API)
@@ -41,7 +41,7 @@ have a concrete implementation:
 
 | Provider name | Class | API style |
 |---|---|---|
-| `ollama` | OllamaProviderClient | Ollama HTTP (`/api/chat`, `/api/embed`) |
+| `mwps` | MwpsProviderClient | Model Workplace Server HTTP (`/api/chat`, `/api/embed`) |
 | `openai` | OpenAIProviderClient | OpenAI REST (`/v1/chat/completions`) |
 | `anthropic` | AnthropicProviderClient | Anthropic Messages API |
 | `google` | GoogleProviderClient | Gemini API (`generativelanguage.googleapis.com`) |
@@ -50,20 +50,20 @@ have a concrete implementation:
 
 ### 1.3 Contract compliance (fixing P1–P6 from architecture review)
 
-- **P1 fix:** Remove all direct `OllamaRepresentation()` instantiations from
-  `chat_flow.py`, `ollama_chat_command.py`, `get_model_context_command.py`.
+- **P1 fix:** Remove all direct `MwpsRepresentation()` instantiations from
+  `chat_flow.py`, `mwps_chat_command.py`, `get_model_context_command.py`.
   All representation lookup must go through `RepresentationRegistry`.
 - **P2 fix:** Implement `provider_registry.get_client()` for all six providers.
   Remove `NOT IMPLEMENTED` from `commercial_chat_client.py`.
-- **P3 fix:** `OllamaServerChatCommand` and `OllamaServerEmbedCommand` must be
-  removed or rerouted through `BaseProviderClient`. Direct HTTP to Ollama API
+- **P3 fix:** `MwpsServerChatCommand` and `MwpsServerEmbedCommand` must be
+  removed or rerouted through `BaseProviderClient`. Direct HTTP to Model Workplace Server API
   is forbidden outside the provider client.
 - **P4:** Two vectorization paths are intentional — see §3.
-- **P5 fix:** `tools.py::get_ollama_tools()` must delegate tool serialization
+- **P5 fix:** `tools.py::get_mwps_tools()` must delegate tool serialization
   to `ContextRepresentation.serialize_tools()` via the registry. The function
   must be renamed `get_tools_for_model(model_id)` and become provider-agnostic.
-- **P6 fix:** `WorkstationConfig` flat Ollama fields (`ollama_url`,
-  `ollama_model`) must be replaced by the normalized `provider_clients`
+- **P6 fix:** `WorkstationConfig` flat Model Workplace Server fields (`mwps_url`,
+  `mwps_model`) must be replaced by the normalized `provider_clients`
   structure from `provider_client_config_standard.md`.
 
 ---
@@ -78,10 +78,10 @@ becomes **mandatory** and must pass full validation before startup.
 
 ```yaml
 provider_clients:
-  default_provider: ollama        # must reference an existing key below
+  default_provider: mwps        # must reference an existing key below
   providers:
 
-    ollama:
+    mwps:
       transport:
         base_url: "http://localhost:11434"
         request_timeout_seconds: 120
@@ -194,11 +194,11 @@ provider_clients:
 
 ### 2.3 Config migration (WorkstationConfig)
 
-Current flat fields (`ollama_url`, `ollama_model`) must be replaced by the
+Current flat fields (`mwps_url`, `mwps_model`) must be replaced by the
 normalized structure above. Migration steps:
 1. Parse new `provider_clients` section in `load_config()`.
 2. Build `ProviderClientConfig` dataclass from parsed section.
-3. Remove `ollama_url`, `ollama_model`, `ollama_embed_model` from
+3. Remove `mwps_url`, `mwps_model`, `mwps_embed_model` from
    `WorkstationConfig`.
 4. `provider_registry.get_client(provider_name, config)` reads from
    `config.provider_clients.providers[provider_name]`.
@@ -309,7 +309,7 @@ message and tool formats differ:
 
 | Provider | Representation class | Notes |
 |---|---|---|
-| `ollama` | `OllamaRepresentation` | already implemented |
+| `mwps` | `MwpsRepresentation` | already implemented |
 | `openai` | `OpenAIRepresentation` | tool calls: `{type: function, function: {name, arguments}}` |
 | `anthropic` | `AnthropicRepresentation` | tool use: `{type: tool_use, name, input}` |
 | `google` | `GeminiRepresentation` | function calling: `{functionCall: {name, args}}` |

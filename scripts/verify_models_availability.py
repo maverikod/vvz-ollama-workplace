@@ -23,11 +23,11 @@ _root = Path(__file__).resolve().parents[1]
 if str(_root) not in sys.path:
     sys.path.insert(0, str(_root))
 
-from ollama_workstation.config import load_config  # noqa: E402
-from ollama_workstation.model_provider_resolver import (  # noqa: E402
+from mwps.config import load_config  # noqa: E402
+from mwps.model_provider_resolver import (  # noqa: E402
     resolve_model_endpoint,
 )
-from ollama_workstation.commercial_chat_client import (  # noqa: E402
+from mwps.commercial_chat_client import (  # noqa: E402
     chat_completion as commercial_chat,
 )
 
@@ -51,10 +51,10 @@ def _get_config_path() -> Path:
 
 
 def _get_model_list(config_path: Path) -> list[str]:
-    """Read model list from ollama_workstation.ollama."""
+    """Read model list from mwps.mwps."""
     data = json.loads(config_path.read_text(encoding="utf-8"))
-    ow = data.get("ollama_workstation") or {}
-    section = ow.get("ollama")
+    ow = data.get("mwps") or {}
+    section = ow.get("mwps")
     if not isinstance(section, dict):
         return []
     models = section.get("models") if isinstance(section.get("models"), list) else []
@@ -65,8 +65,8 @@ def _get_model_list(config_path: Path) -> list[str]:
     return out
 
 
-async def _test_ollama(base_url: str, model: str, timeout: float) -> tuple[bool, str]:
-    """Send test message to Ollama /api/chat. Return (ok, message)."""
+async def _test_mwps(base_url: str, model: str, timeout: float) -> tuple[bool, str]:
+    """Send test message to Model Workplace Server /api/chat. Return (ok, message)."""
     url = base_url.rstrip("/") + "/api/chat"
     body = {
         "model": model,
@@ -106,8 +106,8 @@ async def _check_model(model: str, config_path: Path) -> tuple[str, bool, str]:
     """Resolve model, send test, return (model, ok, detail)."""
     config = load_config(str(config_path))
     endpoint = resolve_model_endpoint(model, config)
-    if endpoint.is_ollama:
-        ok, detail = await _test_ollama(endpoint.base_url, endpoint.model_id, TIMEOUT)
+    if endpoint.is_mwps:
+        ok, detail = await _test_mwps(endpoint.base_url, endpoint.model_id, TIMEOUT)
     else:
         ok, detail = await _test_commercial(endpoint, TIMEOUT)
     return model, ok, detail
@@ -117,7 +117,7 @@ async def main_async(config_path: Path) -> int:
     models = _get_model_list(config_path)
     if not models:
         print(
-            "No models in config (ollama_workstation.ollama).",
+            "No models in config (mwps.mwps).",
             file=sys.stderr,
         )
         return 1

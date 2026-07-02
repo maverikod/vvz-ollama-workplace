@@ -7,13 +7,13 @@ from pathlib import Path
 import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "src"))  # noqa: E402
-from ollama_workstation.commands_policy_config import (  # noqa: E402
+from mwps.commands_policy_config import (  # noqa: E402
     COMMANDS_POLICY_DENY_BY_DEFAULT,
     CommandsPolicyConfig,
 )
-from ollama_workstation.config import WorkstationConfig  # noqa: E402
-from ollama_workstation.chat_flow import run_chat_flow  # noqa: E402
-from ollama_workstation.provider_client_config_generator import (  # noqa: E402
+from mwps.config import WorkstationConfig  # noqa: E402
+from mwps.chat_flow import run_chat_flow  # noqa: E402
+from mwps.provider_client_config_generator import (  # noqa: E402
     generate_provider_clients_section,
 )
 
@@ -29,8 +29,8 @@ def config() -> WorkstationConfig:
     provider_clients_data = generate_provider_clients_section(validate=False)
     return WorkstationConfig(
         mcp_proxy_url="http://localhost:3004",
-        ollama_base_url="http://localhost:11434",
-        ollama_model="llama3.1",
+        mwps_base_url="http://localhost:11434",
+        mwps_model="llama3.1",
         commands_policy_config=_DEFAULT_POLICY,
         provider_clients_data=provider_clients_data,
     )
@@ -41,8 +41,8 @@ async def test_chat_flow_requires_provider_clients_data_no_legacy_fallback() -> 
     """run_chat_flow raises when provider_clients_data is None (no legacy resolver)."""
     config_no_pc = WorkstationConfig(
         mcp_proxy_url="http://localhost:3004",
-        ollama_base_url="http://localhost:11434",
-        ollama_model="llama3.1",
+        mwps_base_url="http://localhost:11434",
+        mwps_model="llama3.1",
         commands_policy_config=_DEFAULT_POLICY,
         provider_clients_data=None,
     )
@@ -61,9 +61,9 @@ async def test_chat_flow_no_tool_calls(config: WorkstationConfig) -> None:
     mock_provider_client = MagicMock()
     mock_provider_client.chat = MagicMock(return_value=mock_response)
     with (
-        patch("ollama_workstation.chat_flow.is_model_ready", return_value=True),
+        patch("mwps.chat_flow.is_model_ready", return_value=True),
         patch(
-            "ollama_workstation.chat_flow.get_default_client",
+            "mwps.chat_flow.get_default_client",
             return_value=mock_provider_client,
         ),
     ):
@@ -93,13 +93,13 @@ async def test_chat_flow_tool_call_appends_tool_msg(config: WorkstationConfig) -
     mock_provider_client = MagicMock()
     mock_provider_client.chat = MagicMock(side_effect=[first_response, second_response])
     with (
-        patch("ollama_workstation.chat_flow.is_model_ready", return_value=True),
+        patch("mwps.chat_flow.is_model_ready", return_value=True),
         patch(
-            "ollama_workstation.chat_flow.get_default_client",
+            "mwps.chat_flow.get_default_client",
             return_value=mock_provider_client,
         ),
     ):
-        with patch("ollama_workstation.chat_flow.ProxyClient") as mock_proxy_cls:
+        with patch("mwps.chat_flow.ProxyClient") as mock_proxy_cls:
             mock_proxy = AsyncMock()
             mock_proxy.list_servers = AsyncMock(return_value={"servers": []})
             mock_proxy.close = AsyncMock()
@@ -113,7 +113,7 @@ async def test_chat_flow_tool_call_appends_tool_msg(config: WorkstationConfig) -
 
 @pytest.mark.asyncio
 async def test_chat_flow_proxy_error_in_tool_content(config: WorkstationConfig) -> None:
-    from ollama_workstation.proxy_client import ProxyClientError
+    from mwps.proxy_client import ProxyClientError
 
     messages = [{"role": "user", "content": "List servers"}]
     mock_response = {
@@ -128,13 +128,13 @@ async def test_chat_flow_proxy_error_in_tool_content(config: WorkstationConfig) 
     mock_provider_client = MagicMock()
     mock_provider_client.chat = MagicMock(return_value=mock_response)
     with (
-        patch("ollama_workstation.chat_flow.is_model_ready", return_value=True),
+        patch("mwps.chat_flow.is_model_ready", return_value=True),
         patch(
-            "ollama_workstation.chat_flow.get_default_client",
+            "mwps.chat_flow.get_default_client",
             return_value=mock_provider_client,
         ),
     ):
-        with patch("ollama_workstation.chat_flow.ProxyClient") as mock_pc:
+        with patch("mwps.chat_flow.ProxyClient") as mock_pc:
             mock_proxy = AsyncMock()
             mock_proxy.list_servers = AsyncMock(
                 side_effect=ProxyClientError("Proxy down")

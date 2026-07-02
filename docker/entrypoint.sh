@@ -1,5 +1,5 @@
 #!/bin/sh
-# Start Redis, then OLLAMA, then MCP adapter. Configs/logs/models mounted from host.
+# Start Redis, then MWPS, then MCP adapter. Configs/logs/models mounted from host.
 # Author: Vasiliy Zdanovskiy
 # email: vasilyvz@gmail.com
 
@@ -24,45 +24,45 @@ echo "Starting Redis (data in /app/redis_data, mounted from host)..."
 redis-server /app/redis.conf
 
 # Keep models loaded: -1 = never unload (model starts with server and stays in memory).
-export OLLAMA_KEEP_ALIVE="${OLLAMA_KEEP_ALIVE:--1}"
+export MWPS_KEEP_ALIVE="${MWPS_KEEP_ALIVE:--1}"
 # Use mounted dir for models so they persist across container rebuilds (no re-download).
-export OLLAMA_MODELS="${OLLAMA_MODELS:-/app/data}"
-export OLLAMA_HOME="${OLLAMA_HOME:-/app/data}"
-# Force CPU-only when OLLAMA_LLM_LIBRARY is set (e.g. cpu, cpu_avx2). Unset = use GPU if available.
-if [ -n "${OLLAMA_LLM_LIBRARY:-}" ]; then
-  export OLLAMA_LLM_LIBRARY
-  echo "OLLAMA: CPU-only mode (OLLAMA_LLM_LIBRARY=${OLLAMA_LLM_LIBRARY})." >&2
+export MWPS_MODELS="${MWPS_MODELS:-/app/data}"
+export MWPS_HOME="${MWPS_HOME:-/app/data}"
+# Force CPU-only when MWPS_LLM_LIBRARY is set (e.g. cpu, cpu_avx2). Unset = use GPU if available.
+if [ -n "${MWPS_LLM_LIBRARY:-}" ]; then
+  export MWPS_LLM_LIBRARY
+  echo "MWPS: CPU-only mode (MWPS_LLM_LIBRARY=${MWPS_LLM_LIBRARY})." >&2
 fi
 
-echo "Starting OLLAMA (KEEP_ALIVE=${OLLAMA_KEEP_ALIVE}, models stay loaded)..." >&2
-ollama serve &
-OLLAMA_PID=$!
-# Wait for Ollama to listen (up to 30s)
+echo "Starting MWPS (KEEP_ALIVE=${MWPS_KEEP_ALIVE}, models stay loaded)..." >&2
+mwps serve &
+MWPS_PID=$!
+# Wait for Model Workplace Server to listen (up to 30s)
 i=0
 while [ $i -lt 30 ]; do
   if curl -sf http://127.0.0.1:11434/api/tags >/dev/null 2>&1; then
     break
   fi
-  if ! kill -0 $OLLAMA_PID 2>/dev/null; then
-    echo "OLLAMA process exited." >&2
+  if ! kill -0 $MWPS_PID 2>/dev/null; then
+    echo "MWPS process exited." >&2
     exit 1
   fi
   sleep 1
   i=$((i + 1))
 done
 if ! curl -sf http://127.0.0.1:11434/api/tags >/dev/null 2>&1; then
-  echo "OLLAMA did not become ready in time." >&2
+  echo "MWPS did not become ready in time." >&2
   exit 1
 fi
 
-# Pull and warm up models (comma-separated list from OLLAMA_PRELOAD_MODELS).
-# Models load here and stay in memory (OLLAMA_KEEP_ALIVE=-1); adapter starts only after this.
-if [ -n "${OLLAMA_PRELOAD_MODELS:-}" ]; then
-  for model in $(echo "${OLLAMA_PRELOAD_MODELS}" | tr ',' ' '); do
+# Pull and warm up models (comma-separated list from MWPS_PRELOAD_MODELS).
+# Models load here and stay in memory (MWPS_KEEP_ALIVE=-1); adapter starts only after this.
+if [ -n "${MWPS_PRELOAD_MODELS:-}" ]; then
+  for model in $(echo "${MWPS_PRELOAD_MODELS}" | tr ',' ' '); do
     model=$(echo "$model" | tr -d ' ')
     [ -z "$model" ] && continue
     echo "Pulling model: ${model}..." >&2
-    ollama pull "${model}" || true
+    mwps pull "${model}" || true
     echo "Warming up model: ${model}..." >&2
     if curl -sf --max-time 300 -X POST http://127.0.0.1:11434/api/chat \
       -H "Content-Type: application/json" \
@@ -73,7 +73,7 @@ if [ -n "${OLLAMA_PRELOAD_MODELS:-}" ]; then
       echo "Warm-up failed for ${model} (will retry in adapter)" >&2
     fi
   done
-  echo "Preload done; models stay loaded (OLLAMA_KEEP_ALIVE=${OLLAMA_KEEP_ALIVE})." >&2
+  echo "Preload done; models stay loaded (MWPS_KEEP_ALIVE=${MWPS_KEEP_ALIVE})." >&2
 fi
 
 echo "Starting MCP adapter..." >&2

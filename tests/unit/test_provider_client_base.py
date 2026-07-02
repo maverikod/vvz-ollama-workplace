@@ -13,15 +13,15 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "src"))
 
-from ollama_workstation.provider_client_base import BaseProviderClient  # noqa: E402
-from ollama_workstation.provider_errors import (  # noqa: E402
+from mwps.provider_client_base import BaseProviderClient  # noqa: E402
+from mwps.provider_errors import (  # noqa: E402
     CapabilityNotSupportedError,
     TransportError,
 )
 
 
 def test_base_provider_client_importable() -> None:
-    """BaseProviderClient is importable from ollama_workstation."""
+    """BaseProviderClient is importable from mwps."""
     assert BaseProviderClient is not None
     assert hasattr(BaseProviderClient, "validate_config")
     assert hasattr(BaseProviderClient, "healthcheck")

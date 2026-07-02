@@ -2,7 +2,7 @@
 """
 Read config JSON, for each model get url+key from model_providers by provider name,
 send one request to that URL. No resolver, no load_config.
-On local Ollama 500 (e.g. CUDA OOM), logs a message; does not start or restart Ollama.
+On local Model Workplace Server 500 (e.g. CUDA OOM), logs a message; does not start or restart Model Workplace Server.
 
 Usage: ADAPTER_CONFIG_PATH=<path> python scripts/check_provider_endpoints.py
 
@@ -36,15 +36,15 @@ MODEL_TO_PROVIDER = [
 
 def provider_for_model(model_id: str) -> str:
     if not model_id:
-        return "ollama"
+        return "mwps"
     m = model_id.strip().lower()
     for prefix, prov in MODEL_TO_PROVIDER:
         if m.startswith(prefix):
             return prov
-    return "ollama"
+    return "mwps"
 
 
-def _is_local_ollama(url: str) -> bool:
+def _is_local_mwps(url: str) -> bool:
     u = (url or "").strip().lower().replace("https://", "").replace("http://", "")
     return u.startswith("127.0.0.1") or u.startswith("localhost")
 
@@ -59,14 +59,14 @@ def main() -> int:
         return 1
 
     data = json.loads(path.read_text(encoding="utf-8"))
-    ow = data.get("ollama_workstation") or {}
-    ollama = ow.get("ollama")
-    if not isinstance(ollama, dict):
-        print("ollama_workstation.ollama not found", file=sys.stderr)
+    ow = data.get("mwps") or {}
+    mwps = ow.get("mwps")
+    if not isinstance(mwps, dict):
+        print("mwps.mwps not found", file=sys.stderr)
         return 1
-    models = ollama.get("models") or []
-    if not models and ollama.get("model"):
-        models = [ollama.get("model")]
+    models = mwps.get("models") or []
+    if not models and mwps.get("model"):
+        models = [mwps.get("model")]
     mp = ow.get("model_providers") or {}
     timeout = 60.0
     msg = "Hi. Reply with one word: OK."
@@ -89,12 +89,12 @@ def main() -> int:
             print("[FAIL] %s -> no url for provider %s" % (model, prov))
             failed += 1
             continue
-        if prov != "ollama" and not key:
+        if prov != "mwps" and not key:
             print("[FAIL] %s -> no api_key for provider %s" % (model, prov))
             failed += 1
             continue
 
-        if prov == "ollama":
+        if prov == "mwps":
             chat_url = url + "/api/chat"
             body = {
                 "model": model,
@@ -117,20 +117,20 @@ def main() -> int:
 
         try:
             r = httpx.post(chat_url, json=body, headers=headers, timeout=timeout)
-            if prov == "ollama" and r.status_code == 500:
+            if prov == "mwps" and r.status_code == 500:
                 err_snippet = (r.text or "")[:200]
-                if _is_local_ollama(url) and (
+                if _is_local_mwps(url) and (
                     "cuda" in err_snippet.lower()
                     or "out of memory" in err_snippet.lower()
                 ):
                     print(
-                        "  [Ollama] Local Ollama returned 500 (CUDA/OOM). "
-                        "Use ollama-adapter container or run Ollama in CPU mode.",
+                        "  [Model Workplace Server] Local Model Workplace Server returned 500 (CUDA/OOM). "
+                        "Use mwps-adapter container or run Model Workplace Server in CPU mode.",
                         file=sys.stderr,
                     )
             if r.status_code == 200:
                 out = r.json()
-                if prov == "ollama":
+                if prov == "mwps":
                     content = (out.get("message") or {}).get("content") or ""
                 else:
                     content = (out.get("choices") or [{}])[0].get("message", {}).get(

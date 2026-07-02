@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 Verify context formation limits and rules without calling the model.
-Uses in-memory session and message stores; no Redis, no OLLAMA.
+Uses in-memory session and message stores; no Redis, no MWPS.
 See docs/context_formation.md for the rules and limits.
 
 Author: Vasiliy Zdanovskiy
@@ -19,18 +19,18 @@ SRC = os.path.join(PROJECT_ROOT, "src")
 if SRC not in sys.path:
     sys.path.insert(0, SRC)
 
-from ollama_workstation.context_builder import (  # noqa: E402
+from mwps.context_builder import (  # noqa: E402
     ContextBuilder,
     ContextBuilderError,
 )
-from ollama_workstation.message_store import MessageStore  # noqa: E402
-from ollama_workstation.ollama_representation import (  # noqa: E402
-    OllamaRepresentation,
+from mwps.message_store import MessageStore  # noqa: E402
+from mwps.mwps_representation import (  # noqa: E402
+    MwpsRepresentation,
 )
-from ollama_workstation.representation_registry import (  # noqa: E402
+from mwps.representation_registry import (  # noqa: E402
     RepresentationRegistry,
 )
-from ollama_workstation.session_store import InMemorySessionStore  # noqa: E402
+from mwps.session_store import InMemorySessionStore  # noqa: E402
 
 
 class StubMessageStore(MessageStore):
@@ -52,7 +52,7 @@ async def run_checks() -> int:
     session_store = InMemorySessionStore()
     session_store.create({"id": "s1", "model": "llama3.2"})
     reg = RepresentationRegistry()
-    reg.register("llama3.2", OllamaRepresentation())
+    reg.register("llama3.2", MwpsRepresentation())
     msg_store = StubMessageStore([])
     builder = ContextBuilder(session_store, reg, msg_store, model_context_tokens=4096)
     try:

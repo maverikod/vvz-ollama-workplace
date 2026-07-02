@@ -75,7 +75,7 @@ def main() -> int:
         return 1
 
     data = json.loads(path.read_text(encoding="utf-8"))
-    ow = data.get("ollama_workstation") or {}
+    ow = data.get("mwps") or {}
     mp = ow.get("model_providers") or {}
     if not isinstance(mp, dict):
         print("No model_providers in config", file=sys.stderr)
@@ -90,7 +90,7 @@ def main() -> int:
         cfg = mp.get(prov) if isinstance(mp.get(prov), dict) else {}
         url = (cfg.get("url") or "").strip().rstrip("/")
         key = (cfg.get("api_key") or "").strip()
-        if prov == "ollama":
+        if prov == "mwps":
             print("[%s] (no list endpoint, use /api/tags for model list)" % prov)
             continue
         if not url or not key:

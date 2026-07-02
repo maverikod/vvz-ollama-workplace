@@ -1,6 +1,6 @@
 # STEP-P5 — GeminiRepresentation (new file)
 
-**File:** `src/ollama_workstation/gemini_representation.py` (new)
+**File:** `src/mwps/gemini_representation.py` (new)
 **Severity:** 🔴 High
 **Depends on:** STEP-P1
 **Related to:** STEP-I3 (GoogleProviderClient uses this representation)

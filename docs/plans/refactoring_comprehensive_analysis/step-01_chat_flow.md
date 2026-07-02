@@ -1,6 +1,6 @@
 # STEP-01 — chat_flow.py: split long file
 
-**File:** `src/ollama_workstation/chat_flow.py`  
+**File:** `src/mwps/chat_flow.py`  
 **Size:** 609 lines (+209 over limit)  
 **Issues:** Long file, monolithic `run_chat_flow` (lines 261–609, 349 lines)  
 **Severity:** 🔴 High  
@@ -25,7 +25,7 @@
 
 `run_chat_flow` (349 lines) contains at least four distinct concerns:
 1. **Initialization** — session load, context build, tool list preparation
-2. **Request dispatch** — send to Ollama, handle streaming vs. non-streaming
+2. **Request dispatch** — send to Model Workplace Server, handle streaming vs. non-streaming
 3. **Tool loop** — detect tool calls, execute, append results, retry
 4. **Result assembly** — collect final message, write to session store
 
@@ -34,7 +34,7 @@
 Split `chat_flow.py` into a package `chat_flow/`:
 
 ```
-src/ollama_workstation/chat_flow/
+src/mwps/chat_flow/
     __init__.py          # re-exports: run_chat_flow, run_tool, run_tool_like_model
     _messages.py         # _tool_message
     _tool_runner.py      # _run_tool, run_tool, run_tool_like_model,
@@ -48,7 +48,7 @@ Target: no file > 200 lines.
 
 - [ ] `split_file_to_package` or manual split via CST
 - [ ] All public names re-exported from `chat_flow/__init__.py`
-- [ ] Existing imports in `ollama_chat_command.py` and `invoke_tool_command.py` unchanged
+- [ ] Existing imports in `mwps_chat_command.py` and `invoke_tool_command.py` unchanged
 - [ ] `run_chat_flow` internally decomposed: each sub-concern is a private function
 - [ ] No file exceeds 400 lines
 - [ ] `lint_code` + `type_check_code` pass

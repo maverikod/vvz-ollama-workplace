@@ -22,8 +22,8 @@ import os
 # Adjust path before importing project modules
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
 
-import ollama_workstation  # E402
-from ollama_workstation.config import load_config  # E402
+import mwps  # E402
+from mwps.config import load_config  # E402
 ```
 
 The `sys.path` manipulation before imports is intentional and necessary
@@ -36,8 +36,8 @@ Add `# noqa: E402` to each affected import line:
 ```python
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
 
-import ollama_workstation  # noqa: E402
-from ollama_workstation.config import load_config  # noqa: E402
+import mwps  # noqa: E402
+from mwps.config import load_config  # noqa: E402
 # ... repeat for all 15 lines
 ```
 

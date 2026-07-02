@@ -2,7 +2,7 @@
 Integration tests: real proxy and services, no mocks.
 
 Step 17 (Real Integration No Mocks): integration only on real services (proxy,
-workstation, db, ollama, real tool server). Validates both pair contracts
+workstation, db, mwps, real tool server). Validates both pair contracts
 (model-workspace + database). Uses real proxy endpoint with mTLS registration
 and certs from mtls_certificates.
 
@@ -25,12 +25,12 @@ from pathlib import Path
 import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "src"))
-from ollama_workstation.config import load_config  # noqa: E402
-from ollama_workstation.proxy_client import ProxyClient, ProxyClientError  # noqa: E402
-from ollama_workstation.registration import (  # noqa: E402
+from mwps.config import load_config  # noqa: E402
+from mwps.proxy_client import ProxyClient, ProxyClientError  # noqa: E402
+from mwps.registration import (  # noqa: E402
     _validate_registration_contract,
 )
-from ollama_workstation.server_resolver import (  # noqa: E402
+from mwps.server_resolver import (  # noqa: E402
     extract_servers_list,
     get_server_url,
     parse_server_url,
@@ -61,16 +61,16 @@ def _get_proxy_config():
         url = os.environ.get("MCP_PROXY_URL", "").strip()
         if not url:
             return None
-        from ollama_workstation.commands_policy_config import (
+        from mwps.commands_policy_config import (
             COMMANDS_POLICY_DENY_BY_DEFAULT,
             CommandsPolicyConfig,
         )
-        from ollama_workstation.config import WorkstationConfig
+        from mwps.config import WorkstationConfig
 
         return WorkstationConfig(
             mcp_proxy_url=url,
-            ollama_base_url=os.environ.get("OLLAMA_BASE_URL", "http://localhost:11434"),
-            ollama_model=os.environ.get("OLLAMA_MODEL", "llama3.2"),
+            mwps_base_url=os.environ.get("MWPS_BASE_URL", "http://localhost:11434"),
+            mwps_model=os.environ.get("MWPS_MODEL", "llama3.2"),
             proxy_client_cert=os.environ.get("PROXY_CLIENT_CERT"),
             proxy_client_key=os.environ.get("PROXY_CLIENT_KEY"),
             proxy_ca_cert=os.environ.get("PROXY_CA_CERT"),
@@ -155,7 +155,7 @@ def test_registration_validation_rejects_invalid_mtls_paths() -> None:
     """
     base = _proxy_base_url_for_contracts()
     config = {
-        "ollama_workstation": {"mcp_proxy_url": base},
+        "mwps": {"mcp_proxy_url": base},
         "registration": {
             "protocol": "mtls",
             "register_url": f"{base}/register",
@@ -187,7 +187,7 @@ def test_registration_validation_accepts_valid_mtls_paths() -> None:
     """
     base = _proxy_base_url_for_contracts()
     config = {
-        "ollama_workstation": {"mcp_proxy_url": base},
+        "mwps": {"mcp_proxy_url": base},
         "registration": {
             "protocol": "mtls",
             "register_url": f"{base}/register",

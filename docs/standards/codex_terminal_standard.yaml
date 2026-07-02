@@ -1,0 +1,33 @@
+meta:
+  title: Codex Terminal Standard
+  version: '1.0'
+  locale: en
+  description: >
+    Governs terminal usage, checks, and verification for Codex in Agent Workstation.
+  scope:
+    covers: [shell commands, virtual environment usage, formatting, linting, typing, tests]
+    excludes: [file editing semantics, prompt role design]
+
+environment:
+  python:
+    venv: .venv
+    rule: Use the project virtual environment when available; never use `--break-system-packages`.
+  package_layout: src
+  test_framework: pytest
+
+commands:
+  discover_files: rg --files
+  search_text: rg
+  format: .venv/bin/black src tests
+  lint: .venv/bin/flake8 src tests
+  typecheck: .venv/bin/mypy src tests
+  tests: .venv/bin/pytest
+
+rules:
+  - Prefer project-local tools under `.venv/bin/` when present.
+  - Keep commands scoped when a full check is unnecessary or too expensive.
+  - Report exact checks run and any check that could not be run.
+  - Do not run destructive commands unless the user explicitly asks.
+  - Do not use console scripts to communicate with a model API outside Cursor/Codex without user permission.
+  - After code changes, run the smallest meaningful verification first, then broader gates when risk warrants it.
+

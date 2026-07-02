@@ -1,6 +1,6 @@
 # STEP-P4 — AnthropicRepresentation (new file)
 
-**File:** `src/ollama_workstation/anthropic_representation.py` (new)
+**File:** `src/mwps/anthropic_representation.py` (new)
 **Severity:** 🔴 High
 **Depends on:** STEP-P1
 

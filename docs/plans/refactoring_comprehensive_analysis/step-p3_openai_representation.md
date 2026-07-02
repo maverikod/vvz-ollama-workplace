@@ -1,6 +1,6 @@
 # STEP-P3 — OpenAIRepresentation (new file)
 
-**File:** `src/ollama_workstation/openai_representation.py` (new)
+**File:** `src/mwps/openai_representation.py` (new)
 **Severity:** 🔴 High
 **Depends on:** STEP-P1 (registry enforced before adding new representations)
 **Used by:** STEP-I1 (OpenAI client), STEP-I4 (xAI), STEP-I5 (DeepSeek)

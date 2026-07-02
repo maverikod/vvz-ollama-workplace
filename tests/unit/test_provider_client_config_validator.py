@@ -13,29 +13,29 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "src"))
 
-from ollama_workstation.provider_client_config_validator import (  # noqa: E402
+from mwps.provider_client_config_validator import (  # noqa: E402
     validate_config_provider_clients,
     validate_provider_clients,
     validate_provider_clients_or_raise,
 )
-from ollama_workstation.provider_errors import ValidationError  # noqa: E402
+from mwps.provider_errors import ValidationError  # noqa: E402
 
 
-def _minimal_ollama() -> dict[str, Any]:
-    """Minimal valid provider_clients with ollama (no auth, http)."""
+def _minimal_mwps() -> dict[str, Any]:
+    """Minimal valid provider_clients with mwps (no auth, http)."""
     return {
-        "default_provider": "ollama",
+        "default_provider": "mwps",
         "providers": {
-            "ollama": {
+            "mwps": {
                 "transport": {"base_url": "http://localhost:11434"},
             },
         },
     }
 
 
-def test_validate_provider_clients_valid_minimal_ollama() -> None:
-    """Valid minimal ollama config passes."""
-    errors = validate_provider_clients(_minimal_ollama())
+def test_validate_provider_clients_valid_minimal_mwps() -> None:
+    """Valid minimal mwps config passes."""
+    errors = validate_provider_clients(_minimal_mwps())
     assert errors == [], f"expected no errors, got {errors}"
 
 
@@ -43,7 +43,7 @@ def test_validate_provider_clients_default_provider_not_in_providers() -> None:
     """default_provider must reference an existing provider (V4)."""
     data: dict[str, Any] = {
         "default_provider": "missing_provider",
-        "providers": {"ollama": {"transport": {"base_url": "http://localhost:11434"}}},
+        "providers": {"mwps": {"transport": {"base_url": "http://localhost:11434"}}},
     }
     errors = validate_provider_clients(data)
     assert any("not in providers" in e[1] for e in errors)
@@ -53,10 +53,10 @@ def test_validate_provider_clients_default_provider_not_in_providers() -> None:
 def test_validate_provider_clients_https_requires_tls() -> None:
     """Endpoint https:// requires tls section (V8/V10)."""
     data: dict[str, Any] = {
-        "default_provider": "ollama",
+        "default_provider": "mwps",
         "providers": {
-            "ollama": {
-                "transport": {"base_url": "https://ollama.example.com"},
+            "mwps": {
+                "transport": {"base_url": "https://mwps.example.com"},
             },
         },
     }
@@ -67,10 +67,10 @@ def test_validate_provider_clients_https_requires_tls() -> None:
 def test_validate_provider_clients_https_with_tls_verify_false_conflict() -> None:
     """Secure endpoint with tls.verify false is rejected (V11)."""
     data: dict[str, Any] = {
-        "default_provider": "ollama",
+        "default_provider": "mwps",
         "providers": {
-            "ollama": {
-                "transport": {"base_url": "https://ollama.example.com"},
+            "mwps": {
+                "transport": {"base_url": "https://mwps.example.com"},
                 "tls": {"verify": False},
             },
         },
@@ -82,10 +82,10 @@ def test_validate_provider_clients_https_with_tls_verify_false_conflict() -> Non
 def test_validate_provider_clients_https_with_tls_ok() -> None:
     """Secure endpoint with tls section and verify true passes."""
     data: dict[str, Any] = {
-        "default_provider": "ollama",
+        "default_provider": "mwps",
         "providers": {
-            "ollama": {
-                "transport": {"base_url": "https://ollama.example.com"},
+            "mwps": {
+                "transport": {"base_url": "https://mwps.example.com"},
                 "tls": {"verify": True},
             },
         },
@@ -144,13 +144,13 @@ def test_validate_provider_clients_commercial_provider_with_api_key_ok() -> None
 
 def test_validate_provider_clients_or_raise_valid() -> None:
     """validate_provider_clients_or_raise does not raise when valid."""
-    validate_provider_clients_or_raise(_minimal_ollama())
+    validate_provider_clients_or_raise(_minimal_mwps())
 
 
 def test_validate_provider_clients_or_raise_invalid_raises() -> None:
     """validate_provider_clients_or_raise raises ValidationError when invalid."""
     data: dict[str, Any] = {
-        "default_provider": "ollama",
+        "default_provider": "mwps",
         "providers": {},
     }
     with pytest.raises(ValidationError) as exc_info:
@@ -170,7 +170,7 @@ def test_validate_config_provider_clients_missing_section() -> None:
 
 def test_validate_config_provider_clients_valid() -> None:
     """validate_config_provider_clients passes when section valid."""
-    app_config = {"provider_clients": _minimal_ollama()}
+    app_config = {"provider_clients": _minimal_mwps()}
     errors = validate_config_provider_clients(app_config)
     assert errors == [], f"expected no errors, got {errors}"
 
@@ -185,8 +185,8 @@ def test_validate_config_provider_clients_not_dict() -> None:
 def test_structure_errors_from_schema_still_reported() -> None:
     """Structure errors (missing transport, etc.) still come from schema."""
     data: dict[str, Any] = {
-        "default_provider": "ollama",
-        "providers": {"ollama": {"auth": {}}},  # missing transport
+        "default_provider": "mwps",
+        "providers": {"mwps": {"auth": {}}},  # missing transport
     }
     errors = validate_provider_clients(data)
     assert any("transport" in e[0] and "required" in e[1] for e in errors)
@@ -195,10 +195,10 @@ def test_structure_errors_from_schema_still_reported() -> None:
 def test_wss_requires_tls() -> None:
     """wss:// endpoint requires tls section."""
     data: dict[str, Any] = {
-        "default_provider": "ollama",
+        "default_provider": "mwps",
         "providers": {
-            "ollama": {
-                "transport": {"base_url": "wss://ollama.example.com"},
+            "mwps": {
+                "transport": {"base_url": "wss://mwps.example.com"},
             },
         },
     }

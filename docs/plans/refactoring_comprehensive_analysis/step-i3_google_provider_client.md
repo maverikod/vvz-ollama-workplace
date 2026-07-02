@@ -1,6 +1,6 @@
 # STEP-I3 — GoogleProviderClient (new file)
 
-**File:** `src/ollama_workstation/google_provider_client.py` (new)
+**File:** `src/mwps/google_provider_client.py` (new)
 **Provider:** `google` — Gemini API only (NOT Vertex AI)
 **Severity:** 🔴 High
 **Depends on:** STEP-08, STEP-P5 (GeminiRepresentation)

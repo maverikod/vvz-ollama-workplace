@@ -14,8 +14,8 @@ cd "${PROJECT_ROOT}"
 if [ -f "${SCRIPT_DIR}/run.conf" ]; then
   . "${SCRIPT_DIR}/run.conf"
 fi
-IMAGE_NAME="${IMAGE_NAME:-ollama-adapter}"
-CONTAINER_NAME="${CONTAINER_NAME:-ollama-adapter}"
+IMAGE_NAME="${IMAGE_NAME:-mwps-adapter}"
+CONTAINER_NAME="${CONTAINER_NAME:-mwps-adapter}"
 # Step 15 runtime contract: network is fixed and mandatory.
 NETWORK_NAME="smart-assistant"
 
@@ -23,7 +23,7 @@ CONFIG_DIR="${SCRIPT_DIR}/config"
 LOGS_DIR="${SCRIPT_DIR}/logs"
 CACHE_DIR="${SCRIPT_DIR}/cache"
 DATA_DIR="${SCRIPT_DIR}/data"
-# Redis persistence (bases); OLLAMA models and runtime in DATA_DIR
+# Redis persistence (bases); MWPS models and runtime in DATA_DIR
 REDIS_DATA_DIR="${SCRIPT_DIR}/redis_data"
 MODELS_AND_DATA_DIR="${DATA_DIR}"
 CERTS_DIR="${SCRIPT_DIR}/certs"
@@ -117,16 +117,16 @@ docker run -d \
   -e CERTS_DIR=/app/certs \
   -e ADAPTER_PORT=8015 \
   -e ADVERTISED_HOST="${CONTAINER_NAME}" \
-  -e OLLAMA_MODELS=/app/data \
-  -e OLLAMA_HOME=/app/data \
+  -e MWPS_MODELS=/app/data \
+  -e MWPS_HOME=/app/data \
   -e HOME=/app/data \
-  -e OLLAMA_PRELOAD_MODELS="${OLLAMA_PRELOAD_MODELS:-llama3.2,qwen3,qwen2.5-coder:1.5b}" \
-  -e OLLAMA_KEEP_ALIVE="${OLLAMA_KEEP_ALIVE:--1}" \
-  -e OLLAMA_LLM_LIBRARY="${OLLAMA_LLM_LIBRARY:-cpu}" \
+  -e MWPS_PRELOAD_MODELS="${MWPS_PRELOAD_MODELS:-llama3.2,qwen3,qwen2.5-coder:1.5b}" \
+  -e MWPS_KEEP_ALIVE="${MWPS_KEEP_ALIVE:--1}" \
+  -e MWPS_LLM_LIBRARY="${MWPS_LLM_LIBRARY:-cpu}" \
   "${IMAGE_NAME}"
 
 echo "Done. Container ${CONTAINER_NAME} is running (adapter ${ADAPTER_HOST_PORT}:8015, Redis ${REDIS_HOST_PORT}:6379, user 1000:1000, restart=always, network=${NETWORK_NAME})."
-echo "Ollama: OLLAMA_LLM_LIBRARY=${OLLAMA_LLM_LIBRARY:-cpu} (CPU-only). Set OLLAMA_LLM_LIBRARY= to use GPU."
+echo "Model Workplace Server: MWPS_LLM_LIBRARY=${MWPS_LLM_LIBRARY:-cpu} (CPU-only). Set MWPS_LLM_LIBRARY= to use GPU."
 echo "Mounts: certs, config, logs, cache, data (models), redis_data (bases)."
 
 validate_container_runtime_contract() {

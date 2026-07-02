@@ -11,7 +11,7 @@ from typing import Any
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "src"))
 
-from ollama_workstation.provider_client_config_schema import (  # noqa: E402
+from mwps.provider_client_config_schema import (  # noqa: E402
     ALLOWED_AUTH_KEYS,
     ALLOWED_FEATURES_KEYS,
     ALLOWED_LIMITS_KEYS,
@@ -30,9 +30,9 @@ from ollama_workstation.provider_client_config_schema import (  # noqa: E402
 def test_valid_minimal_structure_passes() -> None:
     """Minimal valid provider_clients with one provider and transport passes."""
     data: dict[str, Any] = {
-        "default_provider": "ollama",
+        "default_provider": "mwps",
         "providers": {
-            "ollama": {
+            "mwps": {
                 "transport": {"base_url": "http://localhost:11434"},
             },
         },
@@ -43,7 +43,7 @@ def test_valid_minimal_structure_passes() -> None:
 
 def test_missing_default_provider_fails() -> None:
     """Missing default_provider is rejected."""
-    data: dict[str, Any] = {"providers": {"ollama": {"transport": {}}}}
+    data: dict[str, Any] = {"providers": {"mwps": {"transport": {}}}}
     errors = validate_provider_clients_structure(data)
     paths = [e[0] for e in errors]
     assert "provider_clients.default_provider" in paths
@@ -51,7 +51,7 @@ def test_missing_default_provider_fails() -> None:
 
 def test_missing_providers_fails() -> None:
     """Missing providers is rejected."""
-    data: dict[str, Any] = {"default_provider": "ollama"}
+    data: dict[str, Any] = {"default_provider": "mwps"}
     errors = validate_provider_clients_structure(data)
     paths = [e[0] for e in errors]
     assert any("providers" in p for p in paths)
@@ -59,7 +59,7 @@ def test_missing_providers_fails() -> None:
 
 def test_empty_providers_fails() -> None:
     """Empty providers dict is rejected."""
-    data: dict[str, Any] = {"default_provider": "ollama", "providers": {}}
+    data: dict[str, Any] = {"default_provider": "mwps", "providers": {}}
     errors = validate_provider_clients_structure(data)
     assert any("at least one provider" in e[1] for e in errors)
 
@@ -67,8 +67,8 @@ def test_empty_providers_fails() -> None:
 def test_disallowed_top_level_key_fails() -> None:
     """Unknown top-level key under provider_clients is rejected."""
     data: dict[str, Any] = {
-        "default_provider": "ollama",
-        "providers": {"ollama": {"transport": {}}},
+        "default_provider": "mwps",
+        "providers": {"mwps": {"transport": {}}},
         "unknown_key": 1,
     }
     errors = validate_provider_clients_structure(data)
@@ -78,9 +78,9 @@ def test_disallowed_top_level_key_fails() -> None:
 def test_disallowed_provider_section_key_fails() -> None:
     """Unknown key in provider section is rejected."""
     data: dict[str, Any] = {
-        "default_provider": "ollama",
+        "default_provider": "mwps",
         "providers": {
-            "ollama": {
+            "mwps": {
                 "transport": {},
                 "unknown_section_key": 1,
             },
@@ -93,9 +93,9 @@ def test_disallowed_provider_section_key_fails() -> None:
 def test_disallowed_transport_key_fails() -> None:
     """Unknown key inside transport is rejected."""
     data: dict[str, Any] = {
-        "default_provider": "ollama",
+        "default_provider": "mwps",
         "providers": {
-            "ollama": {
+            "mwps": {
                 "transport": {"base_url": "http://x", "invalid_transport_key": 1},
             },
         },
@@ -107,8 +107,8 @@ def test_disallowed_transport_key_fails() -> None:
 def test_missing_transport_fails() -> None:
     """Provider section without transport is rejected."""
     data: dict[str, Any] = {
-        "default_provider": "ollama",
-        "providers": {"ollama": {"auth": {}}},
+        "default_provider": "mwps",
+        "providers": {"mwps": {"auth": {}}},
     }
     errors = validate_provider_clients_structure(data)
     assert any("transport" in e[0] and "required" in e[1] for e in errors)

@@ -1,0 +1,44 @@
+# Agent Workstation example configuration
+# Copy to e.g. mwps.yaml and set values. Environment variables override.
+#
+# Required:
+mcp_proxy_url: "https://mcp-proxy:3004"
+mwps_base_url: "http://mwps:11434"
+mwps_model: "llama3.1"
+
+# Optional:
+# mwps_timeout: 60
+# max_tool_rounds: 10
+# redis_host: "redis"
+# redis_port: 6379
+
+# Optional: proxy auth (if your MCP Proxy requires it)
+# proxy_token_header: "X-API-Key"
+# proxy_token: "your-token"
+
+# Optional: MWPS API key (if required by your setup)
+# mwps_api_key: ""
+
+# Optional: commercial providers — set available_providers and the corresponding key.
+# Cheapest model per provider (see provider_models.CHEAPEST_MODEL_BY_PROVIDER):
+#   Google:    gemini-2.0-flash             → google_api_key
+#   Anthropic: claude-3-5-haiku-20241022    → anthropic_api_key
+#   OpenAI:    gpt-4o-mini                  → openai_api_key
+#   xAI Grok:  grok-2                       → xai_api_key
+#   DeepSeek:  deepseek-chat                → deepseek_api_key
+# available_providers: [ "mwps", "google" ]
+# google_api_key: ""
+# anthropic_api_key: ""
+# openai_api_key: ""
+# xai_api_key: ""
+# deepseek_api_key: ""
+
+# Optional: commands policy (dynamic commands; step 01)
+# allowed_commands: []   # allow-list (used with deny_by_default or as filter with allow_by_default)
+# forbidden_commands: [] # always excluded
+# commands_policy: allow_by_default  # or deny_by_default
+
+# Optional: paths to files auto-injected into model context when present
+# rules_file_path: "config/rules.md"       # rules text → context (session_rules order)
+# standards_file_path: "config/standards.md"  # standards text → context
+# tools_file_path: "config/tools.json"     # JSON array of MWPS tools → tools in request

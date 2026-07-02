@@ -11,7 +11,7 @@ from pathlib import Path
 import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "src"))
-from ollama_workstation.session_entity import Session  # noqa: E402
+from mwps.session_entity import Session  # noqa: E402
 
 
 def test_create_generates_uuid() -> None:

@@ -9,15 +9,15 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "src"))
-from ollama_workstation.safe_name_translator import (  # noqa: E402
+from mwps.safe_name_translator import (  # noqa: E402
     SafeNameTranslator,
     to_safe_name,
 )
 
 
-def test_ollama_chat_ollama_adapter() -> None:
-    """ollama_chat.ollama-adapter -> ollama_chat_ollama_adapter."""
-    assert to_safe_name("ollama_chat.ollama-adapter") == "ollama_chat_ollama_adapter"
+def test_mwps_chat_mwps_adapter() -> None:
+    """mwps_chat.mwps-adapter -> mwps_chat_mwps_adapter."""
+    assert to_safe_name("mwps_chat.mwps-adapter") == "mwps_chat_mwps_adapter"
 
 
 def test_chunk_svo_chunker() -> None:

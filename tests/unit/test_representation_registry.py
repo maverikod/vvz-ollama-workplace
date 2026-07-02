@@ -11,10 +11,10 @@ from pathlib import Path
 import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "src"))
-from ollama_workstation.context_representation import (  # noqa: E402
+from mwps.context_representation import (  # noqa: E402
     ContextRepresentation,
 )
-from ollama_workstation.representation_registry import (  # noqa: E402
+from mwps.representation_registry import (  # noqa: E402
     RepresentationRegistry,
 )
 

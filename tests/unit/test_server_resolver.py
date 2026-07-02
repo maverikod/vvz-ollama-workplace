@@ -10,12 +10,12 @@ from pathlib import Path
 import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "src"))
-from ollama_workstation.config import WorkstationConfig  # noqa: E402
-from ollama_workstation.commands_policy_config import (  # noqa: E402
+from mwps.config import WorkstationConfig  # noqa: E402
+from mwps.commands_policy_config import (  # noqa: E402
     COMMANDS_POLICY_DENY_BY_DEFAULT,
     CommandsPolicyConfig,
 )
-from ollama_workstation.server_resolver import (  # noqa: E402
+from mwps.server_resolver import (  # noqa: E402
     _server_url_cache_from_list_servers,
     extract_servers_list,
     get_server_url,
@@ -52,8 +52,8 @@ def test_server_url_to_embed_config_dict_has_server_and_ssl() -> None:
     """server_url_to_embed_config_dict builds server section and ssl from config."""
     config = WorkstationConfig(
         mcp_proxy_url="https://p",
-        ollama_base_url="http://o",
-        ollama_model="m",
+        mwps_base_url="http://o",
+        mwps_model="m",
         proxy_client_cert="/path/cert",
         proxy_client_key="/path/key",
         proxy_ca_cert="/path/ca",

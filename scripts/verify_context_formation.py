@@ -20,15 +20,15 @@ if SRC not in sys.path:
 
 import redis
 
-from ollama_workstation.context_builder import ContextBuilder, ContextBuilderError
-from ollama_workstation.message_source import MessageSource
-from ollama_workstation.message_store import RedisMessageStore
-from ollama_workstation.message_stream_writer import MessageStreamWriter
-from ollama_workstation.ollama_representation import OllamaRepresentation
-from ollama_workstation.redis_message_record import RedisMessageRecord
-from ollama_workstation.representation_registry import RepresentationRegistry
-from ollama_workstation.relevance_slot_builder import RelevanceSlotBuilder
-from ollama_workstation.session_store import InMemorySessionStore
+from mwps.context_builder import ContextBuilder, ContextBuilderError
+from mwps.message_source import MessageSource
+from mwps.message_store import RedisMessageStore
+from mwps.message_stream_writer import MessageStreamWriter
+from mwps.mwps_representation import MwpsRepresentation
+from mwps.redis_message_record import RedisMessageRecord
+from mwps.representation_registry import RepresentationRegistry
+from mwps.relevance_slot_builder import RelevanceSlotBuilder
+from mwps.session_store import InMemorySessionStore
 
 
 async def main() -> int:
@@ -76,7 +76,7 @@ async def main() -> int:
 
     session_store = InMemorySessionStore()
     session_store.create({"id": session_id, "model": "llama3.2"})
-    registry = RepresentationRegistry(default=OllamaRepresentation())
+    registry = RepresentationRegistry(default=MwpsRepresentation())
     relevance_builder = RelevanceSlotBuilder(
         message_store=store,
         mode="fixed_order",

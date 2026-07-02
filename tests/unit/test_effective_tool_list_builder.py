@@ -9,18 +9,18 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "src"))
-from ollama_workstation.command_alias_registry import CommandAliasRegistry  # noqa: E402
-from ollama_workstation.commands_policy_config import (  # noqa: E402
+from mwps.command_alias_registry import CommandAliasRegistry  # noqa: E402
+from mwps.commands_policy_config import (  # noqa: E402
     COMMANDS_POLICY_ALLOW_BY_DEFAULT,
     CommandsPolicyConfig,
 )
-from ollama_workstation.effective_tool_list_builder import (  # noqa: E402
+from mwps.effective_tool_list_builder import (  # noqa: E402
     EffectiveToolListBuilder,
     build_effective_tool_list,
 )
-from ollama_workstation.command_schema import CommandSchema  # noqa: E402
-from ollama_workstation.session_entity import Session  # noqa: E402
-from ollama_workstation.safe_name_translator import SafeNameTranslator  # noqa: E402
+from mwps.command_schema import CommandSchema  # noqa: E402
+from mwps.session_entity import Session  # noqa: E402
+from mwps.safe_name_translator import SafeNameTranslator  # noqa: E402
 
 
 def test_build_effective_tool_list_config_forbidden_excluded() -> None:

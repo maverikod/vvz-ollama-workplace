@@ -22,10 +22,10 @@ if SRC not in sys.path:
 
 import redis
 
-from ollama_workstation.message_source import MessageSource
-from ollama_workstation.message_store import RedisMessageStore
-from ollama_workstation.message_stream_writer import MessageStreamWriter
-from ollama_workstation.redis_message_record import RedisMessageRecord
+from mwps.message_source import MessageSource
+from mwps.message_store import RedisMessageStore
+from mwps.message_stream_writer import MessageStreamWriter
+from mwps.redis_message_record import RedisMessageRecord
 
 
 def main() -> int:

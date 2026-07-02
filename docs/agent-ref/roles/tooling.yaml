@@ -1,0 +1,33 @@
+# Agent Workstation — TOOLING mechanics. Read ONLY by tool-using roles (researcher, context_former, coder, tester).
+# Orchestrator and conscience do NOT use tools and do NOT read this file.
+# The manuals map below is a TEMPLATE SLOT: during bootstrap, point each key at the
+# project's real standard (docs/standards/...) or delete rows that do not apply.
+# Keys of `manuals:` are referenced by the roles' `standards:` lists — keep them in sync.
+
+meta:
+  path: project-relative POSIX preferred; stay inside the repository; no ".."
+
+# Source of truth. Read on trigger; do not paraphrase from memory.
+manuals:
+  search: docs/standards/codex_search_standard.yaml
+  edit: docs/standards/codex_editing_standard.yaml
+  terminal: docs/standards/codex_terminal_standard.yaml
+  cmd_help: "the failing tool's own help or schema (--help, tool docs)"
+
+# condition -> MUST read manual(s) BEFORE the first matching action
+triggers:
+  - when: before first edit/write of a project file
+    read: [edit]
+  - when: code analysis or code search
+    read: [search]
+    order: {1_structured_code_analysis: first, 2_plain_text_search: only_if_step1_missed}
+  - when: before first terminal command
+    read: [terminal]
+
+# error taxonomy — exactly one branch per failure
+errors:
+  unknown:   'command/tool does not exist -> do NOT guess; consult the tool''s help/catalog, pick an existing command; check its schema via cmd_help.'
+  misuse:    'wrong/unknown params or bad usage -> MANDATORY cmd_help for the failing command; fix to schema; retry once; still bad -> escalate.'
+  tool_fail: 'internal tool failure (crash, 5xx-style error) = the TOOL failed -> STOP; escalate; no retry, no workaround.'
+  infra:     'environment down, timeout, connection refused, permission wall -> STOP on first occurrence; escalate {exact_call, verbatim_error, question}.'
+  law:       'Any tool error -> stop + escalate. Only "misuse" is self-fixable, only via cmd_help.'

@@ -17,7 +17,7 @@ def _run_cli(*args: str) -> subprocess.CompletedProcess:
     exe = PROJECT_ROOT / ".venv" / "bin" / "config-cli"
     if not exe.exists():
         exe = sys.executable
-        args = ("-m", "ollama_workstation.config_cli") + args
+        args = ("-m", "mwps.config_cli") + args
     return subprocess.run(
         [str(exe)] + list(args),
         cwd=PROJECT_ROOT,
@@ -37,7 +37,7 @@ def test_cli_help() -> None:
     assert r.returncode == 0
     assert "--output" in r.stdout
     assert "--certs-dir" in r.stdout
-    assert "--ollama-model" in r.stdout
+    assert "--mwps-model" in r.stdout
 
     r = _run_cli("validate", "--help")
     assert r.returncode == 0
@@ -65,9 +65,9 @@ def test_cli_generate_and_validate(tmp_path: Path) -> None:
     assert r.returncode == 0, (r.stdout, r.stderr)
     assert out.is_file()
     data = json.loads(out.read_text())
-    assert "ollama_workstation" in data
-    ow = data["ollama_workstation"]
-    assert "ollama" in ow and ow["ollama"].get("models") == ["llama3.2"]
+    assert "mwps" in data
+    ow = data["mwps"]
+    assert "mwps" in ow and ow["mwps"].get("models") == ["llama3.2"]
 
     r = _run_cli("validate", str(out), "--no-adapter")
     assert r.returncode == 0, (r.stdout, r.stderr)

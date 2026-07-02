@@ -7,12 +7,12 @@ from pathlib import Path
 import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "src"))  # noqa: E402
-from ollama_workstation.commands_policy_config import (  # noqa: E402
+from mwps.commands_policy_config import (  # noqa: E402
     COMMANDS_POLICY_DENY_BY_DEFAULT,
     CommandsPolicyConfig,
 )
-from ollama_workstation.config import WorkstationConfig  # noqa: E402
-from ollama_workstation.proxy_client import (  # noqa: E402
+from mwps.config import WorkstationConfig  # noqa: E402
+from mwps.proxy_client import (  # noqa: E402
     WS_CONTRACT_VERSION,
     config_to_adapter_params,
     ProxyClient,
@@ -30,8 +30,8 @@ _DEFAULT_POLICY = CommandsPolicyConfig(
 def config() -> WorkstationConfig:
     return WorkstationConfig(
         mcp_proxy_url="http://localhost:3004",
-        ollama_base_url="http://localhost:11434",
-        ollama_model="llama3.1",
+        mwps_base_url="http://localhost:11434",
+        mwps_model="llama3.1",
         commands_policy_config=_DEFAULT_POLICY,
     )
 
@@ -118,8 +118,8 @@ def test_config_to_adapter_params_wss_url() -> None:
     """wss:// URL yields protocol https and default port 443 for adapter ws_url."""
     cfg = WorkstationConfig(
         mcp_proxy_url="wss://proxy.example.com",
-        ollama_base_url="http://localhost:11434",
-        ollama_model="qwen",
+        mwps_base_url="http://localhost:11434",
+        mwps_model="qwen",
         commands_policy_config=_DEFAULT_POLICY,
     )
     params = config_to_adapter_params(cfg)
@@ -132,8 +132,8 @@ def test_config_to_adapter_params_ws_url() -> None:
     """ws:// URL yields protocol http; explicit port in URL is preserved."""
     cfg = WorkstationConfig(
         mcp_proxy_url="ws://localhost:3004",
-        ollama_base_url="http://localhost:11434",
-        ollama_model="qwen",
+        mwps_base_url="http://localhost:11434",
+        mwps_model="qwen",
         commands_policy_config=_DEFAULT_POLICY,
     )
     params = config_to_adapter_params(cfg)
@@ -145,8 +145,8 @@ def test_use_ws_first_true_for_wss() -> None:
     """_use_ws_first is True when mcp_proxy_url starts with wss://."""
     cfg = WorkstationConfig(
         mcp_proxy_url="wss://proxy:3004",
-        ollama_base_url="http://localhost:11434",
-        ollama_model="qwen",
+        mwps_base_url="http://localhost:11434",
+        mwps_model="qwen",
         commands_policy_config=_DEFAULT_POLICY,
     )
     client = ProxyClient(cfg)
@@ -157,8 +157,8 @@ def test_use_ws_first_false_for_https() -> None:
     """_use_ws_first is False for https:// (no WS-first)."""
     cfg = WorkstationConfig(
         mcp_proxy_url="https://proxy:3004",
-        ollama_base_url="http://localhost:11434",
-        ollama_model="qwen",
+        mwps_base_url="http://localhost:11434",
+        mwps_model="qwen",
         commands_policy_config=_DEFAULT_POLICY,
     )
     client = ProxyClient(cfg)
@@ -170,8 +170,8 @@ async def test_ws_first_fallback_to_http_on_ws_failure() -> None:
     """When wss:// and _call_ws raises, fall back to _call_http and return result."""
     cfg = WorkstationConfig(
         mcp_proxy_url="wss://proxy:3004",
-        ollama_base_url="http://localhost:11434",
-        ollama_model="qwen",
+        mwps_base_url="http://localhost:11434",
+        mwps_model="qwen",
         commands_policy_config=_DEFAULT_POLICY,
     )
     client = ProxyClient(cfg)
@@ -194,8 +194,8 @@ async def test_http_url_uses_http_only_no_ws_attempt() -> None:
     """When URL is http://, _call uses only HTTP (no _call_ws)."""
     cfg = WorkstationConfig(
         mcp_proxy_url="http://localhost:3004",
-        ollama_base_url="http://localhost:11434",
-        ollama_model="qwen",
+        mwps_base_url="http://localhost:11434",
+        mwps_model="qwen",
         commands_policy_config=_DEFAULT_POLICY,
     )
     client = ProxyClient(cfg)

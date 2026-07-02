@@ -9,7 +9,7 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "src"))
-from ollama_workstation.context_representation import (  # noqa: E402
+from mwps.context_representation import (  # noqa: E402
     ContextRepresentation,
 )
 

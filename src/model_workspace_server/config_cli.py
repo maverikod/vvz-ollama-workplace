@@ -15,13 +15,6 @@ import sys
 import uuid
 from pathlib import Path
 
-from model_workspace_server.config_generator import (
-    _default_template,
-    generate_server_config,
-    merge_settings,
-)
-from model_workspace_server.config_validator import validate_config_file
-
 _LOG = logging.getLogger(__name__)
 
 EXIT_SUCCESS = 0
@@ -230,6 +223,11 @@ def _parse_generate_args(parser: argparse.ArgumentParser) -> argparse.ArgumentPa
 
 def _settings_from_generate_args(args: argparse.Namespace) -> dict:
     """Build generator settings from parsed generate args."""
+    from model_workspace_server.config_generator import (
+        _default_template,
+        merge_settings,
+    )
+
     out_path = Path(args.output).resolve()
     certs_dir = Path(args.certs_dir).resolve()
     template = _default_template(certs_dir)
@@ -258,6 +256,8 @@ def _settings_from_generate_args(args: argparse.Namespace) -> dict:
 
 def _cmd_generate(args: argparse.Namespace) -> int:
     """Generate config file from arguments."""
+    from model_workspace_server.config_generator import generate_server_config
+
     try:
         settings = _settings_from_generate_args(args)
         generate_server_config(settings)
@@ -287,6 +287,8 @@ def _parse_validate_args(parser: argparse.ArgumentParser) -> argparse.ArgumentPa
 
 def _cmd_validate(args: argparse.Namespace) -> int:
     """Validate config file; on errors log diagnostics and return non-zero."""
+    from model_workspace_server.config_validator import validate_config_file
+
     config_path = Path(args.config)
     errors = validate_config_file(config_path)
     if errors:

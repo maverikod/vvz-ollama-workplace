@@ -13,7 +13,7 @@ from typing import Dict
 import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "src"))
-from ollama_workstation.session_store import (  # noqa: E402
+from mwps.session_store import (  # noqa: E402
     InMemorySessionStore,
     RedisSessionStore,
 )

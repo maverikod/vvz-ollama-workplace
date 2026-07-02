@@ -10,18 +10,18 @@ cd "$CERTS_DIR"
 
 openssl genrsa -out ca.key 4096
 openssl req -x509 -new -nodes -key ca.key -sha256 -days 3650 -out ca.crt \
-  -subj "/CN=ollama-workstation-ca"
+  -subj "/CN=mwps-ca"
 
 openssl genrsa -out server.key 2048
 openssl req -new -key server.key -out server.csr \
-  -subj "/CN=ollama-workstation"
+  -subj "/CN=mwps"
 openssl x509 -req -in server.csr -CA ca.crt -CAkey ca.key -CAcreateserial \
   -out server.crt -days 3650 -sha256
 rm -f server.csr
 
 openssl genrsa -out client.key 2048
 openssl req -new -key client.key -out client.csr \
-  -subj "/CN=ollama-workstation-client"
+  -subj "/CN=mwps-client"
 openssl x509 -req -in client.csr -CA ca.crt -CAkey ca.key -CAcreateserial \
   -out client.crt -days 3650 -sha256
 rm -f client.csr

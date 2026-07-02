@@ -12,9 +12,9 @@ from unittest.mock import MagicMock
 import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "src"))
-from ollama_workstation.message_source import MessageSource  # noqa: E402
-from ollama_workstation.message_stream_writer import MessageStreamWriter  # noqa: E402
-from ollama_workstation.redis_message_record import RedisMessageRecord  # noqa: E402
+from mwps.message_source import MessageSource  # noqa: E402
+from mwps.message_stream_writer import MessageStreamWriter  # noqa: E402
+from mwps.redis_message_record import RedisMessageRecord  # noqa: E402
 
 
 def test_record_source_enum_normalized() -> None:

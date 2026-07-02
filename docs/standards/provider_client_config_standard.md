@@ -7,7 +7,7 @@ email: vasilyvz@gmail.com
 
 Normative document for the provider client configuration structure and validation rules. Schema, validator, and generator must be implemented by following this document.
 
-Context: [refactoring SPEC](../plans/refactoring_adapter_structure/SPEC.md) — model workspace uses provider clients (e.g. ollama_adapter); config structure is defined here.
+Context: [refactoring SPEC](../plans/refactoring_adapter_structure/SPEC.md) — model workspace uses provider clients (e.g. mwps_adapter); config structure is defined here.
 
 ---
 
@@ -44,7 +44,7 @@ The following provider names are **canonical** for the config standard and schem
 
 | Provider name | Notes |
 |---------------|--------|
-| `ollama` | First-class provider; mandatory to support in phase 1. |
+| `mwps` | First-class provider; mandatory to support in phase 1. |
 | `openai` | Example external provider; supported by config/schema; concrete client optional in phase 1. |
 | `anthropic` | Example external provider. |
 | `google` | Example external provider. |

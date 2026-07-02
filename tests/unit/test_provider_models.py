@@ -9,7 +9,7 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "src"))
-from ollama_workstation.provider_models import (  # noqa: E402
+from mwps.provider_models import (  # noqa: E402
     CHEAPEST_MODEL_BY_PROVIDER,
     get_cheapest_model,
 )
@@ -33,6 +33,6 @@ def test_get_cheapest_model() -> None:
     assert get_cheapest_model("xai") == "grok-2"
     assert get_cheapest_model("grok") == "grok-2"
     assert get_cheapest_model("deepseek") == "deepseek-chat"
-    assert get_cheapest_model("ollama") is None
+    assert get_cheapest_model("mwps") is None
     assert get_cheapest_model("") is None
     assert get_cheapest_model("unknown") is None

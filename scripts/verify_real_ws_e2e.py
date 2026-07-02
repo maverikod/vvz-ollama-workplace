@@ -126,7 +126,7 @@ def _get_proxy_base_url() -> str:
             src_dir = str(PROJECT_ROOT / "src")
             if src_dir not in sys.path:
                 sys.path.insert(0, src_dir)
-            from ollama_workstation.config import load_config  # noqa: E402
+            from mwps.config import load_config  # noqa: E402
 
             cfg = load_config(path)
             return (getattr(cfg, "mcp_proxy_url", "") or "").strip().rstrip("/")

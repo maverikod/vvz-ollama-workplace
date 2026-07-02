@@ -12,13 +12,13 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "src"))
-from ollama_workstation.commands import (  # noqa: E402
+from mwps.commands import (  # noqa: E402
     AddCommandToSessionCommand,
     RemoveCommandFromSessionCommand,
     SessionInitCommand,
     SessionUpdateCommand,
 )
-from ollama_workstation.session_store import InMemorySessionStore  # noqa: E402
+from mwps.session_store import InMemorySessionStore  # noqa: E402
 
 
 def _make_store():
@@ -47,7 +47,7 @@ async def test_session_init_execute_returns_session_id() -> None:
     """SessionInitCommand.execute() returns SuccessResult with session_id."""
     cmd = SessionInitCommand()
     with patch(
-        "ollama_workstation.commands.session_init_command._get_session_store"
+        "mwps.commands.session_init_command._get_session_store"
     ) as get_store:
         store = _make_store()
         get_store.return_value = store
@@ -69,7 +69,7 @@ async def test_session_update_execute_success() -> None:
     """SessionUpdateCommand.execute() updates session and returns ok."""
     cmd = SessionUpdateCommand()
     with patch(
-        "ollama_workstation.commands.session_update_command._get_session_store"
+        "mwps.commands.session_update_command._get_session_store"
     ) as get_store:
         store = _make_store()
         s = store.create({"model": "x"})
@@ -100,7 +100,7 @@ async def test_add_command_to_session_success() -> None:
     """AddCommandToSessionCommand.execute() adds command to session."""
     cmd = AddCommandToSessionCommand()
     patch_get = (
-        "ollama_workstation.commands.add_command_to_session_command."
+        "mwps.commands.add_command_to_session_command."
         "_get_session_store"
     )
     with patch(patch_get) as get_store:
@@ -122,10 +122,10 @@ async def test_add_command_forbidden_by_config_rejected() -> None:
     """AddCommandToSession rejects command in config forbidden list."""
     cmd = AddCommandToSessionCommand()
     patch_load = (
-        "ollama_workstation.commands.add_command_to_session_command." "load_config"
+        "mwps.commands.add_command_to_session_command." "load_config"
     )
     patch_get = (
-        "ollama_workstation.commands.add_command_to_session_command."
+        "mwps.commands.add_command_to_session_command."
         "_get_session_store"
     )
     with patch(patch_load) as load_config_mock:
@@ -157,7 +157,7 @@ async def test_remove_command_from_session_success() -> None:
     """RemoveCommandFromSessionCommand removes command from allowed."""
     cmd = RemoveCommandFromSessionCommand()
     patch_get = (
-        "ollama_workstation.commands.remove_command_from_session_command."
+        "mwps.commands.remove_command_from_session_command."
         "_get_session_store"
     )
     with patch(patch_get) as get_store:

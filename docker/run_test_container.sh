@@ -14,8 +14,8 @@ cd "${PROJECT_ROOT}"
 if [ -f "${SCRIPT_DIR}/run.conf" ]; then
   . "${SCRIPT_DIR}/run.conf"
 fi
-IMAGE_NAME="${IMAGE_NAME:-ollama-adapter}"
-CONTAINER_NAME_TEST="${CONTAINER_NAME_TEST:-ollama-adapter-test}"
+IMAGE_NAME="${IMAGE_NAME:-mwps-adapter}"
+CONTAINER_NAME_TEST="${CONTAINER_NAME_TEST:-mwps-adapter-test}"
 NETWORK_NAME="${NETWORK_NAME:-smart-assistant}"
 TEST_ADAPTER_HOST_PORT="${TEST_ADAPTER_HOST_PORT:-8016}"
 TEST_REDIS_HOST_PORT="${TEST_REDIS_HOST_PORT:-63791}"
@@ -61,11 +61,11 @@ docker run -d \
   -e CERTS_DIR=/app/certs \
   -e ADAPTER_PORT=8015 \
   -e ADVERTISED_HOST="${CONTAINER_NAME_TEST}" \
-  -e OLLAMA_MODELS=/app/data \
-  -e OLLAMA_HOME=/app/data \
+  -e MWPS_MODELS=/app/data \
+  -e MWPS_HOME=/app/data \
   -e HOME=/app/data \
-  -e OLLAMA_PRELOAD_MODELS="${OLLAMA_PRELOAD_MODELS:-llama3.2,qwen3,qwen2.5-coder:1.5b}" \
-  -e OLLAMA_KEEP_ALIVE="${OLLAMA_KEEP_ALIVE:--1}" \
+  -e MWPS_PRELOAD_MODELS="${MWPS_PRELOAD_MODELS:-llama3.2,qwen3,qwen2.5-coder:1.5b}" \
+  -e MWPS_KEEP_ALIVE="${MWPS_KEEP_ALIVE:--1}" \
   "${IMAGE_NAME}"
 
 echo "Done. Test container ${CONTAINER_NAME_TEST} is running."

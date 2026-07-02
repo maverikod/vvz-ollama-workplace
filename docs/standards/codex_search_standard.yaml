@@ -1,0 +1,24 @@
+meta:
+  title: Codex Search Standard
+  version: '1.0'
+  locale: en
+  description: >
+    Governs repository search and code analysis for Codex in Agent Workstation.
+  scope:
+    covers: [file discovery, text search, code context gathering, generated index handling]
+    excludes: [file editing, test execution, external service operations]
+
+rules:
+  - Stay inside the repository unless the user explicitly permits another path.
+  - Prefer `rg --files` for file discovery and `rg` for text search.
+  - Use parallel reads for independent files where practical.
+  - Treat `code_analysis/` as generated index data; read it when useful, do not edit it by hand.
+  - Inspect actual source, config, and tests before making implementation claims.
+  - Cite concrete files and symbols in findings.
+
+procedure:
+  - Start from the narrowest paths implied by the user request.
+  - Read existing docs and tests that define expected behavior.
+  - Expand search only when local context is insufficient.
+  - Distinguish observed facts from inferences.
+
