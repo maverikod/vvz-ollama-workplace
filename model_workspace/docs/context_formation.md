@@ -110,15 +110,15 @@ Everything else is "include up to N messages" and "append these blocks". Overflo
 
 ## 7. All providers receive the same full context
 
-**Guarantee:** In the **ollama_chat** path, **every** model (Ollama and all commercial providers: Google, OpenAI, Anthropic, xAI, DeepSeek, OpenRouter) receives the **same** context: (1) **Rules and standards** — file-based plus session standards and session_rules, as system messages; (2) **Tools** — the effective tool list in the request body; (3) **History** — last N messages from the message store; (4) **Semantic augmentation** — relevance slot (RelevanceSlotBuilder). Context is built once in OllamaChatCommand and the same `history` and `tools` are passed to run_chat_flow; both Ollama and commercial endpoints receive that same payload (commercial via _ollama_to_openai_messages, which preserves roles). **direct_chat** does not use context; use **ollama_chat** for full context with any provider.
+**Guarantee:** In the **mwps_chat** path, **every** model (Model Workplace Server and all commercial providers: Google, OpenAI, Anthropic, xAI, DeepSeek, OpenRouter) receives the **same** context: (1) **Rules and standards** — file-based plus session standards and session_rules, as system messages; (2) **Tools** — the effective tool list in the request body; (3) **History** — last N messages from the message store; (4) **Semantic augmentation** — relevance slot (RelevanceSlotBuilder). Context is built once in MwpsChatCommand and the same `history` and `tools` are passed to run_chat_flow; both Model Workplace Server and commercial endpoints receive that same payload (commercial via _mwps_to_openai_messages, which preserves roles). **direct_chat** does not use context; use **mwps_chat** for full context with any provider.
 
 ---
 
 ## 8. Where it is used
 
-- **ollama_chat** (OllamaChatCommand): builds context with config's max_context_tokens, last_n_messages, min_semantic_tokens, min_documentation_tokens; on ContextBuilderError falls back to all messages from store + current (no trim/slots).
+- **mwps_chat** (MwpsChatCommand): builds context with config's max_context_tokens, last_n_messages, min_semantic_tokens, min_documentation_tokens; on ContextBuilderError falls back to all messages from store + current (no trim/slots).
 - **get_model_context** (GetModelContextCommand): same build; on error returns error result instead of fallback.
-- Both use the same ContextBuilder contract; verification scripts can use in-memory session and message stores and no OLLAMA/Redis to assert these rules.
+- Both use the same ContextBuilder contract; verification scripts can use in-memory session and message stores and no MWPS/Redis to assert these rules.
 
 **Script:** `scripts/verify_context_limits.py` runs the above checks without a model or Redis (in-memory stores only). Run from project root with `.venv` activated: `python scripts/verify_context_limits.py`.
 
@@ -128,10 +128,10 @@ Everything else is "include up to N messages" and "append these blocks". Overflo
 
 To evaluate context size and cost (e.g. before/after minimize_context or config changes), the following is logged:
 
-- **chat_flow context_size** (each round): `round`, `messages`, `chars`, `tokens_est` (content length ÷ 4). Logged before sending the request to OLLAMA.
-- **chat_flow token_usage** (each round after response): `round`, `prompt_eval`, `eval`, `total_prompt`, `total_eval` from the OLLAMA response (`prompt_eval_count`, `eval_count`). Accumulated across tool-call rounds.
+- **chat_flow context_size** (each round): `round`, `messages`, `chars`, `tokens_est` (content length ÷ 4). Logged before sending the request to MWPS.
+- **chat_flow token_usage** (each round after response): `round`, `prompt_eval`, `eval`, `total_prompt`, `total_eval` from the MWPS response (`prompt_eval_count`, `eval_count`). Accumulated across tool-call rounds.
 - **chat_flow done**: `duration_sec`, `rounds`, `total_prompt`, `total_eval`, `total` (prompt + eval tokens).
-- **ollama_chat context_build** (session mode): `duration_sec`, `history_len`, `content_chars`, `tokens_est` for the built context.
+- **mwps_chat context_build** (session mode): `duration_sec`, `history_len`, `content_chars`, `tokens_est` for the built context.
 
 Use these log lines to compare token usage across runs or settings.
 

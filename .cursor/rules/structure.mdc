@@ -9,7 +9,7 @@ Recommended layout and conventions for the Agent Workstation project. Align new 
 ## 1. Root layout
 
 ```
-ollama/
+mwps/
 ├── docs/                 # Documentation and guides (документация и руководства)
 │   ├── techspec.md       # Technical specification
 │   ├── standards.md      # Standards derived from techspec
@@ -18,7 +18,7 @@ ollama/
 │   ├── plans/            # Plans (планы)
 │   └── ...
 ├── src/                  # Application source (or package name)
-│   └── ollama_workstation/  # Main package
+│   └── mwps/  # Main package
 ├── tests/                # Tests
 ├── config/                # Example or default config files
 ├── examples/              # Minimal scripts / request examples
@@ -54,26 +54,26 @@ ollama/
 Suggested structure for the workstation component:
 
 ```
-src/ollama_workstation/
+src/mwps/
 ├── __init__.py
-├── config.py           # Config model / loader (mcp_proxy_url, ollama_*, etc.)
-├── tools.py            # OLLAMA tool definitions (list_servers, call_server, help)
-├── chat_flow.py        # Chat loop: request → OLLAMA → tool_calls → proxy → repeat
+├── config.py           # Config model / loader (mcp_proxy_url, mwps_*, etc.)
+├── tools.py            # MWPS tool definitions (list_servers, call_server, help)
+├── chat_flow.py        # Chat loop: request → MWPS → tool_calls → proxy → repeat
 ├── proxy_client.py     # Thin wrapper over adapter client or HTTP to proxy
 ├── commands/           # Adapter commands (if Option A)
 │   ├── __init__.py
-│   └── ollama_chat_command.py
+│   └── mwps_chat_command.py
 └── exceptions.py       # Project-specific exceptions (optional)
 ```
 
 If Option B (standalone service):
 
 ```
-src/ollama_workstation/
+src/mwps/
 ├── ...
 ├── api/
 │   ├── __init__.py
-│   └── routes.py       # e.g. POST /ollama/chat
+│   └── routes.py       # e.g. POST /mwps/chat
 └── main.py             # FastAPI app entry
 ```
 
@@ -82,7 +82,7 @@ src/ollama_workstation/
 ## 6. Configuration
 
 - **config/** — example YAML/JSON and schema.
-- Config schema or example MUST cover: `mcp_proxy_url`, `ollama_base_url`, `ollama_model`, optional `ollama_timeout`, `max_tool_rounds`, and any TLS/API key fields.
+- Config schema or example MUST cover: `mcp_proxy_url`, `mwps_base_url`, `mwps_model`, optional `mwps_timeout`, `max_tool_rounds`, and any TLS/API key fields.
 
 ---
 
@@ -90,7 +90,7 @@ src/ollama_workstation/
 
 - **tests/** — unit and integration tests.
 - Mirror package structure where useful (e.g. `tests/unit/`, `tests/integration/`).
-- Test command registration and chat flow (with mocked OLLAMA and proxy) as per tech spec.
+- Test command registration and chat flow (with mocked MWPS and proxy) as per tech spec.
 
 ---
 

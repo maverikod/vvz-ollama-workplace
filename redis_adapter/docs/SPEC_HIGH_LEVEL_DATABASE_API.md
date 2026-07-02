@@ -11,7 +11,7 @@ Technical specification for **project-specific high-level database access**: dom
 
 - **Server:** The **database_server** (run in the redis-adapter context with `server_id` "database-server") exposes a **domain API**: sessions and messages, not raw Redis commands. This API is the high-level contract for storage used by the model workspace (and any other consumer).
 - **Client:** A **high-level database client** connects to the adapter (via proxy) over **WebSocket** (same transport as other adapter clients), calls the database_server commands, and exposes **project-specific methods** (get_session, create_session, list_sessions, get_session_with_messages, etc.) so that callers do not deal with command names and parameters directly.
-- **Transport:** Client ↔ server interaction uses the **adapter client** from mcp-proxy-adapter: WebSocket (wss:// via proxy) with JSON-RPC; same contract as ollama_provider_client and redis_provider_client (see [docs/standards/provider_client_standard.md](../../docs/standards/provider_client_standard.md) for the general client pattern).
+- **Transport:** Client ↔ server interaction uses the **adapter client** from mcp-proxy-adapter: WebSocket (wss:// via proxy) with JSON-RPC; same contract as mwps_provider_client and redis_provider_client (see [docs/standards/provider_client_standard.md](../../docs/standards/provider_client_standard.md) for the general client pattern).
 
 ---
 
@@ -97,5 +97,5 @@ The client exposes the following **project-specific** methods. Each maps to one 
 - Main Redis adapter ТЗ (raw Redis API): [ТЗ.md](ТЗ.md)
 - Database server commands (current): root `src/database_server/commands/`
 - Redis facade: root `src/database_server/redis_facade.py`
-- Adapter client (WebSocket): mcp-proxy-adapter JsonRpcClient; root `src/ollama_workstation/proxy_client.py` (pattern)
+- Adapter client (WebSocket): mcp-proxy-adapter JsonRpcClient; root `src/mwps/proxy_client.py` (pattern)
 - Analysis report: [docs/reports/redis_database_high_level_api_analysis.md](../../docs/reports/redis_database_high_level_api_analysis.md)

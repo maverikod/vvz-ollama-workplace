@@ -1,5 +1,5 @@
 #!/bin/sh
-# Start OLLAMA in container, then run MCP adapter with auto-registration.
+# Start MWPS in container, then run MCP adapter with auto-registration.
 # Author: Vasiliy Zdanovskiy
 # email: vasilyvz@gmail.com
 
@@ -22,13 +22,13 @@ if [ ! -f "${CONFIG_PATH}" ]; then
   /app/.venv/bin/python /app/generate_config.py
 fi
 
-# 3. Start OLLAMA inside container (used by adapter at 127.0.0.1:11434)
-echo "Starting OLLAMA in container..."
-ollama serve &
-OLLAMA_PID=$!
+# 3. Start MWPS inside container (used by adapter at 127.0.0.1:11434)
+echo "Starting MWPS in container..."
+mwps serve &
+MWPS_PID=$!
 sleep 3
-if ! kill -0 $OLLAMA_PID 2>/dev/null; then
-  echo "OLLAMA failed to start." >&2
+if ! kill -0 $MWPS_PID 2>/dev/null; then
+  echo "MWPS failed to start." >&2
   exit 1
 fi
 

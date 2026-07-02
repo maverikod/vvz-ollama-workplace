@@ -27,9 +27,9 @@ Full rules: **docs/RULES.md**. Summary:
 - Use project **.venv**; never use `--break-system-packages`.
 - Reuse **mcp-proxy-adapter** client/Command/registry; do not duplicate proxy protocol.
 
-## Workstation (OLLAMA tools)
-- Tools: OLLAMA format `type: "function"`, `function: { name, description, parameters }` with JSON Schema.
-- Mandatory tools: `list_servers`, `call_server`, `help`. Config: `mcp_proxy_url`, `ollama_base_url`, `ollama_model` (required); no hardcoded URLs/credentials.
+## Workstation (MWPS tools)
+- Tools: MWPS format `type: "function"`, `function: { name, description, parameters }` with JSON Schema.
+- Mandatory tools: `list_servers`, `call_server`, `help`. Config: `mcp_proxy_url`, `mwps_base_url`, `mwps_model` (required); no hardcoded URLs/credentials.
 - On proxy error: put error in tool result content; do not drop conversation. Log without secrets.
 
 ## Language

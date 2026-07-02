@@ -1,13 +1,13 @@
-# OLLAMA + MCP Proxy Adapter (ollama-workstation) with mTLS
+# MWPS + MCP Proxy Adapter (mwps) with mTLS
 # Author: Vasiliy Zdanovskiy
 # email: vasilyvz@gmail.com
 
 FROM ubuntu:22.04
 
 ENV DEBIAN_FRONTEND=noninteractive
-ENV OLLAMA_HOST=0.0.0.0
+ENV MWPS_HOST=0.0.0.0
 
-# Install OLLAMA, Python, and dependencies
+# Install MWPS, Python, and dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \
     ca-certificates \
@@ -17,13 +17,13 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     openssl \
     && rm -rf /var/lib/apt/lists/*
 
-# Install OLLAMA
-RUN curl -fsSL https://ollama.com/install.sh | sh
+# Install MWPS
+RUN curl -fsSL https://mwps.com/install.sh | sh
 
 # App directory
 WORKDIR /app
 
-# Copy project (for ollama_workstation package)
+# Copy project (for mwps package)
 COPY pyproject.toml /app/
 COPY src/ /app/src/
 

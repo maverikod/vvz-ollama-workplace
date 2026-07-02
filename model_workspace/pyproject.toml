@@ -5,12 +5,12 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "model-workspace"
 version = "0.1.0"
-description = "Model workspace: chat and tools via redis-adapter and ollama-adapter clients"
+description = "Model workspace: chat and tools via redis-adapter and mwps-adapter clients"
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
     "mcp-proxy-adapter",
-    "ollama-provider-client",
+    "mwps-provider-client",
     "redis-provider-client",
     "httpx",
     "PyYAML",

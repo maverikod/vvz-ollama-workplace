@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Run MCP Proxy Adapter with OLLAMA: load config, register command, start server.
+Run MCP Proxy Adapter with MWPS: load config, register command, start server.
 
 Author: Vasiliy Zdanovskiy
 email: vasilyvz@gmail.com
@@ -25,14 +25,14 @@ from mcp_proxy_adapter.commands.command_registry import (
 
 def register_commands() -> None:
     """Register Agent Workstation command with adapter registry."""
-    from ollama_workstation.registration import register_ollama_workstation
+    from mwps.registration import register_mwps
 
-    register_ollama_workstation(registry)
+    register_mwps(registry)
 
 
 def main() -> int:
     """Load config, validate, create app, register commands, run hypercorn."""
-    parser = argparse.ArgumentParser(description="OLLAMA + MCP Adapter (mTLS)")
+    parser = argparse.ArgumentParser(description="MWPS + MCP Adapter (mTLS)")
     parser.add_argument(
         "--config",
         default="/app/config/adapter_config.json",
@@ -91,8 +91,8 @@ def main() -> int:
             return 1
 
     app = create_app(
-        title="OLLAMA Workstation Adapter",
-        description="MCP Adapter with ollama_chat",
+        title="Model Workplace Server Adapter",
+        description="MCP Adapter with mwps_chat",
         version="1.0.0",
         app_config=app_config,
         config_path=str(cfg_path),

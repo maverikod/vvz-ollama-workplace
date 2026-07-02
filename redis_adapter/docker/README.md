@@ -20,4 +20,4 @@ Run from **subproject root** (`redis_adapter/`).
 
 ## Full stack
 
-To run the full stack (redis-adapter, ollama-adapter, model-workspace-server), see root **[docs/container_usage.md](../../docs/container_usage.md)**.
+To run the full stack (redis-adapter, mwps-adapter, model-workspace-server), see root **[docs/container_usage.md](../../docs/container_usage.md)**.

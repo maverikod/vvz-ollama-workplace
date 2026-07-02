@@ -3,9 +3,9 @@ requires = ["setuptools>=61", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "ollama-workstation"
+name = "mwps"
 version = "0.1.1"
-description = "Agent Workstation: chat with OLLAMA using MCP Proxy tools"
+description = "Agent Workstation: chat with MWPS using MCP Proxy tools"
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
@@ -27,7 +27,7 @@ dev = [
 ]
 
 [project.scripts]
-config-cli = "ollama_workstation.config_cli:main"
+config-cli = "mwps.config_cli:main"
 database-client-config-cli = "database_client.config_cli:main"
 
 [tool.setuptools.packages.find]
@@ -38,9 +38,9 @@ root_publishable = false
 model_workspace_client_project = "src/model_workspace_client/pyproject.toml"
 database_client_project = "src/database_client/pyproject.toml"
 model_workspace_client_distribution = "model-workspace-client"
-database_client_distribution = "ollama-model-database-client"
+database_client_distribution = "mwps-model-database-client"
 model_workspace_client_wheel = "src/model_workspace_client/dist/model_workspace_client-*.whl"
-database_client_wheel = "src/database_client/dist/ollama_model_database_client-*.whl"
+database_client_wheel = "src/database_client/dist/mwps_model_database_client-*.whl"
 
 [tool.black]
 line-length = 88

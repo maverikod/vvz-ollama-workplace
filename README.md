@@ -3,7 +3,7 @@
 **Author:** Vasiliy Zdanovskiy  
 **email:** vasilyvz@gmail.com
 
-Monorepo for the Agent Workstation: servers (Ollama+adapter, Redis+adapter, model workspace) and **provider clients** (Ollama, Redis, others). All clients are **based on the adapter client** (mcp-proxy-adapter) and hide provider-specific format and API.
+Monorepo for the Agent Workstation: servers (Model Workplace Server+adapter, Redis+adapter, model workspace) and **provider clients** (Model Workplace Server, Redis, others). All clients are **based on the adapter client** (mcp-proxy-adapter) and hide provider-specific format and API.
 
 ---
 
@@ -11,10 +11,10 @@ Monorepo for the Agent Workstation: servers (Ollama+adapter, Redis+adapter, mode
 
 | # | Category | Subdirectory |
 |---|----------|--------------|
-| 1 | Ollama server + adapter | **ollama_adapter/** |
+| 1 | Model Workplace Server server + adapter | **mwps_adapter/** |
 | 2 | Redis server + adapter | **redis_adapter/** |
 | 3 | Model workspace (server) | **model_workspace/** |
-| 4 | Ollama client (on adapter client base) | **ollama_provider_client/** |
+| 4 | Model Workplace Server client (on adapter client base) | **mwps_provider_client/** |
 | 5 | Redis client (on adapter client base) | **redis_provider_client/** |
 | 6 | Other provider clients | **&lt;name&gt;_provider_client/** (e.g. openai_provider_client) |
 

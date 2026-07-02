@@ -1,6 +1,6 @@
 #!/bin/sh
 # Build Docker image for model-workspace-server.
-# Requires repository root as build context (model_workspace depends on ollama_adapter and redis_adapter).
+# Requires repository root as build context (model_workspace depends on mwps_adapter and redis_adapter).
 # Run from repository root: ./model_workspace/docker/build_image.sh
 # Or from model_workspace/: ./docker/build_image.sh
 # Author: Vasiliy Zdanovskiy
