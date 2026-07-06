@@ -81,41 +81,5 @@
   },
   "transport": {
     "verify_client": true
-  },
-  "mwps": {
-    "mcp_proxy_url": "https://mcp-proxy:3004",
-    "mwps": {
-      "base_url": "http://127.0.0.1:11434",
-      "model_server_url": "http://127.0.0.1:11434",
-      "model": "llama3.2",
-      "models": [],
-      "timeout": 120,
-      "container_name": "",
-      "container_image": ""
-    },
-    "max_tool_rounds": 10,
-    "allowed_commands": [],
-    "forbidden_commands": [],
-    "commands_policy": "allow_by_default",
-    "command_discovery_interval_sec": 0,
-    "session_store_type": "memory",
-    "redis_host": "localhost",
-    "redis_port": 6379,
-    "redis_key_prefix": "message",
-    "max_context_tokens": 4096,
-    "last_n_messages": 10,
-    "min_semantic_tokens": 256,
-    "min_documentation_tokens": 0,
-    "relevance_slot_mode": "fixed_order",
-    "standards_file_path": "",
-    "rules_file_path": "",
-    "max_model_call_depth": 1,
-    "model_calling_tool_allow_list": [],
-    "command_execution_timeout_seconds": 120,
-    "model_providers": {
-      "mwps": {
-        "url": "http://127.0.0.1:11434"
-      }
-    }
   }
 }

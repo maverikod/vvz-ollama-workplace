@@ -11,20 +11,12 @@ from typing import Any, Dict, Iterable, Mapping, Type
 
 from .commands import (
     AddCommandToSessionCommand,
-    DirectChatCommand,
     GetModelContextCommand,
-    GetModelStateCommand,
     InvokeToolCommand,
     MwpsChatCommand,
-    MwpsServerChatCommand,
-    MwpsServerEmbedCommand,
-    MwpsServerListCommand,
-    MwpsServerPullCommand,
     RemoveCommandFromSessionCommand,
-    ServerStatusCommand,
     SessionInitCommand,
     SessionUpdateCommand,
-    SetDefaultModelCommand,
 )
 
 _MAN_LEVEL = "man"
@@ -166,43 +158,13 @@ def _command_classes() -> Iterable[Type[Any]]:
     """Return all workstation command classes included in command catalog."""
     return (
         MwpsChatCommand,
-        ServerStatusCommand,
         SessionInitCommand,
         SessionUpdateCommand,
         AddCommandToSessionCommand,
-        DirectChatCommand,
         RemoveCommandFromSessionCommand,
         GetModelContextCommand,
-        GetModelStateCommand,
         InvokeToolCommand,
-        SetDefaultModelCommand,
     )
-
-
-def _command_classes_mwps_server() -> Iterable[Type[Any]]:
-    """Return mwps-server command classes (chat, embed, list, pull)."""
-    return (
-        MwpsServerChatCommand,
-        MwpsServerEmbedCommand,
-        MwpsServerListCommand,
-        MwpsServerPullCommand,
-    )
-
-
-def register_mwps_server(registry: Any) -> None:
-    """
-    Register mwps-server commands with the given adapter registry.
-
-    Use when adapter runs with registration.server_id=mwps-server.
-    Registers: chat, embed, list, pull (full Model Workplace Server API surface).
-
-    Args:
-        registry: CommandRegistry instance
-        (e.g. from mcp_proxy_adapter.commands.command_registry).
-    """
-    for command_cls in _command_classes_mwps_server():
-        _wrap_metadata(command_cls)
-        registry.register(command_cls, "custom")
 
 
 def register_mwps(registry: Any) -> None:
@@ -210,7 +172,7 @@ def register_mwps(registry: Any) -> None:
     Register Agent Workstation commands with the given adapter registry.
 
     Call this from the main app or a custom-commands hook so that
-    mwps_chat, server_status, and session commands are available.
+    mwps_chat and session commands are available.
 
     Args:
         registry: CommandRegistry instance

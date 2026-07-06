@@ -61,11 +61,7 @@ docker run -d \
   -e CERTS_DIR=/app/certs \
   -e ADAPTER_PORT=8015 \
   -e ADVERTISED_HOST="${CONTAINER_NAME_TEST}" \
-  -e MWPS_MODELS=/app/data \
-  -e MWPS_HOME=/app/data \
   -e HOME=/app/data \
-  -e MWPS_PRELOAD_MODELS="${MWPS_PRELOAD_MODELS:-llama3.2,qwen3,qwen2.5-coder:1.5b}" \
-  -e MWPS_KEEP_ALIVE="${MWPS_KEEP_ALIVE:--1}" \
   "${IMAGE_NAME}"
 
 echo "Done. Test container ${CONTAINER_NAME_TEST} is running."

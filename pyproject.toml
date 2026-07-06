@@ -9,12 +9,13 @@ description = "Agent Workstation: chat with MWPS using MCP Proxy tools"
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
+    # embed-client is still imported directly by tests/integration/test_proxy_and_servers.py
+    # (real integration test); keep until that test is retired or reworked.
     "embed-client>=3.1.7.24",
     "httpx",
     "mcp-proxy-adapter>=8.10.15",
     "PyYAML",
     "redis",
-    "svo-client>=2.2.15",
 ]
 
 [project.optional-dependencies]

@@ -11,7 +11,6 @@ from typing import Optional
 
 from .config import WorkstationConfig, load_config
 from .provider_client_base import BaseProviderClient
-from .provider_models import CHEAPEST_MODEL_BY_PROVIDER, get_cheapest_model
 from .tools import get_mwps_tools
 from .proxy_client import ProxyClient, ProxyClientError
 from .chat_flow import run_chat_flow
@@ -62,9 +61,7 @@ _setup_file_logging()
 
 __all__ = [
     "BaseProviderClient",
-    "CHEAPEST_MODEL_BY_PROVIDER",
     "WorkstationConfig",
-    "get_cheapest_model",
     "load_config",
     "get_mwps_tools",
     "ProxyClient",

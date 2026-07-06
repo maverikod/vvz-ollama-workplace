@@ -14,7 +14,6 @@ import pytest
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "src"))  # noqa: E402
 from mwps.registration import (  # noqa: E402
     _validate_registration_contract,
-    register_mwps_server,
     register_mwps,
 )
 
@@ -34,7 +33,7 @@ def test_register_mwps_registers_catalog_with_man_metadata() -> None:
     registry = _DummyRegistry()
     register_mwps(registry)
 
-    assert len(registry.calls) == 11
+    assert len(registry.calls) == 7
     assert {section for _, section in registry.calls} == {"custom"}
     for command_cls, _ in registry.calls:
         meta = command_cls.get_metadata()
@@ -42,21 +41,6 @@ def test_register_mwps_registers_catalog_with_man_metadata() -> None:
         assert meta["params_schema"] == meta["params"] == meta["parameters"]
         if meta["params_schema"].get("type") == "object":
             assert meta["params_schema"]["additionalProperties"] is False
-
-
-def test_register_mwps_server_registers_four_commands() -> None:
-    """mwps-server catalog: chat, embed, list, pull with strict JSON Schema."""
-    registry = _DummyRegistry()
-    register_mwps_server(registry)
-
-    assert len(registry.calls) == 4
-    names = {str(getattr(c, "name", "")) for c, _ in registry.calls}
-    assert names == {"chat", "embed", "list", "pull"}
-    for command_cls, _ in registry.calls:
-        meta = command_cls.get_metadata()
-        params = meta.get("params_schema") or meta.get("params") or {}
-        if params.get("type") == "object":
-            assert params.get("additionalProperties") is False
 
 
 def test_validate_registration_contract_accepts_naming_freeze_shape() -> None:

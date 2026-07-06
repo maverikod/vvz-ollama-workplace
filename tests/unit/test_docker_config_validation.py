@@ -10,10 +10,6 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "src"))
 from mwps.docker_config_validation import (  # noqa: E402
-    get_required_api_key_for_model,
-    get_runtime_allowed_providers,
-    validate_commercial_model_keys,
-    validate_model_providers,
     validate_project_config,
 )
 
@@ -130,43 +126,6 @@ def test_legacy_provider_urls_forbidden_for_model_workspace() -> None:
     assert any("provider_urls" in e and "forbidden" in e for e in errors)
 
 
-def test_get_required_api_key_for_model() -> None:
-    """Commercial model ids map to required config key; local models return None."""
-    assert get_required_api_key_for_model("gemini-1.5-flash") == "google_api_key"
-    assert get_required_api_key_for_model("Gemini-2.0") == "google_api_key"
-    assert get_required_api_key_for_model("claude-3-opus") == "anthropic_api_key"
-    assert get_required_api_key_for_model("gpt-4o") == "openai_api_key"
-    assert get_required_api_key_for_model("gpt-3.5-turbo") == "openai_api_key"
-    assert get_required_api_key_for_model("o1-mini") == "openai_api_key"
-    assert get_required_api_key_for_model("grok-2") == "xai_api_key"
-    assert get_required_api_key_for_model("deepseek-chat") == "deepseek_api_key"
-    assert get_required_api_key_for_model("llama3.2") is None
-    assert get_required_api_key_for_model("qwen2.5-coder:1.5b") is None
-    assert get_required_api_key_for_model("") is None
-
-
-def test_validate_commercial_model_keys_missing_key() -> None:
-    """Commercial model without corresponding API key yields error."""
-    ow = _ow_base()
-    errors = validate_commercial_model_keys(ow, "gemini-1.5-flash", [])
-    assert len(errors) == 1
-    assert "google_api_key" in errors[0]
-
-
-def test_validate_commercial_model_keys_with_key_ok() -> None:
-    """Commercial model with corresponding API key set passes."""
-    ow = {**_ow_base(), "google_api_key": "sk-fake"}
-    errors = validate_commercial_model_keys(ow, "gemini-1.5-flash", [])
-    assert errors == []
-
-
-def test_validate_commercial_model_keys_mwps_no_key_ok() -> None:
-    """Model Workplace Server/local model does not require commercial key."""
-    ow = _ow_base()
-    errors = validate_commercial_model_keys(ow, "llama3.2", ["qwen2.5-coder:1.5b"])
-    assert errors == []
-
-
 def test_model_workspace_without_provider_clients_fails() -> None:
     """model-workspace without provider_clients fails (no autogeneration)."""
     app_config = {
@@ -242,79 +201,6 @@ def test_validate_project_config_commercial_with_key_ok() -> None:
     }
     errors = validate_project_config(app_config)
     assert not any("google" in e and "auth" in e for e in errors)
-
-
-def test_available_providers_google_requires_key() -> None:
-    """provider_clients with google without auth fails (runtime-allowed commercial)."""
-    app_config = {
-        "server": {"protocol": "http"},
-        "provider_clients": {
-            "default_provider": "mwps",
-            "providers": {
-                "mwps": _pc_mwps_only()["providers"]["mwps"],
-                "google": {
-                    "transport": {
-                        "base_url": "https://generativelanguage.googleapis.com/v1/",
-                        "protocol": "https",
-                        "request_timeout_seconds": 120,
-                    },
-                    "auth": {},
-                    "tls": {},
-                    "features": {},
-                    "limits": {},
-                },
-            },
-        },
-        "mwps": {
-            **_ow_base(),
-            "available_providers": ["mwps", "google"],
-        },
-    }
-    errors = validate_project_config(app_config)
-    assert any("google" in e and "auth" in e for e in errors)
-
-
-def test_available_providers_google_with_key_ok() -> None:
-    """provider_clients with google and auth passes."""
-    app_config = {
-        "server": {"protocol": "http"},
-        "provider_clients": {
-            "default_provider": "mwps",
-            "providers": {
-                "mwps": _pc_mwps_only()["providers"]["mwps"],
-                "google": {
-                    "transport": {
-                        "base_url": "https://generativelanguage.googleapis.com/v1/",
-                        "protocol": "https",
-                        "request_timeout_seconds": 120,
-                    },
-                    "auth": {"api_key": "sk-fake"},
-                    "tls": {"verify": True},
-                    "features": {},
-                    "limits": {},
-                },
-            },
-        },
-        "mwps": {
-            **_ow_base(),
-            "available_providers": ["mwps", "google"],
-        },
-    }
-    assert validate_project_config(app_config) == []
-
-
-def test_available_providers_invalid_value() -> None:
-    """available_providers must contain only mwps, google, anthropic, openai."""
-    app_config = {
-        "server": {"protocol": "http"},
-        "provider_clients": _pc_mwps_only(),
-        "mwps": {
-            **_ow_base(),
-            "available_providers": ["unknown"],
-        },
-    }
-    errors = validate_project_config(app_config)
-    assert any("available_providers" in e and "one of" in e for e in errors)
 
 
 def test_mwps_models_not_list() -> None:
@@ -507,26 +393,13 @@ def test_redis_key_prefix_must_be_string() -> None:
 
 
 def test_mwps_only_config_passes() -> None:
-    """Model Workplace Server-only provider_clients (no commercial in providers) passes."""
+    """Model Workplace Server-only provider_clients (no commercial providers) passes."""
     app_config = {
         "server": {"protocol": "http"},
         "provider_clients": _pc_mwps_only(),
         "mwps": {
             **_ow_base(),
             "mwps": {**_ow_base()["mwps"], "model": "llama3.2", "models": []},
-        },
-    }
-    assert validate_project_config(app_config) == []
-
-
-def test_mwps_only_with_available_providers_mwps_only_passes() -> None:
-    """available_providers only mwps with provider_clients mwps-only passes."""
-    app_config = {
-        "server": {"protocol": "http"},
-        "provider_clients": _pc_mwps_only(),
-        "mwps": {
-            **_ow_base(),
-            "available_providers": ["mwps"],
         },
     }
     assert validate_project_config(app_config) == []
@@ -553,10 +426,7 @@ def test_runtime_allowed_commercial_url_but_no_key_fails() -> None:
                 },
             },
         },
-        "mwps": {
-            **_ow_base(),
-            "available_providers": ["mwps", "google"],
-        },
+        "mwps": _ow_base(),
     }
     errors = validate_project_config(app_config)
     assert any("google" in e and "auth" in e for e in errors), (
@@ -585,10 +455,7 @@ def test_config_path_in_commercial_validation_errors() -> None:
                 },
             },
         },
-        "mwps": {
-            **_ow_base(),
-            "available_providers": ["google"],
-        },
+        "mwps": _ow_base(),
     }
     errors = validate_project_config(app_config)
     assert errors
@@ -633,45 +500,3 @@ def test_provider_clients_providers_expand_runtime_allowed() -> None:
         "expected error for google when in provider_clients.providers without auth: %s"
         % errors
     )
-
-
-def test_get_runtime_allowed_providers_from_available_and_models() -> None:
-    """get_runtime_allowed_providers merges available_providers and model ids."""
-    app_config = {
-        "mwps": {
-            "mwps": {
-                "base_url": "http://localhost:11434",
-                "model": "gemini-2.0-flash",
-                "models": ["llama3.2"],
-            },
-            "available_providers": ["anthropic"],
-        },
-    }
-    providers = get_runtime_allowed_providers(app_config)
-    assert "google" in providers
-    assert "mwps" in providers
-    assert "anthropic" in providers
-
-
-def test_get_runtime_allowed_providers_includes_provider_clients_keys() -> None:
-    """get_runtime_allowed_providers includes provider_clients.providers keys."""
-    app_config = {
-        "mwps": _ow_base(),
-        "provider_clients": {
-            "default_provider": "mwps",
-            "providers": {"mwps": {}, "openai": {}},
-        },
-    }
-    providers = get_runtime_allowed_providers(app_config)
-    assert "openai" in providers
-    assert "mwps" in providers
-
-
-def test_validate_model_providers_without_app_config_backward_compat() -> None:
-    """validate_model_providers without app_config still runs (backward compat)."""
-    ow = {
-        **_ow_base(),
-        "available_providers": ["mwps"],
-    }
-    errors = validate_model_providers(ow, "llama3.2", [])
-    assert errors == []

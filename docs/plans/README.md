@@ -27,3 +27,11 @@ Rules:
 - IDs `G-NNN` / `T-NNN` / `A-NNN` are zero-padded, stable, never reused;
 - all changes flow top-down via the cascade procedure of the plan standard;
 - an atomic step targets exactly one file and inlines everything its coder needs.
+
+## Plans registry
+
+| Plan | Status | Notes |
+| ---- | ------ | ----- |
+| [workspace_orchestration_refactoring/source_spec.md](workspace_orchestration_refactoring/source_spec.md) | **Active** (HRS draft) | Canonical spec. Refactors mwps into an integration/orchestration layer: LLM provider access delegated to model-access-core, local model runtime to lmrs, search/vectorization to svo/embed/doc-store. |
+
+Removed plans (history in git): `refactoring_adapter_structure/` and `refactoring_comprehensive_analysis/` — deleted 2026-07-05 as superseded by the active plan.

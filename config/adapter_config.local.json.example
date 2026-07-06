@@ -122,9 +122,7 @@
       "model_server_url": "http://mwps:11434",
       "model": "llama3.2",
       "models": ["llama3.2", "gemini-2.0-flash", "gpt-4o-mini", "claude-3-5-haiku-20241022", "grok-2", "deepseek-chat"],
-      "timeout": 120,
-      "container_name": "mwps",
-      "container_image": "mwps/mwps"
+      "timeout": 120
     },
     "max_tool_rounds": 10,
     "allowed_commands": [],
@@ -137,9 +135,7 @@
     "redis_key_prefix": "message",
     "max_context_tokens": 4096,
     "last_n_messages": 10,
-    "min_semantic_tokens": 256,
     "min_documentation_tokens": 0,
-    "relevance_slot_mode": "fixed_order",
     "max_model_call_depth": 1,
     "model_calling_tool_allow_list": []
   }

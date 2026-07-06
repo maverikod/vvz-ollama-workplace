@@ -21,10 +21,7 @@ from mwps.config import (  # noqa: E402
     DEFAULT_MAX_TOOL_ROUNDS,
     DEFAULT_MWPS_TIMEOUT,
 )
-from mwps.docker_config_validation import (  # noqa: E402
-    get_runtime_allowed_providers,
-    validate_project_config,
-)
+from mwps.docker_config_validation import validate_project_config  # noqa: E402
 
 _PC_MWPS = (
     '"provider_clients": {"default_provider": "mwps", "providers": {"mwps": '
@@ -140,24 +137,11 @@ def test_load_config_optional_fields_and_defaults(tmp_path: Path) -> None:
     path = tmp_path / "cfg.json"
     path.write_text(
         '{"mwps": {"mcp_proxy_url": "http://x:1", '
-        '"mwps": {"base_url": "http://y:2", "model": "z"}, '
-        '"available_providers": []}, %s}' % _PC_MWPS
+        '"mwps": {"base_url": "http://y:2", "model": "z"}}, %s}' % _PC_MWPS
     )
     cfg = load_config(str(path))
     assert cfg.mwps_timeout == DEFAULT_MWPS_TIMEOUT
     assert cfg.max_tool_rounds == DEFAULT_MAX_TOOL_ROUNDS
-
-
-def test_load_config_available_providers(tmp_path: Path) -> None:
-    """available_providers loaded from file."""
-    path = tmp_path / "cfg.json"
-    path.write_text(
-        '{"mwps": {"mcp_proxy_url": "http://proxy:3004", '
-        '"mwps": {"base_url": "http://localhost:11434", "model": "m"}, '
-        '"available_providers": ["mwps", "google"]}, %s}' % _PC_MWPS
-    )
-    cfg = load_config(str(path))
-    assert cfg.available_providers == ("mwps", "google")
 
 
 def test_config_validation_required() -> None:
@@ -191,9 +175,7 @@ def test_config_validation_required() -> None:
 def test_load_config_missing_mwps_section_raises(tmp_path: Path) -> None:
     """Config without mwps.mwps raises."""
     path = tmp_path / "cfg.json"
-    path.write_text(
-        '{"mwps": {"mcp_proxy_url": "http://p:1"}, %s}' % _PC_MWPS
-    )
+    path.write_text('{"mwps": {"mcp_proxy_url": "http://p:1"}, %s}' % _PC_MWPS)
     with pytest.raises(ValueError, match="mwps.mwps"):
         load_config(str(path))
 
@@ -229,68 +211,3 @@ def test_local_config_example_loads_and_validates() -> None:
     assert cfg.provider_clients_data is not None
     assert "mwps" in (cfg.provider_clients_data.get("providers") or {})
     assert "google" in (cfg.provider_clients_data.get("providers") or {})
-
-
-def test_validation_runtime_consistency_commercial_has_auth(tmp_path: Path) -> None:
-    """
-    For config that passes startup validation, resolver must not return
-    a commercial endpoint with missing url or api_key (provider_clients only).
-    """
-    from mwps.model_provider_resolver import (  # noqa: E402
-        resolve_model_endpoint_from_provider_clients,
-    )
-
-    config_path = tmp_path / "cfg.json"
-    app_config = {
-        "provider_clients": {
-            "default_provider": "mwps",
-            "providers": {
-                "mwps": {
-                    "transport": {
-                        "base_url": "http://localhost:11434",
-                        "protocol": "http",
-                        "request_timeout_seconds": 120,
-                    },
-                    "auth": {},
-                    "tls": {},
-                    "features": {},
-                    "limits": {},
-                },
-                "google": {
-                    "transport": {
-                        "base_url": "https://generativelanguage.googleapis.com/v1beta/",
-                        "protocol": "https",
-                        "request_timeout_seconds": 120,
-                    },
-                    "auth": {"api_key": "test-key"},
-                    "tls": {"verify": True},
-                    "features": {},
-                    "limits": {},
-                },
-            },
-        },
-        "mwps": {
-            "mcp_proxy_url": "http://p:1",
-            "mwps": {
-                "base_url": "http://localhost:11434",
-                "model": "llama3.2",
-                "models": ["llama3.2", "gemini-2.0-flash"],
-            },
-            "available_providers": ["mwps", "google"],
-        },
-    }
-    config_path.write_text(json.dumps(app_config), encoding="utf-8")
-    errors = validate_project_config(app_config)
-    assert not errors, "valid config must pass validation: %s" % errors
-    cfg = load_config(str(config_path))
-    runtime_allowed = get_runtime_allowed_providers(app_config)
-    assert "google" in runtime_allowed
-    endpoint = resolve_model_endpoint_from_provider_clients(
-        cfg.provider_clients_data, "gemini-2.0-flash", default_model="llama3.2"
-    )
-    assert endpoint.base_url
-    assert not endpoint.is_mwps
-    assert endpoint.api_key, (
-        "google is runtime-allowed and config passed validation; "
-        "resolver must return endpoint with api_key"
-    )

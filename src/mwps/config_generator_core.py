@@ -16,66 +16,6 @@ from mcp_proxy_adapter.core.config.simple_config_generator import (
     SimpleConfigGenerator,
 )
 
-MODEL_PREFIX_TO_PROVIDER: tuple[tuple[str, str], ...] = (
-    ("gemini", "google"),
-    ("claude", "anthropic"),
-    ("gpt-4", "openai"),
-    ("gpt-3.5", "openai"),
-    ("gpt-35", "openai"),
-    ("o1-", "openai"),
-    ("o1-mini", "openai"),
-    ("grok", "xai"),
-    ("deepseek", "deepseek"),
-)
-
-COMMERCIAL_PROVIDER_API_KEY_SETTING: dict[str, str] = {
-    "google": "google_api_key",
-    "anthropic": "anthropic_api_key",
-    "openai": "openai_api_key",
-    "xai": "xai_api_key",
-    "deepseek": "deepseek_api_key",
-    "openrouter": "openrouter_api_key",
-}
-
-COMMERCIAL_PROVIDER_DEFAULT_BASE_URL: dict[str, str] = {
-    "google": "https://generativelanguage.googleapis.com",
-    "anthropic": "https://api.anthropic.com",
-    "openai": "https://api.openai.com",
-    "xai": "https://api.x.ai",
-    "deepseek": "https://api.deepseek.com",
-    "openrouter": "https://openrouter.ai/api",
-}
-
-
-def _provider_for_model(model_id: str) -> str:
-    mid = (model_id or "").strip().lower()
-    for prefix, provider in MODEL_PREFIX_TO_PROVIDER:
-        if mid.startswith(prefix):
-            return provider
-    return "mwps"
-
-
-def _commercial_providers_from_settings(settings: dict[str, Any]) -> set[str]:
-    providers: set[str] = set()
-    model_ids = [str(settings.get("mwps_model") or "").strip()]
-    for model in settings.get("mwps_models") or []:
-        if isinstance(model, str) and model.strip():
-            model_ids.append(model.strip())
-    for model_id in model_ids:
-        provider = _provider_for_model(model_id)
-        if provider != "mwps":
-            providers.add(provider)
-    available = settings.get("available_providers")
-    if isinstance(available, str):
-        available = [p.strip() for p in available.split(",") if p.strip()]
-    if isinstance(available, list):
-        for provider in available:
-            if isinstance(provider, str):
-                provider = provider.strip().lower()
-                if provider in COMMERCIAL_PROVIDER_API_KEY_SETTING:
-                    providers.add(provider)
-    return providers
-
 
 def generate_adapter_config(settings: dict[str, Any]) -> None:
     """
@@ -90,8 +30,8 @@ def generate_adapter_config(settings: dict[str, Any]) -> None:
     mwps_timeout, max_tool_rounds, allowed_commands, forbidden_commands,
     commands_policy, command_discovery_interval_sec, session_store_type,
     redis_host, redis_port, redis_key_prefix, max_context_tokens,
-    last_n_messages, min_semantic_tokens, min_documentation_tokens,
-    relevance_slot_mode, max_model_call_depth, model_calling_tool_allow_list.
+    last_n_messages, min_documentation_tokens,
+    max_model_call_depth, model_calling_tool_allow_list.
     """
     out_path = str(settings["output_path"])
     certs_dir = Path(settings["certs_dir"])
@@ -158,8 +98,6 @@ def generate_adapter_config(settings: dict[str, Any]) -> None:
 
     model_server_url = str(settings.get("model_server_url") or mwps_base_url).strip()
     mwps_timeout = int(settings.get("mwps_timeout", 60))
-    container_name = str(settings.get("model_server_container_name", "")).strip()
-    container_image = str(settings.get("model_server_image", "")).strip()
 
     ow_mwps: dict[str, Any] = {
         "base_url": mwps_base_url,
@@ -167,8 +105,6 @@ def generate_adapter_config(settings: dict[str, Any]) -> None:
         "model": mwps_model,
         "models": mwps_models,
         "timeout": mwps_timeout,
-        "container_name": container_name,
-        "container_image": container_image,
     }
     ow: dict[str, Any] = {
         "mcp_proxy_url": base_url,
@@ -186,9 +122,7 @@ def generate_adapter_config(settings: dict[str, Any]) -> None:
         "redis_key_prefix": str(settings.get("redis_key_prefix", "message")),
         "max_context_tokens": int(settings.get("max_context_tokens", 4096)),
         "last_n_messages": int(settings.get("last_n_messages", 10)),
-        "min_semantic_tokens": int(settings.get("min_semantic_tokens", 256)),
         "min_documentation_tokens": int(settings.get("min_documentation_tokens", 0)),
-        "relevance_slot_mode": str(settings.get("relevance_slot_mode", "fixed_order")),
         "standards_file_path": str(settings.get("standards_file_path", "")).strip(),
         "rules_file_path": str(settings.get("rules_file_path", "")).strip(),
         "max_model_call_depth": int(settings.get("max_model_call_depth", 1)),
@@ -199,19 +133,12 @@ def generate_adapter_config(settings: dict[str, Any]) -> None:
             settings.get("command_execution_timeout_seconds", 120)
         ),
     }
-    ap = settings.get("available_providers")
-    if isinstance(ap, list) and ap:
-        ow["available_providers"] = [
-            str(p).strip().lower() for p in ap if str(p).strip()
-        ]
-    elif isinstance(ap, str) and ap.strip():
-        ow["available_providers"] = [
-            p.strip().lower() for p in ap.split(",") if p.strip()
-        ]
     if settings.get("redis_password") is not None:
         ow["redis_password"] = str(settings["redis_password"])
 
-    # provider_clients: canonical source for model-workspace; no legacy model_providers.
+    # provider_clients: canonical source for model-workspace; only mwps is
+    # generated here. Commercial provider access is delegated to
+    # model-access-core (separate reorientation step).
     mwps_base = (model_server_url or mwps_base_url or "").strip().rstrip("/")
     if not mwps_base:
         mwps_base = "http://127.0.0.1:11434"
@@ -231,30 +158,6 @@ def generate_adapter_config(settings: dict[str, Any]) -> None:
             }
         },
     }
-    for provider in sorted(_commercial_providers_from_settings(settings)):
-        key_setting = COMMERCIAL_PROVIDER_API_KEY_SETTING[provider]
-        api_key = str(settings.get(key_setting) or "").strip()
-        if not api_key:
-            raise ValueError(
-                "Config generation: %s is required for commercial provider %s"
-                % (key_setting, provider)
-            )
-        base_setting = "%s_base_url" % provider
-        base_url = str(
-            settings.get(base_setting)
-            or COMMERCIAL_PROVIDER_DEFAULT_BASE_URL.get(provider, "")
-        ).strip()
-        provider_clients["providers"][provider] = {
-            "transport": {
-                "base_url": base_url,
-                "protocol": "https" if base_url.startswith("https") else "http",
-                "request_timeout_seconds": mwps_timeout,
-            },
-            "auth": {"api_key": api_key},
-            "tls": {"verify": True} if base_url.startswith("https") else {},
-            "features": {},
-            "limits": {},
-        }
     data["provider_clients"] = provider_clients
     data["mwps"] = ow
 

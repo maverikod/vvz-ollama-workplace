@@ -184,24 +184,11 @@ def _parse_generate_args(parser: argparse.ArgumentParser) -> argparse.ArgumentPa
         help="Last N messages in context (default: %(default)s).",
     )
     parser.add_argument(
-        "--min-semantic-tokens",
-        type=int,
-        default=256,
-        metavar="N",
-        help="Min semantic tokens (default: %(default)s).",
-    )
-    parser.add_argument(
         "--min-documentation-tokens",
         type=int,
         default=0,
         metavar="N",
         help="Min documentation tokens (default: %(default)s).",
-    )
-    parser.add_argument(
-        "--relevance-slot-mode",
-        choices=("fixed_order", "unified_by_relevance"),
-        default="fixed_order",
-        help="Relevance slot mode (default: %(default)s).",
     )
     parser.add_argument(
         "--max-model-call-depth",
@@ -270,9 +257,7 @@ def _settings_from_args(args: argparse.Namespace) -> dict:
         "redis_key_prefix": args.redis_key_prefix,
         "max_context_tokens": args.max_context_tokens,
         "last_n_messages": args.last_n_messages,
-        "min_semantic_tokens": args.min_semantic_tokens,
         "min_documentation_tokens": args.min_documentation_tokens,
-        "relevance_slot_mode": args.relevance_slot_mode,
         "max_model_call_depth": args.max_model_call_depth,
         "allowed_commands": _comma_list(getattr(args, "allowed_commands", "") or ""),
         "forbidden_commands": _comma_list(

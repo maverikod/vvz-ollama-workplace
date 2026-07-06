@@ -23,9 +23,8 @@ CONFIG_DIR="${SCRIPT_DIR}/config"
 LOGS_DIR="${SCRIPT_DIR}/logs"
 CACHE_DIR="${SCRIPT_DIR}/cache"
 DATA_DIR="${SCRIPT_DIR}/data"
-# Redis persistence (bases); MWPS models and runtime in DATA_DIR
+# Redis persistence (bases); DATA_DIR is generic mounted data (e.g. database storage)
 REDIS_DATA_DIR="${SCRIPT_DIR}/redis_data"
-MODELS_AND_DATA_DIR="${DATA_DIR}"
 CERTS_DIR="${SCRIPT_DIR}/certs"
 # Prefer mtls_certificates (proxy-trusted certs) when present
 MTLS_DIR="${PROJECT_ROOT}/mtls_certificates"
@@ -34,7 +33,7 @@ if [ -f "${MTLS_DIR}/ca.crt" ] && [ -f "${MTLS_DIR}/client.crt" ] && [ -f "${MTL
   echo "Using certs from mtls_certificates/ (proxy-trusted)."
 fi
 
-# Create all mounted dirs so host paths exist (bases, configs, logs, models)
+# Create all mounted dirs so host paths exist (bases, configs, logs, data)
 for d in "${CONFIG_DIR}" "${LOGS_DIR}" "${CACHE_DIR}" "${DATA_DIR}" "${REDIS_DATA_DIR}" "${SCRIPT_DIR}/certs"; do
   mkdir -p "$d"
 done
@@ -100,7 +99,7 @@ elif command -v ss >/dev/null 2>&1 && is_host_port_busy "${ADAPTER_HOST_PORT}"; 
 fi
 
 echo "Starting container ${CONTAINER_NAME} on network ${NETWORK_NAME} (restart=always, user 1000:1000)..."
-# Restart policy: always. Bases, configs, logs, models mounted from host. Redis published for tests.
+# Restart policy: always. Bases, configs, logs, data mounted from host. Redis published for tests.
 docker run -d \
   --name "${CONTAINER_NAME}" \
   --restart=always \
@@ -112,22 +111,16 @@ docker run -d \
   -v "${CONFIG_DIR}:/app/config" \
   -v "${LOGS_DIR}:/app/logs" \
   -v "${CACHE_DIR}:/app/cache" \
-  -v "${MODELS_AND_DATA_DIR}:/app/data" \
+  -v "${DATA_DIR}:/app/data" \
   -v "${REDIS_DATA_DIR}:/app/redis_data" \
   -e CERTS_DIR=/app/certs \
   -e ADAPTER_PORT=8015 \
   -e ADVERTISED_HOST="${CONTAINER_NAME}" \
-  -e MWPS_MODELS=/app/data \
-  -e MWPS_HOME=/app/data \
   -e HOME=/app/data \
-  -e MWPS_PRELOAD_MODELS="${MWPS_PRELOAD_MODELS:-llama3.2,qwen3,qwen2.5-coder:1.5b}" \
-  -e MWPS_KEEP_ALIVE="${MWPS_KEEP_ALIVE:--1}" \
-  -e MWPS_LLM_LIBRARY="${MWPS_LLM_LIBRARY:-cpu}" \
   "${IMAGE_NAME}"
 
 echo "Done. Container ${CONTAINER_NAME} is running (adapter ${ADAPTER_HOST_PORT}:8015, Redis ${REDIS_HOST_PORT}:6379, user 1000:1000, restart=always, network=${NETWORK_NAME})."
-echo "Model Workplace Server: MWPS_LLM_LIBRARY=${MWPS_LLM_LIBRARY:-cpu} (CPU-only). Set MWPS_LLM_LIBRARY= to use GPU."
-echo "Mounts: certs, config, logs, cache, data (models), redis_data (bases)."
+echo "Mounts: certs, config, logs, cache, data, redis_data (bases)."
 
 validate_container_runtime_contract() {
   target_container="$1"

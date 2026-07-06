@@ -25,7 +25,6 @@ from ..command_alias_registry import CommandAliasRegistry
 from ..tools import MODEL_HELP_TOOL
 from ..command_discovery import CommandDiscovery
 from ..config import load_config
-from ..model_loading_state import get_active_model, get_state
 from ..context_builder import ContextBuilder, ContextBuilderError
 from ..context_file_loader import load_tools_json
 from ..effective_tool_list_builder import EffectiveToolListBuilder
@@ -39,7 +38,6 @@ from ..mwps_representation import MwpsRepresentation, register_mwps_models
 from ..redis_message_record import RedisMessageRecord
 from ..representation_registry import RepresentationRegistry
 from ..relevance_slot_builder import RelevanceSlotBuilder
-from ..vectorization_client import DirectEmbedVectorizationClient
 from .mwps_chat_schema import (
     get_mwps_chat_error_schema,
     get_mwps_chat_metadata,
@@ -54,6 +52,8 @@ logger = logging.getLogger(__name__)
 _DEFAULT_CONFIG_PATH = os.environ.get(
     "ADAPTER_CONFIG_PATH", "/app/config/adapter_config.json"
 )
+# Token budget reserved for the relevance slot when building context (step 10).
+_DEFAULT_MIN_SEMANTIC_TOKENS = 256
 
 
 class MwpsChatCommand(Command):
@@ -158,11 +158,6 @@ class MwpsChatCommand(Command):
         tools_from_file: Optional[List[Dict[str, Any]]] = None
         if getattr(config, "tools_file_path", None):
             tools_from_file = load_tools_json(config.tools_file_path)
-        state = get_state()
-        if state.get("status") != "ready":
-            return SuccessResult(
-                data={"ready": False, "server_status": state},
-            )
 
         _raw = getattr(config, "command_execution_timeout_seconds", 120)
         _sec = int(_raw) if isinstance(_raw, (int, float)) else 120
@@ -267,7 +262,7 @@ class MwpsChatCommand(Command):
             return ErrorResult(
                 message="Session not found: %s" % session_id, code=-32602
             )
-        use_model = model or session.model or get_active_model() or config.mwps_model
+        use_model = model or session.model or config.mwps_model
         logger.debug("mwps_chat session loaded model=%s", use_model)
 
         try:
@@ -287,23 +282,10 @@ class MwpsChatCommand(Command):
             redis_client,
             key_prefix=config.redis_key_prefix,
         )
-        # Form context: trim, last_n, relevance slot (vector when embed available).
+        # Form context: trim, last_n, relevance slot (word-overlap ordering).
         registry = RepresentationRegistry(default=MwpsRepresentation())
         register_mwps_models(registry, getattr(config, "mwps_models", None) or [])
-        proxy_for_embed = ProxyClient(config)
-        embed_client = DirectEmbedVectorizationClient(
-            proxy_for_embed,
-            config,
-            embedding_server_id=getattr(
-                config, "embedding_server_id", "embedding-service"
-            ),
-            embedding_command=getattr(config, "embedding_command", "embed"),
-        )
-        relevance_builder = RelevanceSlotBuilder(
-            message_store=message_store,
-            mode=getattr(config, "relevance_slot_mode", "fixed_order") or "fixed_order",
-            vectorization_client=embed_client,
-        )
+        relevance_builder = RelevanceSlotBuilder(message_store=message_store)
         context_builder = ContextBuilder(
             session_store=store,
             representation_registry=registry,
@@ -321,7 +303,7 @@ class MwpsChatCommand(Command):
                 current_message=current_message,
                 max_context_tokens=getattr(config, "max_context_tokens", 4096),
                 last_n_messages=getattr(config, "last_n_messages", 10),
-                min_semantic_tokens=getattr(config, "min_semantic_tokens", 256),
+                min_semantic_tokens=_DEFAULT_MIN_SEMANTIC_TOKENS,
                 min_documentation_tokens=getattr(config, "min_documentation_tokens", 0),
                 model_override=use_model,
             )
@@ -384,12 +366,6 @@ class MwpsChatCommand(Command):
                 session_id,
                 e,
                 exc_info=True,
-            )
-
-        state = get_state()
-        if state.get("status") != "ready":
-            return SuccessResult(
-                data={"ready": False, "server_status": state},
             )
 
         logger.info(

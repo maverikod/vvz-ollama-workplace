@@ -54,33 +54,26 @@ def test_get_metadata_returns_full_metadata() -> None:
 async def test_execute_returns_success_result_with_message_and_history() -> None:
     """execute() returns SuccessResult with data.message and data.history."""
     cmd = MwpsChatCommand()
-    ready_state = {"status": "ready", "current_model": None, "message": None}
-    with patch(
-        "mwps.commands.mwps_chat_command.get_state",
-        return_value=ready_state,
-    ):
+    with patch("mwps.commands.mwps_chat_command.load_config") as load_cfg:
         with patch(
-            "mwps.commands.mwps_chat_command.load_config"
-        ) as load_cfg:
-            with patch(
-                "mwps.commands.mwps_chat_command.run_chat_flow",
-                new_callable=AsyncMock,
-                return_value={
-                    "message": "Done.",
-                    "history": [
-                        {"role": "user", "content": "Hi"},
-                        {"role": "assistant", "content": "Done."},
-                    ],
-                },
-            ):
-                load_cfg.return_value = MagicMock(
-                    mcp_proxy_url="http://p",
-                    mwps_base_url="http://o",
-                    mwps_model="m",
-                    mwps_timeout=60.0,
-                    max_tool_rounds=10,
-                )
-                result = await cmd.execute(messages=[{"role": "user", "content": "Hi"}])
+            "mwps.commands.mwps_chat_command.run_chat_flow",
+            new_callable=AsyncMock,
+            return_value={
+                "message": "Done.",
+                "history": [
+                    {"role": "user", "content": "Hi"},
+                    {"role": "assistant", "content": "Done."},
+                ],
+            },
+        ):
+            load_cfg.return_value = MagicMock(
+                mcp_proxy_url="http://p",
+                mwps_base_url="http://o",
+                mwps_model="m",
+                mwps_timeout=60.0,
+                max_tool_rounds=10,
+            )
+            result = await cmd.execute(messages=[{"role": "user", "content": "Hi"}])
     assert result.to_dict().get("success") is True
     assert result.data.get("message") == "Done."
     assert "history" in result.data
@@ -105,33 +98,28 @@ async def test_execute_session_mode_session_not_found() -> None:
     cmd = MwpsChatCommand()
     mock_store = MagicMock()
     mock_store.get.return_value = None
-    ready_state = {"status": "ready", "current_model": None, "message": None}
     with patch(
-        "mwps.commands.mwps_chat_command.get_state",
-        return_value=ready_state,
+        "mwps.commands.mwps_chat_command.load_config",
+        return_value=MagicMock(
+            mcp_proxy_url="http://p",
+            mwps_base_url="http://o",
+            mwps_model="m",
+            mwps_timeout=60.0,
+            max_tool_rounds=10,
+            redis_host="localhost",
+            redis_port=6379,
+            redis_password=None,
+            redis_key_prefix="message",
+        ),
     ):
         with patch(
-            "mwps.commands.mwps_chat_command.load_config",
-            return_value=MagicMock(
-                mcp_proxy_url="http://p",
-                mwps_base_url="http://o",
-                mwps_model="m",
-                mwps_timeout=60.0,
-                max_tool_rounds=10,
-                redis_host="localhost",
-                redis_port=6379,
-                redis_password=None,
-                redis_key_prefix="message",
-            ),
+            "mwps.commands.mwps_chat_command._get_session_store",
+            return_value=mock_store,
         ):
-            with patch(
-                "mwps.commands.mwps_chat_command._get_session_store",
-                return_value=mock_store,
-            ):
-                result = await cmd.execute(
-                    session_id="00000000-0000-0000-0000-000000000000",
-                    content="Hello",
-                )
+            result = await cmd.execute(
+                session_id="00000000-0000-0000-0000-000000000000",
+                content="Hello",
+            )
     assert result.to_dict().get("success") is False
     assert "Session not found" in (result.message or "")
 
@@ -162,39 +150,33 @@ async def test_execute_session_mode_uses_context_builder() -> None:
         redis_key_prefix="message",
         max_context_tokens=4096,
         last_n_messages=10,
-        min_semantic_tokens=256,
         min_documentation_tokens=0,
-        relevance_slot_mode="fixed_order",
-        embedding_server_id="embedding-service",
-        embedding_command="embed",
     )
-    ready_state = {"status": "ready", "current_model": None, "message": None}
-    with patch.object(mod, "get_state", return_value=ready_state):
-        with patch.object(mod, "load_config", return_value=config):
-            with patch.object(mod.redis, "Redis", return_value=mock_redis):
-                run_chat_flow_mock = AsyncMock(
-                    return_value={
-                        "message": "ok",
-                        "history": serialized_from_builder
-                        + [
-                            {"role": "user", "content": content},
-                            {"role": "assistant", "content": "ok"},
-                        ],
-                    },
-                )
-                with patch(
-                    "mwps.context_builder.ContextBuilder.build",
-                    new_callable=AsyncMock,
-                    return_value=(MagicMock(), serialized_from_builder),
-                ):
-                    with patch.object(mod, "run_chat_flow", run_chat_flow_mock):
-                        with patch.object(
-                            mod, "_get_session_store", return_value=mock_store
-                        ):
-                            result = await cmd.execute(
-                                session_id=session_id,
-                                content=content,
-                            )
+    with patch.object(mod, "load_config", return_value=config):
+        with patch.object(mod.redis, "Redis", return_value=mock_redis):
+            run_chat_flow_mock = AsyncMock(
+                return_value={
+                    "message": "ok",
+                    "history": serialized_from_builder
+                    + [
+                        {"role": "user", "content": content},
+                        {"role": "assistant", "content": "ok"},
+                    ],
+                },
+            )
+            with patch(
+                "mwps.context_builder.ContextBuilder.build",
+                new_callable=AsyncMock,
+                return_value=(MagicMock(), serialized_from_builder),
+            ):
+                with patch.object(mod, "run_chat_flow", run_chat_flow_mock):
+                    with patch.object(
+                        mod, "_get_session_store", return_value=mock_store
+                    ):
+                        result = await cmd.execute(
+                            session_id=session_id,
+                            content=content,
+                        )
     assert result.to_dict().get("success") is True
     run_chat_flow_mock.assert_called_once()
     call_kw = run_chat_flow_mock.call_args[1]

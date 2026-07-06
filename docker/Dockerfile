@@ -1,5 +1,6 @@
-# Image: REDIS + MWPS + MCP Proxy Adapter (mwps).
-# Bases, configs, logs, models mounted from host. Run with user 1000:1000.
+# Image: REDIS + MCP Proxy Adapter (mwps). Model access is delegated to the
+# external model-access-core server over the network; no local model process.
+# Bases, configs, logs mounted from host. Run with user 1000:1000.
 # Author: Vasiliy Zdanovskiy
 # email: vasilyvz@gmail.com
 # Build from project root: docker build -f docker/Dockerfile .
@@ -7,7 +8,6 @@
 FROM ubuntu:22.04
 
 ENV DEBIAN_FRONTEND=noninteractive
-ENV MWPS_HOST=0.0.0.0
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \
@@ -19,8 +19,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     openssl \
     redis-server \
     && rm -rf /var/lib/apt/lists/*
-
-RUN curl -fsSL https://mwps.com/install.sh | sh
 
 WORKDIR /app
 
@@ -35,7 +33,6 @@ RUN mkdir -p /app/certs /app/config /app/logs /app/data /app/cache /app/redis_da
 
 COPY docker/redis.conf /app/redis.conf
 COPY docker/entrypoint.sh /app/entrypoint.sh
-COPY docker/ensure_mwps_models.py /app/ensure_mwps_models.py
 COPY docker/generate_config.py /app/generate_config.py
 COPY docker/run_adapter.py /app/run_adapter.py
 

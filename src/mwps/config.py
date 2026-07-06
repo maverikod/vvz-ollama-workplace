@@ -49,11 +49,9 @@ class WorkstationConfig:
     mcp_proxy_url: str
     mwps_base_url: str
     mwps_model: str
-    # Model server URL (Model Workplace Server or other backend). If empty, equals mwps_base_url.
+    # Model server URL (Model Workplace Server or other backend).
+    # If empty, equals mwps_base_url.
     model_server_url: str = ""
-    # Optional Docker container for model server; if both set, adapter ensures it runs.
-    model_server_container_name: str = ""
-    model_server_image: str = ""
     mwps_timeout: float = DEFAULT_MWPS_TIMEOUT
     # Optional list of model ids (e.g. for representation registry).
     mwps_models: Tuple[str, ...] = ()
@@ -66,22 +64,6 @@ class WorkstationConfig:
     proxy_client_key: Optional[str] = None
     proxy_ca_cert: Optional[str] = None
     mwps_api_key: Optional[str] = None
-    # API keys: canonical source is model_providers[provider].api_key. Flat keys
-    # below are legacy/override only (env or file); resolver uses model_providers first.
-    google_api_key: Optional[str] = None
-    anthropic_api_key: Optional[str] = None
-    openai_api_key: Optional[str] = None
-    xai_api_key: Optional[str] = None  # xAI Grok
-    deepseek_api_key: Optional[str] = None
-    openrouter_api_key: Optional[str] = None  # OpenRouter
-    # model_providers: provider -> {url, api_key}. URL and key bound to model type.
-    # When model selected, both url and api_key for its provider are mandatory.
-    model_providers: Dict[str, Dict[str, str]] = field(default_factory=dict)
-    # Legacy: provider_urls (provider -> url) when model_providers not used.
-    provider_urls: Dict[str, str] = field(default_factory=dict)
-    # Optional: enabled providers (mwps, google, anthropic, openai, xai, deepseek).
-    # Keys are required only when the provider is in this list or in model ids.
-    available_providers: tuple[str, ...] = ()
     # Commands policy: model context only from config allowed list, then session filter.
     # Default: deny_by_default with empty allowed (no tools until config lists them).
     commands_policy_config: CommandsPolicyConfig = field(
@@ -100,12 +82,10 @@ class WorkstationConfig:
     redis_port: int = 6379
     redis_password: Optional[str] = None
     redis_key_prefix: str = "message"
-    # Context (step 10): max_context_tokens, last_n_messages, min_semantic_tokens, etc.
+    # Context (step 10): max_context_tokens, last_n_messages, etc.
     max_context_tokens: int = 4096
     last_n_messages: int = 10
-    min_semantic_tokens: int = 256
     min_documentation_tokens: int = 0
-    relevance_slot_mode: str = "fixed_order"
     # Step 12: tool→model recursion
     max_model_call_depth: int = 1
     model_calling_tool_allow_list: tuple[str, ...] = ()
@@ -115,10 +95,6 @@ class WorkstationConfig:
     tools_file_path: str = ""
     # Optional: this adapter's server_id (priority when deduping by name).
     adapter_server_id: str = ""
-    # Embedding service for vectorization (relevance slot by vector similarity).
-    # Via proxy: call_server(embedding_server_id, embedding_command, {"text": "..."}).
-    embedding_server_id: str = "embedding-service"
-    embedding_command: str = "embed"
     # Adapter command execution timeout (sec). When chat exceeds it we return
     # ErrorResult with message instead of raising so the client gets a clear error.
     command_execution_timeout_seconds: int = 120
@@ -224,7 +200,7 @@ def load_config(config_path: Optional[str] = None) -> WorkstationConfig:
             raw = path.read_text(encoding="utf-8")
             if path.suffix in (".yaml", ".yml"):
                 try:
-                    import yaml  # type: ignore[import-untyped]
+                    import yaml
 
                     data = yaml.safe_load(raw) or {}
                 except ImportError:
@@ -284,48 +260,21 @@ def load_config(config_path: Optional[str] = None) -> WorkstationConfig:
     )
     _mwps_models_raw = o.get("models")
     if isinstance(_mwps_models_raw, list):
-        mwps_models = tuple(
-            str(m).strip() for m in _mwps_models_raw if str(m).strip()
-        )
+        mwps_models = tuple(str(m).strip() for m in _mwps_models_raw if str(m).strip())
     else:
         mwps_models = ()
     max_tool_rounds = _parse_int(
         os.environ.get(ENV_MAX_TOOL_ROUNDS) or _get("max_tool_rounds"),
         DEFAULT_MAX_TOOL_ROUNDS,
     )
-    proxy_token = os.environ.get("MWPS_PROXY_TOKEN") or _get(
-        "proxy_token"
+    proxy_token = os.environ.get("MWPS_PROXY_TOKEN") or _get("proxy_token")
+    proxy_token_header = os.environ.get("MWPS_PROXY_TOKEN_HEADER") or _get(
+        "proxy_token_header"
     )
-    proxy_token_header = os.environ.get(
-        "MWPS_PROXY_TOKEN_HEADER"
-    ) or _get("proxy_token_header")
 
     # Legacy provider fields are not read for provider routing (model-workspace
     # uses only provider_clients). No fallback; empty so runtime never uses legacy.
-    google_api_key: Optional[str] = None
-    anthropic_api_key: Optional[str] = None
-    openai_api_key: Optional[str] = None
-    xai_api_key: Optional[str] = None
-    deepseek_api_key: Optional[str] = None
     mwps_api_key: Optional[str] = None
-    openrouter_api_key: Optional[str] = None
-    model_providers: Dict[str, Dict[str, str]] = {}
-    provider_urls: Dict[str, str] = {}
-    avail_prov_raw = os.environ.get("MWPS_AVAILABLE_PROVIDERS") or ow.get(
-        "available_providers"
-    )
-    if isinstance(avail_prov_raw, list):
-        available_providers = tuple(
-            str(p).strip().lower()
-            for p in avail_prov_raw
-            if isinstance(p, str) and p.strip()
-        )
-    elif isinstance(avail_prov_raw, str) and avail_prov_raw.strip():
-        available_providers = tuple(
-            p.strip().lower() for p in avail_prov_raw.split(",") if p.strip()
-        )
-    else:
-        available_providers = ()
 
     commands_policy_config = _load_commands_policy_config(ow)
     cmd_disc_sec = _parse_int(
@@ -343,11 +292,7 @@ def load_config(config_path: Optional[str] = None) -> WorkstationConfig:
     redis_key_prefix = str(_get("redis_key_prefix") or "message").strip() or "message"
     max_context_tokens = max(1, _parse_int(_get("max_context_tokens"), 4096))
     last_n_messages = max(0, _parse_int(_get("last_n_messages"), 10))
-    min_semantic_tokens = max(0, _parse_int(_get("min_semantic_tokens"), 256))
     min_documentation_tokens = max(0, _parse_int(_get("min_documentation_tokens"), 0))
-    relevance_slot_mode = (
-        str(_get("relevance_slot_mode") or "fixed_order").strip() or "fixed_order"
-    )
     max_model_call_depth = max(0, _parse_int(_get("max_model_call_depth"), 1))
     allow_list_raw = ow.get("model_calling_tool_allow_list")
     if isinstance(allow_list_raw, list):
@@ -362,18 +307,10 @@ def load_config(config_path: Optional[str] = None) -> WorkstationConfig:
     adapter_server_id = str(
         _get("adapter_server_id") or data.get("server", {}).get("advertised_host") or ""
     ).strip()
-    embedding_server_id = (
-        str(_get("embedding_server_id") or "embedding-service").strip()
-        or "embedding-service"
-    )
-    embedding_command = str(_get("embedding_command") or "embed").strip() or "embed"
     command_execution_timeout_seconds = max(
         30,
         _parse_int(_get("command_execution_timeout_seconds"), 120),
     )
-
-    model_server_container_name = str(o.get("container_name") or "").strip()
-    model_server_image = str(o.get("container_image") or "").strip()
 
     # Provider clients: required from config; no autogeneration from legacy fields.
     provider_clients_raw = data.get("provider_clients") or ow.get("provider_clients")
@@ -402,8 +339,6 @@ def load_config(config_path: Optional[str] = None) -> WorkstationConfig:
         mwps_model=mwps_model,
         mwps_models=mwps_models,
         model_server_url=model_server_url,
-        model_server_container_name=model_server_container_name,
-        model_server_image=model_server_image,
         mwps_timeout=mwps_timeout,
         max_tool_rounds=max_tool_rounds,
         proxy_token=proxy_token,
@@ -412,15 +347,6 @@ def load_config(config_path: Optional[str] = None) -> WorkstationConfig:
         proxy_client_key=proxy_client_key,
         proxy_ca_cert=proxy_ca_cert,
         mwps_api_key=mwps_api_key,
-        google_api_key=google_api_key,
-        anthropic_api_key=anthropic_api_key,
-        openai_api_key=openai_api_key,
-        xai_api_key=xai_api_key,
-        deepseek_api_key=deepseek_api_key,
-        openrouter_api_key=openrouter_api_key,
-        model_providers=model_providers,
-        provider_urls=provider_urls,
-        available_providers=available_providers,
         commands_policy_config=commands_policy_config,
         command_discovery_interval_sec=command_discovery_interval_sec,
         session_store_type=session_store_type,
@@ -430,17 +356,13 @@ def load_config(config_path: Optional[str] = None) -> WorkstationConfig:
         redis_key_prefix=redis_key_prefix,
         max_context_tokens=max_context_tokens,
         last_n_messages=last_n_messages,
-        min_semantic_tokens=min_semantic_tokens,
         min_documentation_tokens=min_documentation_tokens,
-        relevance_slot_mode=relevance_slot_mode,
         max_model_call_depth=max_model_call_depth,
         model_calling_tool_allow_list=model_calling_tool_allow_list,
         rules_file_path=rules_file_path,
         standards_file_path=standards_file_path,
         tools_file_path=tools_file_path,
         adapter_server_id=adapter_server_id,
-        embedding_server_id=embedding_server_id,
-        embedding_command=embedding_command,
         command_execution_timeout_seconds=command_execution_timeout_seconds,
         provider_clients_data=provider_clients_data,
     )

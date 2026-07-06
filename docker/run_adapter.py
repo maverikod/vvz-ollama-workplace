@@ -11,8 +11,6 @@ import asyncio
 import json
 import logging
 import sys
-import threading
-import time
 from pathlib import Path
 
 from mcp_proxy_adapter.api.app import create_app
@@ -27,25 +25,18 @@ from mcp_proxy_adapter.commands.command_registry import (
 )
 
 from mwps.docker_config_validation import validate_project_config
-from mwps.model_loading_state import (
-    set_loading,
-    set_model_ready,
-    set_ready,
-)
-from mwps.model_loader import run_model_loading, warm_up_models
-from mwps.mwps_client import start_readiness_ping_thread
 
 # So that chat_flow, mwps_chat_command, proxy_client INFO appear in adapter logs.
 logging.getLogger("mwps").setLevel(logging.INFO)
 
 # Server description for proxy catalog.
 MWPS_SERVER_DESCRIPTION = (
-    "Model Workplace Server: MCP adapter that runs chat with local MWPS and gives the "
-    "model access to MCP Proxy tools (list_servers, call_server, help). Use "
-    "mwps_chat to send messages and get replies; model can call any server. "
-    "Session commands (session_init, session_update, add_command_to_session, "
-    "remove_command_from_session) manage per-session allow/forbid lists. "
-    "server_status reports adapter readiness or model loading."
+    "Model Workplace Server: MCP adapter that runs chat via a configured provider "
+    "client and gives the model access to MCP Proxy tools (list_servers, "
+    "call_server, help). Use mwps_chat to send messages and get replies; model "
+    "can call any server. Session commands (session_init, session_update, "
+    "add_command_to_session, remove_command_from_session) manage per-session "
+    "allow/forbid lists."
 )
 
 DATABASE_SERVER_DESCRIPTION = (
@@ -56,7 +47,7 @@ DATABASE_SERVER_DESCRIPTION = (
 
 
 def register_commands() -> None:
-    """Register commands by server_id: mwps-server | workstation | database-server."""
+    """Register commands by server_id: workstation | database-server."""
     cfg = get_config()
     cfg_data = getattr(cfg, "config_data", None) or {}
     server_id = str((cfg_data.get("registration") or {}).get("server_id") or "").strip()
@@ -64,10 +55,6 @@ def register_commands() -> None:
         from database_server.commands import register_database_commands
 
         register_database_commands(registry)
-    elif server_id == "mwps-server":
-        from mwps.registration import register_mwps_server
-
-        register_mwps_server(registry)
     else:
         from mwps.registration import register_mwps
 
@@ -163,53 +150,6 @@ def main() -> int:
     )
 
     register_commands()
-
-    ow = app_config.get("mwps") or {}
-    oo = (ow.get("mwps") or {}) if isinstance(ow, dict) else {}
-    model_list: list[str] = []
-    model_server_url = ""
-    if server_id != "database-server" and isinstance(ow, dict):
-        model_server_url = (
-            oo.get("model_server_url") or oo.get("base_url") or "http://127.0.0.1:11434"
-        ).strip()
-        start_readiness_ping_thread(model_server_url)
-        model_list = list(oo.get("models") or [])
-        if not model_list and oo.get("model"):
-            model_list = [str(oo.get("model", "")).strip()]
-        model_list = [m for m in model_list if isinstance(m, str) and m.strip()]
-
-    def _model_loading_worker() -> None:
-        """Run in background: ensure container if configured, load and warm via API."""
-        set_loading(None, "Model loading started...")
-        print("Model loading started (background). Use server_status.", file=sys.stderr)
-        t0 = time.perf_counter()
-        try:
-            run_model_loading(str(cfg_path))
-            if model_list and model_server_url:
-                timeout = float(oo.get("timeout", 120))
-                warm_up_models(model_server_url, model_list, timeout_sec=timeout)
-            set_model_ready(True)
-            set_ready()
-            print(
-                "Model loading finished in %.2fs" % (time.perf_counter() - t0),
-                file=sys.stderr,
-            )
-        except Exception as e:
-            print("Model loading failed: %s" % e, file=sys.stderr)
-            set_ready()
-            set_model_ready(False)
-
-    if model_list or ow:
-        t = threading.Thread(
-            target=_model_loading_worker, daemon=True, name="model-load"
-        )
-        t.start()
-        print(
-            "Server starting; model loading in background. Use server_status.",
-            file=sys.stderr,
-        )
-    else:
-        set_model_ready(True)
 
     host = app_config.get("server", {}).get("host", "0.0.0.0")
     port = int(app_config.get("server", {}).get("port", 8443))

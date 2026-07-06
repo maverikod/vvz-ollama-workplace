@@ -21,9 +21,7 @@ from .config import WorkstationConfig
 from .tools import HELP_REFERENCE_TEXT
 from .effective_tool_list_builder import EffectiveToolListBuilder
 from .mwps_representation import MwpsRepresentation, register_mwps_models
-from .model_loading_state import get_active_model, is_model_ready
 from .model_provider_resolver import resolve_model_endpoint_from_provider_clients
-from .commercial_chat_client import chat_completion as commercial_chat_completion
 from .proxy_client import ProxyClient, ProxyClientError
 from .provider_registry import get_default_client
 from .representation_registry import RepresentationRegistry
@@ -137,9 +135,7 @@ async def run_tool_like_model(
     proxy = ProxyClient(config)
     registry = RepresentationRegistry(default=MwpsRepresentation())
     register_mwps_models(registry, getattr(config, "mwps_models", None) or [])
-    representation = registry.get_representation(
-        get_active_model() or config.mwps_model or ""
-    )
+    representation = registry.get_representation(config.mwps_model or "")
     try:
         discovery = CommandDiscovery(
             proxy,
@@ -277,7 +273,7 @@ async def run_chat_flow(
         representation: Used to format_tool_result(raw) for tool message content.
             If None, a default is used (MwpsRepresentation).
     """
-    use_model = model or get_active_model() or config.mwps_model
+    use_model = model or config.mwps_model
     if not config.provider_clients_data:
         raise ValueError(
             "provider_clients_data is required; "
@@ -302,22 +298,15 @@ async def run_chat_flow(
         if session_tools is not None and tool_registry is not None
         else (tools_from_file if tools_from_file else [])
     )
-    if endpoint.is_mwps and not is_model_ready():
-        return {
-            "message": "",
-            "history": list(messages),
-            "error": "Model not ready; waiting for MWPS to respond.",
-        }
-
     history: List[Dict[str, Any]] = list(messages)
     proxy = ProxyClient(config)
     use_registry = tool_registry is not None
     t_flow_start = time.perf_counter()
     total_prompt_tokens = 0
     total_eval_tokens = 0
-    provider_client = None
-    if endpoint.is_mwps and config.provider_clients_data:
-        provider_client = get_default_client(config.provider_clients_data)
+    # All chat requests go through the provider client (model-access-core
+    # delegation is a later reorientation step); no direct commercial calls.
+    provider_client = get_default_client(config.provider_clients_data)
 
     logger.info(
         "chat_flow start model=%s max_rounds=%s session_tools=%s message_count=%s",
@@ -391,34 +380,12 @@ async def run_chat_flow(
 
         try:
             t_mwps_start = time.perf_counter()
-            if endpoint.is_mwps:
-                logger.debug(
-                    "chat_flow MWPS request round=%s model=%s (provider client)",
-                    round_num + 1,
-                    use_model,
-                )
-                if provider_client is None:
-                    raise ValueError(
-                        "Model Workplace Server provider client not available; "
-                        "provider_clients_data missing or invalid."
-                    )
-                data = await asyncio.to_thread(provider_client.chat, body)
-            else:
-                # Same full context (standards, rules, last_n, relevance slot, tools)
-                # as for Model Workplace Server; history is built once in mwps_chat and passed here.
-                logger.debug(
-                    "chat_flow commercial request round=%s provider=%s model=%s",
-                    round_num + 1,
-                    endpoint.provider,
-                    endpoint.model_id,
-                )
-                data = await commercial_chat_completion(
-                    endpoint,
-                    history,
-                    tools=tools if tools else None,
-                    stream=False,
-                    timeout=config.mwps_timeout,
-                )
+            logger.debug(
+                "chat_flow MWPS request round=%s model=%s (provider client)",
+                round_num + 1,
+                use_model,
+            )
+            data = await asyncio.to_thread(provider_client.chat, body)
             # Log token usage from MWPS response (for cost/effect evaluation).
             prompt_tokens = data.get("prompt_eval_count")
             eval_tokens = data.get("eval_count")
@@ -461,17 +428,11 @@ async def run_chat_flow(
             )
             err_msg = str(e)
             if e.response and e.response.status_code == 404:
-                if endpoint.is_mwps:
-                    err_msg = (
-                        "MWPS 404 at %s/api/chat. Check: (1) model_server_url "
-                        "points to Model Workplace Server; (2) model '%s' exists (GET /api/tags); "
-                        "(3) Model Workplace Server is running."
-                    ) % (endpoint.base_url, use_model)
-                else:
-                    err_msg = (
-                        "Model API 404 for %s at %s. Check provider_urls and "
-                        "API key for %s."
-                    ) % (use_model, endpoint.base_url, endpoint.provider)
+                err_msg = (
+                    "MWPS 404 at %s/api/chat. Check: (1) model_server_url "
+                    "points to Model Workplace Server; (2) model '%s' exists "
+                    "(GET /api/tags); (3) Model Workplace Server is running."
+                ) % (endpoint.base_url, use_model)
             if total_prompt_tokens or total_eval_tokens:
                 logger.info(
                     "chat_flow error_exit total_prompt_tokens=%s total_eval_tokens=%s",

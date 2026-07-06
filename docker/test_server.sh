@@ -47,19 +47,6 @@ if [ $i -ge "$WAIT_MAX" ]; then
 fi
 
 echo "Server smoke tests (JSON-RPC)..."
-BODY='{"jsonrpc":"2.0","method":"server_status","params":{},"id":1}'
-RESP=$(curl -k -s -X POST \
-  --cert "${CERTS_DIR}/client.crt" --key "${CERTS_DIR}/client.key" \
-  -H "Content-Type: application/json" \
-  -d "${BODY}" \
-  "${ADAPTER_URL}${JSONRPC_PATH}" 2>/dev/null || echo "{}")
-if echo "${RESP}" | grep -q '"result"'; then
-  echo "server_status: OK"
-else
-  echo "server_status failed. Response: ${RESP}"
-  exit 1
-fi
-
 BODY2='{"jsonrpc":"2.0","method":"session_init","params":{},"id":2}'
 RESP2=$(curl -k -s -X POST \
   --cert "${CERTS_DIR}/client.crt" --key "${CERTS_DIR}/client.key" \
@@ -69,7 +56,8 @@ RESP2=$(curl -k -s -X POST \
 if echo "${RESP2}" | grep -q '"result"'; then
   echo "session_init: OK"
 else
-  echo "session_init response: ${RESP2}"
+  echo "session_init failed. Response: ${RESP2}"
+  exit 1
 fi
 
 echo "Server test pipeline OK."

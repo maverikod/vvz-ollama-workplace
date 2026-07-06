@@ -19,7 +19,6 @@ from mcp_proxy_adapter.commands.result import SuccessResult, ErrorResult
 from ..command_alias_registry import CommandAliasRegistry
 from ..command_discovery import CommandDiscovery
 from ..config import load_config
-from ..model_loading_state import get_active_model
 from ..context_builder import ContextBuilder, ContextBuilderError
 from ..context_file_loader import load_tools_json
 from ..effective_tool_list_builder import EffectiveToolListBuilder
@@ -29,7 +28,6 @@ from ..proxy_client import ProxyClient
 from ..representation_registry import RepresentationRegistry
 from ..relevance_slot_builder import RelevanceSlotBuilder
 from ..safe_name_translator import SafeNameTranslator
-from ..vectorization_client import DirectEmbedVectorizationClient
 from ..tools import MODEL_HELP_TOOL
 from .session_init_command import _get_session_store
 
@@ -38,6 +36,8 @@ logger = logging.getLogger(__name__)
 _DEFAULT_CONFIG_PATH = os.environ.get(
     "ADAPTER_CONFIG_PATH", "/app/config/adapter_config.json"
 )
+# Token budget reserved for the relevance slot when building context (step 10).
+_DEFAULT_MIN_SEMANTIC_TOKENS = 256
 
 
 def _messages_for_display(
@@ -282,7 +282,7 @@ class GetModelContextCommand(Command):
             return ErrorResult(
                 message="Session not found: %s" % session_id, code=-32602
             )
-        use_model = session.model or get_active_model() or config.mwps_model
+        use_model = session.model or config.mwps_model
         try:
             redis_client = redis.Redis(
                 host=config.redis_host,
@@ -298,20 +298,7 @@ class GetModelContextCommand(Command):
         )
         registry = RepresentationRegistry(default=MwpsRepresentation())
         register_mwps_models(registry, getattr(config, "mwps_models", None) or [])
-        proxy_for_embed = ProxyClient(config)
-        embed_client = DirectEmbedVectorizationClient(
-            proxy_for_embed,
-            config,
-            embedding_server_id=getattr(
-                config, "embedding_server_id", "embedding-service"
-            ),
-            embedding_command=getattr(config, "embedding_command", "embed"),
-        )
-        relevance_builder = RelevanceSlotBuilder(
-            message_store=message_store,
-            mode=getattr(config, "relevance_slot_mode", "fixed_order") or "fixed_order",
-            vectorization_client=embed_client,
-        )
+        relevance_builder = RelevanceSlotBuilder(message_store=message_store)
         context_builder = ContextBuilder(
             session_store=store,
             representation_registry=registry,
@@ -328,7 +315,7 @@ class GetModelContextCommand(Command):
                 current_message=current_message,
                 max_context_tokens=getattr(config, "max_context_tokens", 4096),
                 last_n_messages=getattr(config, "last_n_messages", 10),
-                min_semantic_tokens=getattr(config, "min_semantic_tokens", 256),
+                min_semantic_tokens=_DEFAULT_MIN_SEMANTIC_TOKENS,
                 min_documentation_tokens=getattr(config, "min_documentation_tokens", 0),
                 model_override=use_model,
             )

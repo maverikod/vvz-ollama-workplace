@@ -2,12 +2,13 @@
 Integration tests: provider client unification (step 13).
 
 Covers:
-1. No-direct-access policy: chat flow uses provider client for Model Workplace Server; test fails
-   if direct mwps/redis path is reintroduced in the model request path.
-2. Provider parity via common API: at least Model Workplace Server exercised through provider
-   client (get_default_client + .chat()).
-3. Proxy registration and command availability: database-server and mwps-server
-   visible in list_servers; key commands callable via call_server.
+1. No-direct-access policy: chat flow uses provider client for Model Workplace
+   Server; test fails if direct mwps/redis path is reintroduced in the model
+   request path.
+2. Provider parity via common API: at least Model Workplace Server exercised
+   through provider client (get_default_client + .chat()).
+3. Proxy registration and command availability: database-server visible in
+   list_servers; key commands callable via call_server.
 
 References: docs/plans/provider_client_unification/atomic/step_13_integration_tests.md,
 SCOPE_FREEZE.md, CLIENT_UNIFICATION_TZ.md.
@@ -82,8 +83,9 @@ def _minimal_workstation_config(
 @pytest.mark.asyncio
 async def test_mwps_chat_flow_uses_provider_client_only() -> None:
     """
-    No-direct-access: run_chat_flow for Model Workplace Server must use get_default_client and
-    provider_client.chat(); must not use direct mwps HTTP in this path.
+    No-direct-access: run_chat_flow for Model Workplace Server must use
+    get_default_client and provider_client.chat(); must not use direct mwps
+    HTTP in this path.
 
     If someone reintroduces direct httpx/requests to mwps in chat_flow, the
     mock's chat() would not be called and this test fails.
@@ -95,15 +97,9 @@ async def test_mwps_chat_flow_uses_provider_client_only() -> None:
         "done": True,
     }
 
-    with (
-        patch(
-            "mwps.chat_flow.get_default_client",
-            return_value=mock_client,
-        ),
-        patch(
-            "mwps.chat_flow.is_model_ready",
-            return_value=True,
-        ),
+    with patch(
+        "mwps.chat_flow.get_default_client",
+        return_value=mock_client,
     ):
         result = await run_chat_flow(
             config,
@@ -137,9 +133,9 @@ async def test_mwps_chat_flow_uses_provider_client_only() -> None:
 @pytest.mark.asyncio
 async def test_mwps_provider_client_chat_via_common_api() -> None:
     """
-    Provider parity: model interaction for Model Workplace Server is performed via provider
-    client only (common API). Run one round with real provider client; skip if
-    Model Workplace Server or proxy unavailable.
+    Provider parity: model interaction for Model Workplace Server is performed
+    via provider client only (common API). Run one round with real provider
+    client; skip if Model Workplace Server or proxy unavailable.
     """
     base_url = os.environ.get("MWPS_BASE_URL", "http://127.0.0.1:11434").strip()
     model = os.environ.get("MWPS_MODEL", "llama3.2").strip()
@@ -167,8 +163,8 @@ async def test_mwps_provider_client_chat_via_common_api() -> None:
             or "connection" in result["error"].lower()
         ):
             pytest.skip(
-                "Integration: Model Workplace Server not available or model not ready: %s"
-                % result["error"]
+                "Integration: Model Workplace Server not available or "
+                "model not ready: %s" % result["error"]
             )
         if (
             "provider_clients_data" in result["error"]
@@ -242,37 +238,6 @@ async def test_proxy_registration_database_server_visible(
 
 @pytest.mark.integration
 @pytest.mark.asyncio
-async def test_proxy_registration_mwps_server_visible(
-    proxy_config_integration: WorkstationConfig,
-) -> None:
-    """
-    Proxy registration: mwps-server is proxy-registered and discoverable
-    via list_servers.
-    """
-    client = ProxyClient(proxy_config_integration)
-    try:
-        raw = await client.list_servers(page=1, page_size=100)
-    except ProxyClientError as e:
-        pytest.skip("Integration: proxy absent: %s" % e.message)
-    finally:
-        await client.close()
-
-    servers = extract_servers_list(raw)
-    server_ids = set()
-    for srv in servers:
-        if isinstance(srv, dict):
-            sid = (srv.get("server_id") or srv.get("id") or "").strip()
-            if sid:
-                server_ids.add(sid)
-
-    assert "mwps-server" in server_ids, (
-        "mwps-server must be proxy-registered and visible in list_servers; "
-        "got: %s" % sorted(server_ids)
-    )
-
-
-@pytest.mark.integration
-@pytest.mark.asyncio
 async def test_proxy_registration_database_server_key_command_callable(
     proxy_config_integration: WorkstationConfig,
 ) -> None:
@@ -307,42 +272,3 @@ async def test_proxy_registration_database_server_key_command_callable(
         await client.close()
 
     assert out is not None, "call_server(database-server, health) must return a result"
-
-
-@pytest.mark.integration
-@pytest.mark.asyncio
-async def test_proxy_registration_mwps_server_key_command_callable(
-    proxy_config_integration: WorkstationConfig,
-) -> None:
-    """
-    Proxy registration: a key command on mwps-server is callable via
-    call_server (e.g. list or health). Skips if proxy or mwps-server unavailable.
-    """
-    client = ProxyClient(proxy_config_integration)
-    try:
-        raw = await client.list_servers()
-        servers = extract_servers_list(raw)
-        if not any(
-            (s.get("server_id") or s.get("id") or "").strip() == "mwps-server"
-            for s in servers
-            if isinstance(s, dict)
-        ):
-            pytest.skip("Integration: mwps-server not in proxy list")
-    except ProxyClientError as e:
-        pytest.skip("Integration: proxy absent: %s" % e.message)
-
-    # Try "list" (Model Workplace Server /api/tags) or "health" if implemented
-    try:
-        out = await client.call_server(
-            "mwps-server",
-            "list",
-            params={},
-        )
-    except ProxyClientError as e:
-        pytest.skip(
-            "Integration: call_server(mwps-server, list) failed: %s" % e.message
-        )
-    finally:
-        await client.close()
-
-    assert out is not None, "call_server(mwps-server, list) must return a result"

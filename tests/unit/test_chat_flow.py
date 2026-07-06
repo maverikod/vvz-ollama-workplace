@@ -60,12 +60,9 @@ async def test_chat_flow_no_tool_calls(config: WorkstationConfig) -> None:
     }
     mock_provider_client = MagicMock()
     mock_provider_client.chat = MagicMock(return_value=mock_response)
-    with (
-        patch("mwps.chat_flow.is_model_ready", return_value=True),
-        patch(
-            "mwps.chat_flow.get_default_client",
-            return_value=mock_provider_client,
-        ),
+    with patch(
+        "mwps.chat_flow.get_default_client",
+        return_value=mock_provider_client,
     ):
         result = await run_chat_flow(config, messages)
     assert result.get("error") is None
@@ -92,12 +89,9 @@ async def test_chat_flow_tool_call_appends_tool_msg(config: WorkstationConfig) -
     }
     mock_provider_client = MagicMock()
     mock_provider_client.chat = MagicMock(side_effect=[first_response, second_response])
-    with (
-        patch("mwps.chat_flow.is_model_ready", return_value=True),
-        patch(
-            "mwps.chat_flow.get_default_client",
-            return_value=mock_provider_client,
-        ),
+    with patch(
+        "mwps.chat_flow.get_default_client",
+        return_value=mock_provider_client,
     ):
         with patch("mwps.chat_flow.ProxyClient") as mock_proxy_cls:
             mock_proxy = AsyncMock()
@@ -127,12 +121,9 @@ async def test_chat_flow_proxy_error_in_tool_content(config: WorkstationConfig) 
     }
     mock_provider_client = MagicMock()
     mock_provider_client.chat = MagicMock(return_value=mock_response)
-    with (
-        patch("mwps.chat_flow.is_model_ready", return_value=True),
-        patch(
-            "mwps.chat_flow.get_default_client",
-            return_value=mock_provider_client,
-        ),
+    with patch(
+        "mwps.chat_flow.get_default_client",
+        return_value=mock_provider_client,
     ):
         with patch("mwps.chat_flow.ProxyClient") as mock_pc:
             mock_proxy = AsyncMock()

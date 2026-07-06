@@ -101,9 +101,7 @@
     "redis_key_prefix": "message",
     "max_context_tokens": 4096,
     "last_n_messages": 10,
-    "min_semantic_tokens": 256,
     "min_documentation_tokens": 0,
-    "relevance_slot_mode": "fixed_order",
     "max_model_call_depth": 1,
     "model_calling_tool_allow_list": []
   }
