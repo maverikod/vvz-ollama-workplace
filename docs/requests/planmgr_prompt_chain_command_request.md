@@ -2,9 +2,62 @@
 
 **Author:** Vasiliy Zdanovskiy
 **email:** vasilyvz@gmail.com
-**Date:** 2026-07-05
+**Date:** 2026-07-05 (rev 2 — 2026-07-06)
 **Requesting project:** mwps (Agent Workstation)
-**Requesting plan:** `docs/plans/workspace_orchestration_refactoring/`
+**Requesting plan:** `docs/plans/workspace_orchestration_refactoring/` (plan uuid `e271ef77-0e62-4450-8bfa-f253659a0534`)
+
+**rev 2 note (2026-07-06):** the plan is now fully authored and **committed on a green gate** —
+head revision `8ea27aaf-b9d5-4259-8922-240763bc3d3b` (HRS 109 labels → MRS 45 concepts + 72
+relations → 9 GS → all TS → all AS, `coverage.*` green). This revision of the request incorporates
+the agreed **return-object contract** (§4: `waves` + level-keyed `blocks` + `assembly` manifest),
+makes explicit per-block **`cache_key`** the machine-checkable basis of "no randomness" cache
+determinism (§4a), and settles the **dependency-graph source** (§5a): derive the DAG from MRS
+relations + `target_file` produce/consume now, add explicit step-level `depends_on` later.
+
+The core insight driving the command: **the heavy upper-layer context (HRS/MRS/GS/TS) is an input
+to the _author_ of each A-step, not to its _executor_.** Authoring (Opus/Sonnet with the full
+layered context) distills everything the coder needs **into the A-step itself**, so the coder's
+context is **minimal by design**:
+
+> `единый_текст(A)_coder = tool_instructions (fixed per role) + AS(prompt + verification + target_file + operation)`
+
+Nothing else is pushed. Anything the A-step references (a style exemplar such as
+`redis_message_record.py`, or the current contents of the file a `modify_file` step edits) is
+**pulled by the coder via tools on demand**, never pushed into context — "if it can be omitted,
+omit it", which is also a hard requirement given VRAM-bounded executor windows (`{e4a1}`). planmgr
+still emits the full **deduplicated block corpus** (HRS/MRS/GS/TS/AS) for traceability and for
+review/Conscience roles that judge against the upper layers, but the **coder-role `assembly`
+manifest selects only `{AS, tool_instructions}`** (§4a). Determinism/cache: each block carries a
+canonical `cache_key`; the coder prefix is just the fixed `tool_instructions` block, so its cache
+hits by construction. **Corollary invariant:** an A-step MUST be self-contained enough to execute
+with zero upper-layer context; if it is not, that is an authoring defect (anti-placeholder DoD),
+not a reason to push more context.
+
+## Task statement (for the plan-manager team)
+
+**Implement a new additive, read-only command `plan_prompt_chain`** (queue-bound → `job_id`) that
+compiles the **entire coder-prompt corpus** for a committed, gate-green plan revision in one call —
+deduplicated, deterministic, with a parallelization (wave) map — so mwps executes plans on small
+models without re-deriving prefixes or ordering, and with a provider cache that hits by construction.
+
+- **Input:** `plan`, `revision` (default head), `scope` (whole plan | `G-NNN` | `G-NNN/T-NNN`),
+  `role` (default `coder`), `ordering` view is implicit (both keys always returned). Pinned to a
+  **committed** revision; the command performs **zero retrieval** (pure compile).
+- **Output (rev-2 contract, §4 + §5a):** `{ waves, blocks{hrs,mrs,gs,ts,as,tool_instructions},
+  assembly[], meta }`. Each block carries `cache_key = hash(canonical_bytes)`. The per-step
+  `assembly.use` manifest is **role-scoped**: `role=coder` → `{as, tool_instructions}` only.
+- **Three decisions to honor:** (1) **minimal coder context** — no HRS/MRS/GS/TS in a coder prompt;
+  the A-step is self-contained, everything else is pulled by tools on demand (self-contained-AS
+  acceptance check §8.11); (2) **retrieval/RAG is planning-mode only** — execution is retrieval-free
+  and therefore deterministic; (3) **wave DAG is derived** from MRS relations + `target_file`
+  produce/consume now, with explicit step-level `depends_on` as a later override (`meta.dag_source`).
+- **Acceptance:** §8 (determinism, dedup, coverage, both ordering keys, gate enforcement, revision
+  validation, no consumer-side concerns leak in, scope exactness, additive/non-breaking) **plus**
+  §8.11 self-contained-AS and stable `cache_key`.
+- **Reference target:** plan `workspace_orchestration_refactoring`
+  (`e271ef77-0e62-4450-8bfa-f253659a0534`), committed head `8ea27aaf-b9d5-4259-8922-240763bc3d3b`
+  (109 HRS labels, 45 concepts, 72 relations, 9 GS, all TS/AS, `coverage.*` green) — a ready live
+  fixture to test the command against.
 
 ## Table of contents
 
@@ -137,6 +190,95 @@ plan-manager. Every step therefore carries **both** keys, unconditionally:
 
 `plan_prompt_chain` does not pick a strategy or pre-sort `steps` into one privileged order —
 callers sort/group by whichever key they need.
+
+## 5a. Minimal execution context, retrieval boundary, DAG source, determinism (rev 2)
+
+This section consolidates the design decisions agreed 2026-07-06; §4/§5 above remain the base
+contract, refined here.
+
+### Minimal coder assembly (`role`-selected)
+
+The command gains a `role` parameter (default `coder`). The returned `blocks` corpus is the full
+deduplicated set (HRS/MRS/GS/TS/AS) — kept for traceability and for `review`/`conscience` roles that
+must judge against the upper layers — but the per-step **`assembly.use`** manifest is **role-scoped**:
+
+- `role = coder` → `use = { as, tool_instructions }` **only**. No HRS/MRS/GS/TS in the coder prompt.
+- `role = review | conscience` → `use` may include the upper layers, since judging correctness
+  requires the concept/HRS context the coder does not need.
+
+`единый_текст(A)_coder = tool_instructions (fixed, shared, cache-anchored) + AS`. `tool_instructions`
+is a single fixed block per role (the harness: how to read/write files, run the verification command,
+report). It is the coder's entire shared prefix.
+
+**Self-contained-AS invariant (new acceptance check, §8.11):** every A-step's `prompt` +
+`verification` must be sufficient for a small model, given only `tool_instructions` and tool access,
+to execute the step. Referenced material (a style exemplar, the current contents of a `modify_file`
+target) is **pulled by the coder via a named tool read**, never pushed into context. If an A-step
+cannot be executed without upper-layer context, that is an **authoring defect** (surfaced by the
+anti-placeholder Definition-of-Done), not a case for enlarging the coder prompt. Principle: *if a
+block can be omitted from the coder context, omit it.*
+
+### Retrieval is a planning-mode concern only
+
+All retrieval/RAG — doc-store lookup, semantic and full-text standards search, the six context
+slots, rolling-summary regeneration — belongs to **planning mode** (authoring HRS/MRS/GS/TS/AS),
+where the author retrieves what is relevant and **bakes the distilled result into the A-step**.
+**Execution mode performs no retrieval:** the coder receives the frozen AS + `tool_instructions` and
+pulls any explicitly named file by direct read (deterministic), never by semantic search. This is
+what makes execution reproducible and the cache deterministic: no retrieval nondeterminism at run
+time — everything variable was resolved at authoring time and frozen into the committed revision.
+`plan_prompt_chain` therefore issues **zero retrieval calls**; it is a pure compile over the pinned
+revision.
+
+### DAG source for the wave map
+
+Since step-level `depends_on` is not currently populated (`step_update` exposes no such parameter),
+`waves` are computed from a DAG the command **derives**:
+
+1. **MRS relations** projected onto steps: for concept relation `C-a depends_on|consumes|uses C-b`,
+   every step tagged `C-a` is ordered after every step whose `target_file` produces what `C-b`
+   denotes.
+2. **`target_file` produce/consume**: a step that creates a module → its importer steps (edge from
+   producer to consumer), inferable from the module path referenced in the consumer's `prompt`.
+3. `priority` as tie-breaker **within** a wave only (never as a cross-wave dependency).
+
+`waves` = topological levels of this DAG; a cycle is a hard error naming the offending edge. When
+explicit step-level `depends_on` becomes settable, it **overrides/augments** the derived edges;
+`meta.dag_source` records `"derived: relations+target_file"` vs `"explicit_depends_on"` vs `"mixed"`.
+
+### Determinism / `cache_key` (machine-checkable "no randomness")
+
+Every entry in `blocks` carries `cache_key = hash(canonical_bytes)`, where canonical serialization
+uses a stable key order, normalized newlines, and strips any `timestamp`/`random`/`uuid`/date from
+prompt text. Identical logical content ⇒ identical `cache_key` across chats, runs, and revisions ⇒
+provider cache hits **by construction, not by luck**. For `role = coder` the shared prefix is exactly
+the one fixed `tool_instructions` block, so its cache key is constant across the whole run.
+
+### Revised output shape (superset of §4)
+
+```
+{
+  "plan": "...", "revision": "8ea27aaf-...", "role": "coder",
+  "waves": [ ["G-004/T-002/A-001", "G-005/T-001/A-001"], ["G-004/T-002/A-002"] ],
+  "blocks": {
+    "hrs": { "<label>": {"content":"...","cache_key":"..."} },
+    "mrs": { "C-020": {"content":"...","cache_key":"..."} },
+    "gs":  { "G-004": {"content":"...","cache_key":"..."} },
+    "ts":  { "G-004/T-002": {"content":"...","cache_key":"..."} },
+    "as":  { "G-004/T-002/A-001": {"prompt":"...","operation":"create_file","target_file":"...","verification":{...},"cache_key":"..."} },
+    "tool_instructions": { "coder": {"content":"...","cache_key":"..."} }
+  },
+  "assembly": [
+    { "step":"G-004/T-002/A-001", "wave":0, "role":"coder",
+      "use": { "as":"G-004/T-002/A-001", "tool_instructions":"coder" } }
+  ],
+  "meta": { "dag_source":"derived: relations+target_file", "counts": {...} }
+}
+```
+
+The flat `blocks[block_id]` + `steps[]` form in §4 and this level-keyed `blocks` + `assembly` form
+are isomorphic; the plan-manager team may pick either serialization — the level-keyed one is
+preferred because the level is the natural dedup/cache-stability axis.
 
 ## 6. Boundary of responsibility
 
